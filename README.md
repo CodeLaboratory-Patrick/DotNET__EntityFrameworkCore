@@ -1,5 +1,6 @@
 # EntityFrameworkCore
 
+---
 # 🚀 Entity Framework Core (EF Core) in .NET Development
 ## 📌 Introduction
 Entity Framework Core (EF Core) is an open-source, lightweight, and cross-platform Object-Relational Mapper (ORM) developed by Microsoft. It simplifies database interactions in .NET applications by allowing developers to work with strongly typed C# objects instead of raw SQL queries. EF Core is the successor to Entity Framework (EF) and provides enhanced performance, flexibility, and scalability.
@@ -271,5 +272,156 @@ flowchart TD
 ## 📚 References
 - [📖 Official .NET CLI Documentation](https://docs.microsoft.com/en-us/dotnet/core/tools/)
 - [🔗 Download .NET SDK](https://dotnet.microsoft.com/en-us/download)
+
+---
+# 🚀 Code First vs Database First Development in .NET
+## 📌 Introduction
+In **.NET development**, particularly with **Entity Framework Core (EF Core)**, developers have two primary approaches for working with databases:
+1. **Code First Development**
+2. **Database First Development**
+
+Each approach has distinct benefits and is suited for different scenarios. This guide explores both methodologies, their characteristics, advantages, disadvantages, and practical use cases. By the end, you'll have a clear understanding of when and how to use each approach effectively.
+
+## 🏗️ Code First Development
+### 📌 What is Code First?
+The **Code First** approach allows developers to define the database schema using **C# entity classes**. EF Core then generates the database structure based on these classes. This approach is ideal when starting a new project without an existing database.
+
+### 🔍 Key Characteristics
+- ✅ Database schema is **generated from entity classes**.
+- ✅ Developers manage database structure using **migrations**.
+- ✅ Ideal for **greenfield projects** (new applications).
+- ✅ Changes to the schema are **tracked within the source code**.
+- ❌ Requires developers to manage database creation and migration manually.
+
+### 🏗️ How to Use Code First
+#### Step 1️⃣: Define Entity Classes
+
+Create a `Product` class representing a table in the database:
+
+```csharp
+public class Product
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public decimal Price { get; set; }
+}
+```
+
+#### Step 2️⃣: Create a DbContext
+Define a `DbContext` class to manage database connections:
+
+```csharp
+public class ApplicationDbContext : DbContext
+{
+    public DbSet<Product> Products { get; set; }
+
+    protected override void OnConfiguring(DbContextOptionsBuilder options)
+    {
+        options.UseSqlServer("Server=.;Database=ShopDB;Trusted_Connection=True;");
+    }
+}
+```
+
+#### Step 3️⃣: Apply Migrations and Create the Database
+Use the following commands to generate the database schema:
+
+```sh
+dotnet ef migrations add InitialCreate
+dotnet ef database update
+```
+
+#### Step 4️⃣: CRUD Operations
+
+```csharp
+using (var context = new ApplicationDbContext())
+{
+    var product = new Product { Name = "Laptop", Price = 1200.50m };
+    context.Products.Add(product);
+    context.SaveChanges();
+}
+```
+
+## 🏛️ Database First Development
+### 📌 What is Database First?
+The **Database First** approach is used when the database schema **already exists**, and entity classes are generated based on the existing structure. This is useful for integrating legacy databases or when the schema is designed separately.
+
+### 🔍 Key Characteristics
+- ✅ The database schema **exists first**, and entity classes are generated from it.
+- ✅ Uses **reverse engineering** to create models from the database.
+- ✅ Ideal for **working with existing databases**.
+- ✅ Reduces the need to manually define migrations.
+- ❌ Less flexible, as database changes require **re-scaffolding**.
+
+### 🏗️ How to Use Database First
+#### Step 1️⃣: Install EF Core Tools
+Run the following command to install Entity Framework Core tools:
+
+```sh
+dotnet tool install --global dotnet-ef
+```
+
+#### Step 2️⃣: Generate Entity Classes from Database
+Use the following command to scaffold entity classes from an existing database:
+
+```sh
+dotnet ef dbcontext scaffold "Server=.;Database=ShopDB;Trusted_Connection=True;" Microsoft.EntityFrameworkCore.SqlServer -o Models
+```
+
+This generates the `Models` folder with entity classes corresponding to database tables.
+
+#### Step 3️⃣: Use the Generated Context
+Once the entity classes are generated, use them in your application:
+
+```csharp
+using (var context = new ApplicationDbContext())
+{
+    var products = context.Products.ToList();
+    foreach (var product in products)
+    {
+        Console.WriteLine($"{product.Id} - {product.Name} - {product.Price}");
+    }
+}
+```
+
+## 🔄 Comparison: Code First vs Database First
+| Feature | Code First | Database First |
+|---------|------------|---------------|
+| **Use Case** | New applications | Existing databases |
+| **Schema Management** | Defined in C# classes | Defined in SQL |
+| **Database Evolution** | Uses migrations | Manual updates |
+| **Flexibility** | High (customizable in code) | Limited to database structure |
+| **Tooling Support** | Uses EF migrations | Uses reverse engineering |
+
+## 📊 Workflow Diagrams
+### Code First Workflow
+
+```mermaid
+flowchart TD
+    A[Write Domain Classes] --> B[Configure DbContext]
+    B --> C[Create Migrations]
+    C --> D[Update Database]
+    D --> E[Run Application]
+```
+
+### Database First Workflow
+
+```mermaid
+flowchart TD
+    A[Existing Database] --> B[Scaffold Entity Classes]
+    B --> C[Review & Customize Generated Code]
+    C --> D[Run Application]
+```
+
+## 🏁 Conclusion
+Both **Code First** and **Database First** approaches have advantages depending on the project requirements:
+
+- Use **Code First** when starting a new project and managing schema in C#.
+- Use **Database First** when working with an existing database that must remain unchanged.
+
+By understanding these approaches, developers can choose the best strategy to fit their application’s needs.
+
+## 📚 References
+- [Microsoft Documentation - EF Core](https://learn.microsoft.com/en-us/ef/core/)
+- [Entity Framework Core GitHub Repository](https://github.com/dotnet/efcore)
 
 
