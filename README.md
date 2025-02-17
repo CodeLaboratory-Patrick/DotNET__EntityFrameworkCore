@@ -134,3 +134,142 @@ Entity Framework Core is a powerful ORM for .NET applications that simplifies da
 - [📖 Microsoft Documentation](https://docs.microsoft.com/en-us/ef/core/)
 - [🔗 EF Core GitHub Repository](https://github.com/dotnet/efcore)
 
+---
+# 🚀 .NET CLI (Command Line Interface) in .NET Development
+## 📌 Introduction
+The **.NET CLI (Command Line Interface)** is a cross-platform tool that allows developers to create, build, run, test, and deploy .NET applications directly from the command line. It eliminates the need for a full IDE, making it a powerful tool for automation, CI/CD pipelines, cloud environments, and lightweight development workflows.
+
+By leveraging .NET CLI, developers can efficiently manage dependencies, execute builds, and deploy applications across different platforms, such as:
+
+- 🖥️ **Windows**
+- 🐧 **Linux**
+- 🍏 **macOS**
+
+## 🔑 Key Features of .NET CLI
+| Feature                 | Description                                                                                                  |
+|-------------------------|--------------------------------------------------------------------------------------------------------------|
+| 🚀 **Cross-Platform**      | Works on Windows, macOS, and Linux, enabling flexible development.                                           |
+| 🔧 **Automation-Friendly** | Easily integrates into CI/CD pipelines and scriptable environments.                                        |
+| ⚡ **Lightweight**         | Provides minimal installation compared to full IDEs, ideal for fast setups.                                |
+| 📦 **Template-Driven**    | Offers multiple project templates (console, web, class library, etc.) to jumpstart development.           |
+| 🏗️ **Extensible**         | Supports additional tools and custom commands via NuGet packages and scripts.                           |
+| 🔍 **Dependency Management** | Allows easy addition, removal, and updating of NuGet packages within projects.                          |
+| 🛠️ **Testing and Deployment** | Supports unit testing, integration testing, and publishing applications efficiently.                   |
+
+---
+
+## 📥 Installing .NET CLI
+.NET CLI is bundled with the .NET SDK. To check if it's installed, open a terminal and run:
+
+```sh
+dotnet --version
+```
+
+If .NET SDK is not installed, download it from:
+👉 [Download .NET SDK](https://dotnet.microsoft.com/en-us/download)
+
+## 🏗️ Commonly Used .NET CLI Commands
+| Command | Description |
+|---------|-------------|
+| `dotnet --version` | Displays the installed .NET SDK version. |
+| `dotnet new <template>` | Creates a new project from a specified template. |
+| `dotnet restore` | Restores dependencies and project-specific tools. |
+| `dotnet build` | Compiles the project and generates binaries. |
+| `dotnet run` | Runs the application from source code. |
+| `dotnet test` | Executes unit tests using a test framework. |
+| `dotnet publish` | Packages the application for deployment. |
+| `dotnet add package <package-name>` | Adds a NuGet package to the project. |
+| `dotnet remove package <package-name>` | Removes a NuGet package from the project. |
+| `dotnet list package` | Lists installed NuGet packages. |
+
+## 🏗️ Creating, Building, and Running a .NET Application
+### 1️⃣ Creating a New .NET Project
+To create a new console application, run:
+
+```sh
+dotnet new console -o MyConsoleApp
+cd MyConsoleApp
+```
+
+This generates a directory `MyConsoleApp` with a basic console app structure.
+
+### 2️⃣ Restoring Dependencies
+After modifying the `csproj` file or adding dependencies, restore them using:
+
+```sh
+dotnet restore
+```
+
+### 3️⃣ Building a .NET Project
+To compile and build your application, run:
+
+```sh
+dotnet build
+```
+
+This generates compiled output files in the `bin` directory.
+
+### 4️⃣ Running a .NET Application
+To execute a .NET application, use:
+
+```sh
+dotnet run
+```
+
+## 🛠️ Managing Dependencies
+### ➕ Adding a NuGet Package
+
+```sh
+dotnet add package Newtonsoft.Json
+```
+
+### 🗑️ Removing a Package
+
+```sh
+dotnet remove package Newtonsoft.Json
+```
+
+### 📦 Listing Installed Packages
+
+```sh
+dotnet list package
+```
+
+## 🧪 Running Tests
+If the project contains unit tests, execute:
+
+```sh
+dotnet test
+```
+
+This runs all tests in the project and outputs the results to the terminal.
+
+## 🌍 Publishing a .NET Application
+To publish a self-contained application for deployment, use:
+
+```sh
+dotnet publish -c Release -r win-x64 --self-contained true
+```
+
+This generates a publishable binary inside the `publish` directory, ready for deployment.
+
+## 📊 .NET CLI Workflow Diagram
+
+```mermaid
+flowchart TD
+    A[Install .NET SDK] --> B[Create Project (dotnet new)]
+    B --> C[Restore Dependencies (dotnet restore)]
+    C --> D[Build Project (dotnet build)]
+    D --> E[Run Application (dotnet run)]
+    E --> F[Test Application (dotnet test)]
+    F --> G[Publish Application (dotnet publish)]
+```
+
+## 🏁 Conclusion
+.NET CLI is a powerful and essential tool for .NET developers. It enables efficient project management, dependency handling, building, testing, and deployment, making it indispensable for modern development workflows. By mastering .NET CLI, developers can streamline development, automate tasks, and enhance productivity across different environments.
+
+## 📚 References
+- [📖 Official .NET CLI Documentation](https://docs.microsoft.com/en-us/dotnet/core/tools/)
+- [🔗 Download .NET SDK](https://dotnet.microsoft.com/en-us/download)
+
+
