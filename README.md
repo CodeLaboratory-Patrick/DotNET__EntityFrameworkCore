@@ -39,7 +39,6 @@ To use EF Core in a .NET project, install the necessary NuGet packages:
 
 ### 2️⃣ Define a Model (Entity Class)
 A model represents a table in the database. Below is an example entity class for a `Product` table:
-
 ```csharp
 public class Product
 {
@@ -52,7 +51,6 @@ public class Product
 
 ### 3️⃣ Create a DbContext Class
 The `DbContext` class manages database interactions and provides an interface for querying and persisting data:
-
 ```csharp
 public class ApplicationDbContext : DbContext
 {
@@ -67,7 +65,6 @@ public class ApplicationDbContext : DbContext
 
 ## 🔄 Database Migrations
 Migrations allow developers to update database schemas without manually modifying SQL scripts.
-
 - **Create an Initial Migration:**
   ```sh
   dotnet ef migrations add InitialCreate
@@ -139,9 +136,7 @@ Entity Framework Core is a powerful ORM for .NET applications that simplifies da
 # 🚀 .NET CLI (Command Line Interface) in .NET Development
 ## 📌 Introduction
 The **.NET CLI (Command Line Interface)** is a cross-platform tool that allows developers to create, build, run, test, and deploy .NET applications directly from the command line. It eliminates the need for a full IDE, making it a powerful tool for automation, CI/CD pipelines, cloud environments, and lightweight development workflows.
-
 By leveraging .NET CLI, developers can efficiently manage dependencies, execute builds, and deploy applications across different platforms, such as:
-
 - 🖥️ **Windows**
 - 🐧 **Linux**
 - 🍏 **macOS**
@@ -156,8 +151,6 @@ By leveraging .NET CLI, developers can efficiently manage dependencies, execute 
 | 🏗️ **Extensible**         | Supports additional tools and custom commands via NuGet packages and scripts.                           |
 | 🔍 **Dependency Management** | Allows easy addition, removal, and updating of NuGet packages within projects.                          |
 | 🛠️ **Testing and Deployment** | Supports unit testing, integration testing, and publishing applications efficiently.                   |
-
----
 
 ## 📥 Installing .NET CLI
 .NET CLI is bundled with the .NET SDK. To check if it's installed, open a terminal and run:
@@ -279,7 +272,6 @@ flowchart TD
 In **.NET development**, particularly with **Entity Framework Core (EF Core)**, developers have two primary approaches for working with databases:
 1. **Code First Development**
 2. **Database First Development**
-
 Each approach has distinct benefits and is suited for different scenarios. This guide explores both methodologies, their characteristics, advantages, disadvantages, and practical use cases. By the end, you'll have a clear understanding of when and how to use each approach effectively.
 
 ## 🏗️ Code First Development
@@ -295,9 +287,7 @@ The **Code First** approach allows developers to define the database schema usin
 
 ### 🏗️ How to Use Code First
 #### Step 1️⃣: Define Entity Classes
-
 Create a `Product` class representing a table in the database:
-
 ```csharp
 public class Product
 {
@@ -331,7 +321,6 @@ dotnet ef database update
 ```
 
 #### Step 4️⃣: CRUD Operations
-
 ```csharp
 using (var context = new ApplicationDbContext())
 {
@@ -371,7 +360,6 @@ This generates the `Models` folder with entity classes corresponding to database
 
 #### Step 3️⃣: Use the Generated Context
 Once the entity classes are generated, use them in your application:
-
 ```csharp
 using (var context = new ApplicationDbContext())
 {
@@ -414,14 +402,141 @@ flowchart TD
 
 ## 🏁 Conclusion
 Both **Code First** and **Database First** approaches have advantages depending on the project requirements:
-
 - Use **Code First** when starting a new project and managing schema in C#.
 - Use **Database First** when working with an existing database that must remain unchanged.
-
 By understanding these approaches, developers can choose the best strategy to fit their application’s needs.
 
 ## 📚 References
 - [Microsoft Documentation - EF Core](https://learn.microsoft.com/en-us/ef/core/)
 - [Entity Framework Core GitHub Repository](https://github.com/dotnet/efcore)
 
+---
+# 🚀 Database Migrations in .NET Development
+## 📌 Introduction
+**Database migrations** in .NET development, particularly with **Entity Framework Core (EF Core)**, provide a mechanism to manage database schema changes systematically. Instead of manually altering database tables, migrations allow developers to modify and evolve their database structure while ensuring that the database remains in sync with the application’s data model.
+Migrations facilitate version control, making it easier to track database changes, roll back modifications if needed, and streamline the deployment process across different environments.
+
+## 🔍 Key Characteristics of Database Migrations
+| Feature                 | Description |
+|-------------------------|-------------|
+| ✅ **Schema Automation** | Apply, modify, or delete tables and columns without manual SQL scripting. |
+| 🔄 **Version Control**  | Track database schema changes incrementally, ensuring structured evolution. |
+| 🌍 **Multi-Database Support** | Compatible with SQL Server, PostgreSQL, MySQL, SQLite, and more. |
+| ⚡ **CI/CD Integration** | Automate database updates in development, staging, and production environments. |
+| 🛠 **Rollback Support** | Enables rolling back schema changes to a previous state when needed. |
+
+## 🏗️ Setting Up Migrations in EF Core
+### 1️⃣ Install EF Core Tools
+Ensure EF Core is installed in your .NET project. If not, install it with the following commands:
+
+```sh
+# Install EF Core CLI Tool
+dotnet tool install --global dotnet-ef
+
+# Install EF Core SQL Server Provider
+dotnet add package Microsoft.EntityFrameworkCore.SqlServer
+```
+
+### 2️⃣ Creating an Initial Migration
+Define a **DbContext** class representing the database connection:
+```csharp
+public class ApplicationDbContext : DbContext
+{
+    public DbSet<Product> Products { get; set; }
+
+    protected override void OnConfiguring(DbContextOptionsBuilder options)
+    {
+        options.UseSqlServer("Server=.;Database=ShopDB;Trusted_Connection=True;");
+    }
+}
+```
+
+Now, create the first migration:
+
+```sh
+dotnet ef migrations add InitialCreate
+```
+
+This command generates a **Migrations** folder containing:
+- `YYYYMMDDHHMMSS_InitialCreate.cs` – Defines schema changes.
+- `ApplicationDbContextModelSnapshot.cs` – Represents the latest schema snapshot.
+
+### 3️⃣ Applying the Migration to the Database
+Once a migration is created, apply it using:
+
+```sh
+dotnet ef database update
+```
+
+This command updates the database schema to match the migration script.
+
+### 4️⃣ Adding New Migrations
+If changes are made to the model (e.g., adding a new column `Category` to `Product`):
+```csharp
+public class Product
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public decimal Price { get; set; }
+    public string Category { get; set; }  // New column added
+}
+```
+Generate a new migration:
+
+```sh
+dotnet ef migrations add AddCategoryColumn
+```
+
+Apply the changes to the database:
+
+```sh
+dotnet ef database update
+```
+
+### 5️⃣ Reverting Migrations
+To revert the last migration:
+
+```sh
+dotnet ef migrations remove
+```
+
+To roll back to a specific migration:
+
+```sh
+dotnet ef database update PreviousMigrationName
+```
+
+## 📊 Understanding Migration Files
+| File | Description |
+|------|-------------|
+| `YYYYMMDDHHMMSS_MigrationName.cs` | Defines schema changes. |
+| `ApplicationDbContextModelSnapshot.cs` | Represents the latest schema snapshot. |
+| `MigrationsHistoryTable` | A special table in the database that tracks applied migrations. |
+
+## 🌍 Using Migrations in Production
+- 📌 Use **CI/CD pipelines** to automate migrations.
+- 📌 Apply migrations **before deploying** the application.
+- 📌 Keep **database backups** before running new migrations.
+- 📌 Use **transactional migrations** to prevent partial updates in case of errors.
+
+## 🔄 Migration Workflow Diagram
+
+```mermaid
+flowchart TD
+    A[Define/Modify Domain Models] --> B[Create Migration (dotnet ef migrations add)]
+    B --> C[Review Generated Migration Code]
+    C --> D[Apply Migration (dotnet ef database update)]
+    D --> E[Database Schema Updated]
+    E --> F[Run Application]
+```
+
+## 🏁 Conclusion
+Database migrations in .NET development simplify schema changes, allowing applications to evolve without manual database modifications. They enhance version control, ensure consistency across environments, and streamline database updates.
+
+By integrating EF Core migrations into the development workflow, teams can maintain robust and scalable applications while keeping database structures versioned and synchronized.
+
+## 📚 References
+- [Microsoft Documentation - Migrations](https://learn.microsoft.com/en-us/ef/core/managing-schemas/migrations/)
+
+---
 
