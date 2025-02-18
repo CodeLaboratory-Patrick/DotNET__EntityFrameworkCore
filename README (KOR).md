@@ -10,10 +10,6 @@
 
 이 둘 사이에는 데이터 구조와 조작 방식에 차이가 있어서, 직접 데이터베이스 코드를 작성하면 번거롭고 오류가 발생하기 쉽습니다. 마치 서로 다른 언어를 사용하는 사람과 대화하는 것처럼 어렵다고 생각하면 됩니다.
 
-**[Image of ORM 개념 다이어그램]**
-
-*위 그림은 ORM의 개념을 간단하게 보여줍니다. 개발자는 객체(Object)를 다루지만, ORM이 이를 데이터베이스 테이블(Table)과 자동으로 매핑시켜 줍니다.*
-
 **EF Core는 바로 이 문제를 해결해 줍니다\!**  EF Core를 사용하면 개발자는 데이터베이스 테이블을 직접 조작하는 SQL 쿼리 대신, 객체를 사용하여 데이터를 다룰 수 있게 됩니다. EF Core가 객체를 데이터베이스 테이블과 자동으로 연결해 주고, 데이터베이스 작업 (저장, 조회, 수정, 삭제) 을 대신 처리해 줍니다. 마치 번역가가 있어서, 다른 언어를 사용하는 사람과 쉽게 대화할 수 있게 되는 것과 같습니다.
 
 **핵심 요약:**
@@ -348,10 +344,6 @@ EF Core를 더 자세히 배우고 싶다면 다음 웹사이트들을 참고해
 
 CLI는 텍스트 명령어를 입력하여 컴퓨터를 제어하는 방식입니다.  마우스 클릭이나 GUI (Graphical User Interface) 대신, 키보드로 명령어를 입력하여 작업을 수행합니다.  과거에는 컴퓨터와 소통하는 주요 방식이었으며, 개발 환경에서는 여전히 강력하고 효율적인 도구로 사용됩니다.
 
-**[Image of CLI vs GUI 비교 다이어그램]**
-
-*위 그림은 CLI와 GUI의 차이점을 간단하게 보여줍니다. CLI는 텍스트 명령어 기반, GUI는 그래픽 인터페이스 기반입니다.*
-
 **.NET CLI는 .NET 개발의 '만능 도구' 입니다\!**  .NET CLI를 사용하면 다음과 같은 다양한 작업을 할 수 있습니다.
 
   * **프로젝트 생성:**  새로운 .NET 프로젝트 (콘솔 앱, 웹 API, 웹 앱, 클래스 라이브러리 등) 를 템플릿 기반으로 빠르게 생성
@@ -561,10 +553,6 @@ dotnet publish -c Release -r win-x64  # Windows 64비트 릴리즈 버전으로 
 ### 1\. Code First 와 Database First 란 무엇일까요? (What are Code First and Database First?)
 
 .NET 개발에서 데이터베이스와 연동하는 방식은 크게 **Code First** 와 **Database First** 두 가지로 나눌 수 있습니다. 이 두 방식은 데이터베이스와 애플리케이션의 객체 모델을 연결하는 EF Core를 사용할 때, 개발 시작점을 어디에 두느냐에 따라 구분됩니다.
-
-**[Image of Code First vs Database First 비교 다이어그램]**
-
-*위 그림은 Code First 와 Database First 방식의 핵심 차이점을 보여줍니다. Code First는 코드를 먼저 작성하고 데이터베이스를 생성하는 방식, Database First는 기존 데이터베이스를 기반으로 코드를 생성하는 방식입니다.*
 
 #### 1.1. Code First 방식 (Code First Approach)
 
@@ -995,10 +983,6 @@ dotnet ef migrations script -i -o Script.sql
 
 **데이터 시딩은 애플리케이션의 초기 상태를 구성하고, 개발 및 테스트 효율성을 높여줍니다\!**  마이그레이션과 함께 사용하면, 데이터베이스 스키마와 초기 데이터를 함께 관리하고 배포할 수 있습니다.
 
-**[Image of Database Seeding Data Examples]**
-
-*위 그림은 데이터 시딩의 예시를 보여줍니다. 초기 사용자 계정, 시스템 설정, 카테고리 목록과 같은 데이터를 데이터베이스에 미리 채워 넣을 수 있습니다.*
-
 **핵심 요약:**
 
 *   **데이터베이스 초기 데이터 설정:** 애플리케이션 시작 시 필요한 초기 데이터 또는 샘플 데이터를 데이터베이스에 미리 채워 넣는 작업
@@ -1249,10 +1233,7 @@ EF Core 에서 데이터 시딩을 구현하는 방법은 여러 가지가 있�
 # .NET 데이터 모델 완벽 분석 가이드
 ### 1\. 데이터 모델이란 무엇일까요? (데이터 모델의 정의)
 
-데이터 모델을 이해하기 위해 먼저 \*\*모델(Model)\*\*이라는 단어의 의미부터 생각해 봅시다. 모델은 현실 세계의 어떤 대상을 단순화하거나 추상화하여 표현한 것을 의미합니다. 예를 들어, **건축 모델**은 실제 건물을 짓기 전에 건물의 구조와 형태를 미리 보여주는 축소 모형입니다.  **자동차 모델**은 자동차의 디자인이나 기능을 설명하기 위해 사용되는 모형이죠.
-
-[Image of 건축 모델 예시]
-[Image of 자동차 모델 예시]
+데이터 모델을 이해하기 위해 먼저 \*\*모델(Model)\*\*이라는 단어의 의미부터 생각해 봅시다. 모델은 현실 세계의 어떤 대상을 단순화하거나 추상화하여 표현한 것을 의미합니다. 
 
 **데이터 모델**도 마찬가지입니다. **데이터 모델은 프로그램에서 사용될 데이터를 체계적으로 구조화하고 표현하는 도구**입니다.  즉, 현실 세계의 정보를 컴퓨터 시스템에 저장하고 관리하기 쉽도록 **데이터의 구조, 관계, 그리고 규칙**을 정의하는 것이죠.
 
@@ -1609,10 +1590,6 @@ classDiagram
 ### 1\. Database Context 란 무엇일까요? (What is Database Context?)
 
 **Database Context** 는 .NET 개발, 특히 **Entity Framework Core (EF Core)** 를 사용할 때 핵심적인 역할을 하는 클래스입니다.  DbContext는 애플리케이션과 데이터베이스 사이의 **'다리'** 또는 **'창구'** 와 같은 역할을 하며, 다음과 같은 중요한 기능들을 수행합니다.
-
-**[Image of Database Context Analogy - Bridge between Application and Database]**
-
-*위 그림은 Database Context를 다리에 비유하여, .NET 애플리케이션과 데이터베이스를 연결하는 역할을 시각적으로 보여줍니다. 애플리케이션은 DbContext를 통해 데이터베이스와 소통하고 데이터를 주고받습니다.*
 
 **.NET 애플리케이션과 데이터베이스 사이의 통로 역할:**
 
@@ -1974,10 +1951,6 @@ Database Context 에 대해 더 자세히 배우고 싶다면 다음 웹사이�
   * **Oracle:** `Oracle.EntityFrameworkCore`
   * **InMemory Database (테스트용):** `Microsoft.EntityFrameworkCore.InMemory`
 
-**[Image of .NET Database Providers - Logos of various database systems with .NET Provider logos next to them]**
-
-*위 그림은 .NET 에서 지원하는 주요 데이터베이스 시스템과 해당 데이터베이스 시스템의 .NET 프로바이더 로고를 함께 보여줍니다.  각 데이터베이스 시스템에 맞는 프로바이더를 선택하여 .NET 애플리케이션에서 사용할 수 있습니다.*
-
 **프로바이더 선택 및 구성 예시 (EF Core):**
 
 ```csharp
@@ -2164,10 +2137,6 @@ using (var context = new BloggingContext())
   * **마이그레이션 파일에 시딩 코드 추가:**  마이그레이션 파일의 `Up()` 메서드에 `InsertData()` 메서드 또는 SQL 쿼리를 사용하여 데이터 시딩 코드를 직접 작성할 수 있습니다.
   * **프로그램적인 시딩:**  애플리케이션 시작 시 특정 조건에 따라 프로그램적으로 데이터 시딩을 수행할 수 있습니다.
 
-**[Image of Data Seeding Examples - Examples of initial data like default users, roles, configuration settings]**
-
-*위 그림은 데이터 시딩의 예시를 보여줍니다. 초기 사용자 계정, 역할 정보, 시스템 설정과 같은 데이터를 데이터베이스에 미리 채워 넣어 애플리케이션을 초기화하고 테스트 환경을 구성할 수 있습니다.*
-
 ### 3\. .NET 데이터베이스 지원 활용 방법 (How to Use Database Support in .NET Development)
 
 .NET 데이터베이스 지원을 효과적으로 활용하기 위한 몇 가지 방법을 제시합니다.
@@ -2210,10 +2179,6 @@ using (var context = new BloggingContext())
   * **데이터베이스 스키마 변경:**  `Posts` 테이블에 `LikeCount` 컬럼을 추가해야 함
 
 **마이그레이션은 Entity 클래스 변경 사항을 감지하고, 데이터베이스 스키마를 자동으로 업데이트해 줍니다\!**  마치 코드 변경 사항을 Git 으로 버전 관리하듯이, 데이터베이스 스키마 변경 사항을 마이그레이션으로 버전 관리한다고 생각하면 이해하기 쉬울 것입니다.
-
-**[Image of Database Migrations Analogy - Version Control for Database Schema]**
-
-*위 그림은 마이그레이션을 '데이터베이스 스키마 버전 관리' 에 비유하여, 코드 변경 (Entity 모델 변경) -\> 마이그레이션 생성 -\> 데이터베이스 업데이트 과정을 통해 데이터베이스 스키마를 관리하는 것을 시각적으로 보여줍니다.*
 
 **마이그레이션이 필요한 이유:**
 
