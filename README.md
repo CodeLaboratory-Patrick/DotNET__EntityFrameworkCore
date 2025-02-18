@@ -1,4 +1,4 @@
-# EntityFrameworkCore
+# Entity Framework Core - EF Core
 
 ---
 # 🚀 Entity Framework Core (EF Core) in .NET Development
@@ -1089,3 +1089,133 @@ flowchart TD
 ## 🏁 Conclusion
 Database support in .NET is robust and versatile, enabling developers to work with both **relational** and **NoSQL** databases seamlessly. Understanding different database access methods—**ADO.NET** for raw control, **EF Core** for abstraction, and **Dapper** for optimized queries—helps in choosing the right tool for the job.
 By following best practices, developers can build **high-performance** and **secure** applications with well-structured database interactions.
+
+---
+# 🚀 Migrations in .NET Development
+## 📖Introduction
+Migrations in .NET, particularly within **Entity Framework Core (EF Core)**, provide a structured way to manage **database schema changes**. Instead of manually editing SQL scripts, migrations automate and version-control the evolution of your database schema to keep it in sync with your application models.
+## 🔍 Key Features of Migrations
+| Feature | Description |
+|---------|------------|
+| ✅ **Automated Schema Management** | Updates the database schema without manual SQL scripts. |
+| ✅ **Version Control for Schema** | Each migration is a versioned snapshot of schema changes. |
+| ✅ **Rollback Support** | Easily revert to previous versions in case of issues. |
+| ✅ **Cross-Database Compatibility** | Works with SQL Server, MySQL, PostgreSQL, SQLite, etc. |
+| ✅ **CI/CD Integration** | Ensures database consistency across environments. |
+
+## ⚙️ Setting Up Migrations in EF Core
+### 🏗️ 1. Install EF Core Tools
+Before creating migrations, install the EF Core CLI:
+
+```sh
+dotnet tool install --global dotnet-ef
+```
+
+For SQL Server support, add the necessary package:
+
+```sh
+dotnet add package Microsoft.EntityFrameworkCore.SqlServer
+```
+
+### 📌 2. Define a `DbContext` and Data Model
+#### Example: `ApplicationDbContext` with a `Product` Entity
+```csharp
+using Microsoft.EntityFrameworkCore;
+
+public class ApplicationDbContext : DbContext
+{
+    public DbSet<Product> Products { get; set; }
+
+    protected override void OnConfiguring(DbContextOptionsBuilder options)
+    {
+        options.UseSqlServer("Server=localhost;Database=ShopDB;Trusted_Connection=True;");
+    }
+}
+
+public class Product
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public decimal Price { get; set; }
+}
+```
+
+### 🔄 3. Creating and Applying Migrations
+Create an initial migration:
+
+```sh
+dotnet ef migrations add InitialCreate
+```
+
+Apply the migration to the database:
+
+```sh
+dotnet ef database update
+```
+
+This executes the migration and updates the database schema.
+
+## ✏️ Modifying Database Schema with Migrations
+If you modify the model (e.g., adding a new column), follow these steps:
+#### Example: Adding a `Category` Column to `Product`
+Modify the `Product` model:
+```csharp
+public class Product
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public decimal Price { get; set; }
+    public string Category { get; set; }  // New column added
+}
+```
+
+Generate a new migration:
+
+```sh
+dotnet ef migrations add AddCategoryColumn
+```
+
+Update the database:
+
+```sh
+dotnet ef database update
+```
+
+## 🔄 Reverting Migrations
+To remove the last migration before applying it:
+
+```sh
+dotnet ef migrations remove
+```
+
+To roll back to a specific migration:
+
+```sh
+dotnet ef database update PreviousMigrationName
+```
+
+## 📊 Understanding Migration Files
+Each migration consists of three key files:
+| File | Description |
+|------|-------------|
+| `YYYYMMDDHHMMSS_MigrationName.cs` | Contains schema changes. |
+| `ApplicationDbContextModelSnapshot.cs` | Represents the latest schema. |
+| `MigrationsHistoryTable` | A database table tracking applied migrations. |
+
+## 📌 Migrations Workflow Diagram
+
+```mermaid
+flowchart TD
+    A[Modify Domain Models] --> B[Generate Migration (dotnet ef migrations add)]
+    B --> C[Review Generated Migration Code]
+    C --> D[Apply Migration (dotnet ef database update)]
+    D --> E[Updated Database Schema]
+```
+
+## 🌍 Best Practices for Migrations
+- **Commit Migrations** – Always commit migration files to version control.
+- **Review Generated Code** – Check migration files for correctness before applying them.
+- **Use Descriptive Names** – Name migrations clearly (e.g., `AddCustomerEmail`).
+- **Automate in CI/CD** – Run migrations automatically before deployment.
+- **Backup Database** – Always backup before running migrations.
+
