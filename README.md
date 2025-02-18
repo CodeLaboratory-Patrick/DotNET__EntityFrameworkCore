@@ -539,4 +539,111 @@ By integrating EF Core migrations into the development workflow, teams can maint
 - [Microsoft Documentation - Migrations](https://learn.microsoft.com/en-us/ef/core/managing-schemas/migrations/)
 
 ---
+# 🚀 Seeding Data in Database using .NET Development
+## 📌 Introduction
+**Seeding data** in .NET development refers to the process of **pre-populating a database** with initial values when the database is created or migrated. This is commonly used to set up reference data, default configurations, or test data to ensure the application has the necessary information when it starts.
+Entity Framework Core (EF Core) provides a built-in mechanism for seeding data during migrations, ensuring that required data is available without requiring manual insertion. This document will guide you through various approaches to database seeding using **migrations** and **runtime seeding**.
 
+## 🔍 Key Characteristics of Data Seeding
+| Feature | Description |
+|---------|-------------|
+| ✅ **Automatic Data Insertion** | Ensures data is inserted automatically when the database is created or migrated. |
+| 🔄 **Idempotent Execution** | Prevents duplicate records by checking existing data. |
+| 🌍 **Supports Multiple Databases** | Works with SQL Server, PostgreSQL, MySQL, SQLite, etc. |
+| ⚡ **Useful for Default Data** | Ideal for roles, categories, admin users, etc. |
+| 🔧 **Supports Versioning** | Seed data can evolve through migrations. |
+
+## ⚙️ Implementing Data Seeding in EF Core
+### 📌 1. Adding Seed Data in the `OnModelCreating` Method
+EF Core allows you to seed data by overriding the `OnModelCreating` method in your `DbContext` class.
+#### Example: Seeding a `Products` Table
+```csharp
+public class ApplicationDbContext : DbContext
+{
+    public DbSet<Product> Products { get; set; }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<Product>().HasData(
+            new Product { Id = 1, Name = "Laptop", Price = 1200.00m },
+            new Product { Id = 2, Name = "Smartphone", Price = 800.00m },
+            new Product { Id = 3, Name = "Tablet", Price = 500.00m }
+        );
+    }
+}
+```
+### 🔄 2. Applying Migrations
+After adding seed data, generate a migration and apply it:
+
+```sh
+dotnet ef migrations add SeedProducts
+dotnet ef database update
+```
+
+This migration ensures that the seed data is inserted into the database.
+
+## ✏️ Seeding Related Entities
+If there are relationships between tables, you need to ensure proper foreign key values.
+#### Example: Seeding `Categories` and `Products`
+```csharp
+public class ApplicationDbContext : DbContext
+{
+    public DbSet<Category> Categories { get; set; }
+    public DbSet<Product> Products { get; set; }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<Category>().HasData(
+            new Category { Id = 1, Name = "Electronics" },
+            new Category { Id = 2, Name = "Appliances" }
+        );
+
+        modelBuilder.Entity<Product>().HasData(
+            new Product { Id = 1, Name = "Laptop", Price = 1200.00m, CategoryId = 1 },
+            new Product { Id = 2, Name = "Washing Machine", Price = 700.00m, CategoryId = 2 }
+        );
+    }
+}
+```
+This ensures that `Products` reference the `Category` table correctly.
+
+## 📦 Alternative Approach: Seeding Data at Application Startup
+Instead of migrations, you can seed data when the application starts using `IServiceProvider`.
+### Example: Seeding Users in `Program.cs`
+```csharp
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    if (!context.Users.Any())
+    {
+        context.Users.Add(new User { Id = 1, Name = "Admin", Role = "Administrator" });
+        context.SaveChanges();
+    }
+}
+```
+
+This method is useful for dynamic seeding without modifying migrations.
+## 📊 Comparison: Migrations vs Runtime Seeding
+| Feature | Migrations Seeding | Runtime Seeding |
+|---------|----------------|----------------|
+| **When Applied?** | During migrations | At application startup |
+| **Ensures Data Integrity?** | Yes | Not enforced |
+| **Flexible Data Updates?** | Requires migration updates | Can be changed dynamically |
+| **Best For** | Static default data | Dynamic or user-configurable data |
+
+## 📊 Data Seeding Workflow Diagram
+
+```mermaid
+flowchart TD
+    A[Define Entity Models] --> B[Configure DbContext with HasData]
+    B --> C[Add Migration (dotnet ef migrations add)]
+    C --> D[Update Database (dotnet ef database update)]
+    D --> E[Database is Created/Updated with Seed Data]
+    E --> F[Application Runs with Baseline Data]
+```
+
+## 🏁 Conclusion
+Seeding data in .NET ensures that applications start with essential data, reducing manual effort and improving consistency. Whether using **EF Core migrations** or **runtime seeding**, the right approach depends on project requirements.
+For **static, version-controlled data**, use migrations. For **dynamic, configurable data**, seed during application startup.
+
+---
