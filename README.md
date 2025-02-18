@@ -819,3 +819,165 @@ protected override void OnModelCreating(ModelBuilder modelBuilder)
 ## 🏁 Conclusion
 Data models are fundamental in .NET development, defining how data is structured, stored, and managed. Whether using **Entity Framework Core** or raw SQL, a well-designed data model improves application maintainability, performance, and scalability.
 Choosing the right modeling approach—**Conceptual, Logical, or Physical**—and configuring relationships properly ensures efficient data handling in modern applications. By implementing best practices such as data integrity constraints, performance optimization, and scalability considerations, developers can build robust and efficient systems.
+
+---
+# 🚀 Database Context in .NET Development
+## 📌 Introduction
+In **.NET development**, **Database Context** (commonly referred to as `DbContext` in **Entity Framework Core**) is the bridge between your application and the database. It allows developers to interact with a database using **C# objects** instead of raw SQL queries. The `DbContext` class is a crucial component of **Entity Framework Core (EF Core)**, providing an abstraction layer for database operations.
+A well-configured `DbContext` ensures **efficient data access, transaction management, and scalability**, making it a fundamental aspect of **modern .NET applications**.
+
+## 🔍 Key Characteristics of `DbContext`
+| Feature | Description |
+|---------|-------------|
+| ✅ **Manages Database Connections** | Handles opening and closing database connections. |
+| ✅ **Tracks Changes** | Keeps track of entity changes and updates them in the database. |
+| ✅ **Provides Query Capabilities** | Allows LINQ-based querying of the database. |
+| ✅ **Manages Transactions** | Ensures atomicity of operations. |
+| ✅ **Works with Multiple Database Providers** | Supports SQL Server, PostgreSQL, MySQL, SQLite, and more. |
+| ✅ **Facilitates Dependency Injection** | Can be injected into services for better code organization. |
+
+## 📌 Defining a Database Context in EF Core
+To use a `DbContext`, you must define a class that inherits from `DbContext` and specify **DbSet properties** that represent database tables.
+### Example: Defining `ApplicationDbContext`
+```csharp
+using Microsoft.EntityFrameworkCore;
+
+public class ApplicationDbContext : DbContext
+{
+    public DbSet<Product> Products { get; set; }
+    public DbSet<Category> Categories { get; set; }
+
+    protected override void OnConfiguring(DbContextOptionsBuilder options)
+    {
+        options.UseSqlServer("Server=.;Database=ShopDB;Trusted_Connection=True;");
+    }
+}
+```
+### Explanation:
+- The `DbSet<Product>` and `DbSet<Category>` represent tables in the database.
+- `OnConfiguring()` method is used to define the **database connection string**.
+- `UseSqlServer()` specifies **SQL Server** as the database provider.
+
+## 🔄 Registering `DbContext` in Dependency Injection
+To properly manage database context in an **ASP.NET Core application**, register it in the **Dependency Injection (DI) container** within `Program.cs`.
+### Example: Adding `DbContext` in `Program.cs`
+```csharp
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Register DbContext with SQL Server
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+var app = builder.Build();
+app.Run();
+```
+### Explanation:
+- `AddDbContext<TContext>()` registers the `DbContext` in the dependency injection system.
+- The connection string is retrieved from the **configuration file (`appsettings.json`)**.
+
+## 📊 Understanding `DbSet` and Querying Data
+The `DbSet<T>` property in `DbContext` represents a table in the database. You can perform **CRUD operations** using LINQ.
+### Example: Performing CRUD Operations
+#### 1️⃣ **Adding Data**
+```csharp
+using (var context = new ApplicationDbContext())
+{
+    var product = new Product { Name = "Laptop", Price = 1200.00m };
+    context.Products.Add(product);
+    context.SaveChanges();
+}
+```
+
+#### 2️⃣ **Retrieving Data**
+```csharp
+using (var context = new ApplicationDbContext())
+{
+    var products = context.Products.ToList();
+    foreach (var product in products)
+    {
+        Console.WriteLine($"{product.Id}: {product.Name} - ${product.Price}");
+    }
+}
+```
+
+#### 3️⃣ **Updating Data**
+```csharp
+using (var context = new ApplicationDbContext())
+{
+    var product = context.Products.FirstOrDefault(p => p.Id == 1);
+    if (product != null)
+    {
+        product.Price = 999.99m;
+        context.SaveChanges();
+    }
+}
+```
+
+#### 4️⃣ **Deleting Data**
+```csharp
+using (var context = new ApplicationDbContext())
+{
+    var product = context.Products.FirstOrDefault(p => p.Id == 1);
+    if (product != null)
+    {
+        context.Products.Remove(product);
+        context.SaveChanges();
+    }
+}
+```
+
+## 🔍 Managing Transactions with `DbContext`
+EF Core provides built-in support for **transactions**, allowing multiple operations to be executed atomically.
+### Example: Using Transactions
+```csharp
+using (var context = new ApplicationDbContext())
+{
+    using var transaction = context.Database.BeginTransaction();
+    try
+    {
+        var product = new Product { Name = "Tablet", Price = 400.00m };
+        context.Products.Add(product);
+        context.SaveChanges();
+        
+        var category = new Category { Name = "Electronics" };
+        context.Categories.Add(category);
+        context.SaveChanges();
+        
+        transaction.Commit();
+    }
+    catch
+    {
+        transaction.Rollback();
+    }
+}
+```
+### Explanation:
+- `BeginTransaction()` starts a database transaction.
+- `Commit()` saves all operations atomically.
+- `Rollback()` reverts changes if an error occurs.
+
+## 📌 Best Practices for Using `DbContext`
+| Best Practice | Description |
+|--------------|-------------|
+| **Use Dependency Injection** | Always inject `DbContext` instead of creating new instances manually. |
+| **Dispose Context Properly** | Use `using` statements or scoped lifetime to manage context efficiently. |
+| **Avoid Long-Lived Contexts** | Keep `DbContext` short-lived to prevent memory leaks. |
+| **Use Asynchronous Methods** | Prefer async methods like `SaveChangesAsync()` for better performance. |
+| **Optimize Queries** | Retrieve only necessary data using `.Select()` and `.AsNoTracking()`. |
+
+## 📊 Database Context Workflow Diagram
+
+```mermaid
+flowchart LR
+    A[Application Code] --> B[Domain Models (Entities)]
+    B --> C[Database Context (DbContext)]
+    C --> D[LINQ Queries/Operations]
+    D --> E[Database (SQL Server, SQLite, etc.)]
+```
+
+## 🏁 Conclusion
+The **Database Context (`DbContext`)** is a fundamental part of **Entity Framework Core**, acting as the gateway between the .NET application and the database. It provides **querying, data manipulation, and transaction management** while ensuring efficient database operations.
+Understanding how to correctly configure, use, and optimize `DbContext` is crucial for building high-performance and maintainable applications.
