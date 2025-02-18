@@ -11,13 +11,19 @@ namespace EntityFrameworkCore.Data
 {
     public class FootballLeagueDbContext : DbContext
     {
+        public FootballLeagueDbContext()
+        {
+            var folder = Environment.SpecialFolder.LocalApplicationData;
+            var path = Environment.GetFolderPath(folder);
+            DbPath = Path.Combine(path, "FootballLeague_EfCore.db");
+        }
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             //Using SQL Server
             //optionsBuilder.UseSqlServer("Data Source=(localdb)\\MSSQLLocalDB; Initial Catalog=FootballLeage_EfCore; Encrypt=False");
 
             //Using SQLite
-            optionsBuilder.UseSqlite($"Data Source=FootballLeage_EfCore.db")
+            optionsBuilder.UseSqlite($"Data Source={DbPath}")
                 .LogTo(Console.WriteLine, LogLevel.Information)
 
                 //EnableSensitiveDataLogging + EnableDetailedErrors => Do not use this in production
@@ -56,5 +62,6 @@ namespace EntityFrameworkCore.Data
 
         public DbSet<Team> Teams { get; set; }
         public DbSet<Coach> Coaches { get; set; }
+        public string DbPath { get; }
     }
 }
