@@ -981,3 +981,111 @@ flowchart LR
 ## 🏁 Conclusion
 The **Database Context (`DbContext`)** is a fundamental part of **Entity Framework Core**, acting as the gateway between the .NET application and the database. It provides **querying, data manipulation, and transaction management** while ensuring efficient database operations.
 Understanding how to correctly configure, use, and optimize `DbContext` is crucial for building high-performance and maintainable applications.
+
+---
+# 🚀 Database Support in .NET Development
+## 📌 Introduction
+In .NET development, **Database Support** refers to the built-in capabilities of the .NET framework to interact with various types of databases. .NET provides multiple ways to connect, query, and manipulate databases efficiently. From **ADO.NET** for direct database interactions to **Entity Framework Core (EF Core)** for Object-Relational Mapping (ORM), .NET ensures that developers have robust tools to manage data.
+Understanding how .NET supports different databases, their characteristics, and how to use them effectively is crucial for developing **scalable** and **maintainable** applications.
+
+## 🔍 Key Characteristics of Database Support in .NET
+| Feature | Description |
+|---------|-------------|
+| ✅ **Multi-Database Support** | Compatible with relational (SQL) and non-relational (NoSQL) databases. |
+| ✅ **Multiple Access Methods** | Supports ADO.NET, Entity Framework Core, and Dapper for database interactions. |
+| ✅ **Cross-Platform Compatibility** | .NET Core and .NET 6+ support Linux, Windows, and macOS databases. |
+| ✅ **ORM Support** | Provides high-level abstraction via Entity Framework Core. |
+| ✅ **Security and Performance Optimization** | Includes features like connection pooling, parameterized queries, and transactions. |
+
+## 📌 Types of Database Support in .NET
+### 1️⃣ **Relational Databases (SQL-Based)**
+Relational databases store structured data in tables with defined relationships. .NET supports:
+- **Microsoft SQL Server**
+- **MySQL**
+- **PostgreSQL**
+- **SQLite**
+- **Oracle Database**
+
+### 2️⃣ **NoSQL Databases (Non-Relational)**
+NoSQL databases store data in flexible formats such as JSON or key-value pairs. .NET supports:
+- **MongoDB**
+- **Cassandra**
+- **Cosmos DB**
+- **Redis**
+
+## ⚙️ Connecting to a Database in .NET
+### 🏗️ 1. Using ADO.NET (Low-Level Access)
+ADO.NET provides direct control over database connections, commands, and transactions.
+#### Example: Connecting to SQL Server
+```csharp
+using System;
+using System.Data.SqlClient;
+
+string connectionString = "Server=localhost;Database=ShopDB;Trusted_Connection=True;";
+
+using (SqlConnection connection = new SqlConnection(connectionString))
+{
+    connection.Open();
+    Console.WriteLine("Database connected successfully.");
+}
+```
+
+### 🔄 2. Using Entity Framework Core (High-Level ORM)
+Entity Framework Core simplifies database interactions by allowing developers to work with objects instead of raw SQL.
+#### Example: Defining a DbContext
+```csharp
+using Microsoft.EntityFrameworkCore;
+
+public class ApplicationDbContext : DbContext
+{
+    public DbSet<Product> Products { get; set; }
+
+    protected override void OnConfiguring(DbContextOptionsBuilder options)
+    {
+        options.UseSqlServer("Server=localhost;Database=ShopDB;Trusted_Connection=True;");
+    }
+}
+```
+
+#### Example: Querying Data with EF Core
+```csharp
+using (var context = new ApplicationDbContext())
+{
+    var products = context.Products.ToList();
+    foreach (var product in products)
+    {
+        Console.WriteLine($"{product.Id} - {product.Name} - ${product.Price}");
+    }
+}
+```
+
+## 📊 Comparing ADO.NET, EF Core, and Dapper
+| Feature | ADO.NET | Entity Framework Core | Dapper |
+|---------|--------|----------------------|--------|
+| **Abstraction Level** | Low | High | Medium |
+| **Performance** | High | Moderate | High |
+| **Ease of Use** | Complex | Easy | Moderate |
+| **Supports Transactions** | ✅ | ✅ | ✅ |
+| **Ideal For** | High-performance scenarios | Rapid development | Optimized queries |
+
+## 🔍 Managing Database Connections Efficiently
+To ensure optimal performance and security, follow these best practices:
+1. **Use Connection Pooling** – Reduce overhead by reusing existing connections.
+2. **Use Parameterized Queries** – Prevent SQL injection attacks.
+3. **Manage Transactions** – Ensure atomic operations using `BeginTransaction()`.
+4. **Use Lazy Loading Wisely** – Avoid unnecessary data fetching.
+5. **Optimize Queries** – Fetch only required data with `.Select()` and `.AsNoTracking()`.
+
+## 📊 .NET Database Support Architecture
+
+```mermaid
+flowchart TD
+    A[.NET Application] --> B[Data Access Layer]
+    B --> C[ADO.NET / ORM Frameworks]
+    C --> D[Database Providers (SQL Server, SQLite, etc.)]
+    D --> E[Underlying Database Engine]
+```
+
+## 🏁 Conclusion
+Database support in .NET is robust and versatile, enabling developers to work with both **relational** and **NoSQL** databases seamlessly. Understanding different database access methods—**ADO.NET** for raw control, **EF Core** for abstraction, and **Dapper** for optimized queries—helps in choosing the right tool for the job.
+By following best practices, developers can build **high-performance** and **secure** applications with well-structured database interactions.
