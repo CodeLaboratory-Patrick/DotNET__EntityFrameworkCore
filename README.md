@@ -647,3 +647,175 @@ Seeding data in .NET ensures that applications start with essential data, reduci
 For **static, version-controlled data**, use migrations. For **dynamic, configurable data**, seed during application startup.
 
 ---
+# 🚀 Data Models in .NET Development
+## 📌 Introduction
+In **.NET development**, **Data Models** define how data is structured, stored, and manipulated within an application. These models are essential for ensuring data integrity, consistency, and efficiency. **Entity Framework Core (EF Core)** enables developers to interact with databases using C# objects rather than raw SQL queries, streamlining development and maintaining cleaner code.
+A well-designed **data model** enhances application scalability, maintainability, and performance by reducing redundancy and optimizing data retrieval.
+
+## 🔍 Key Characteristics of Data Models
+| Feature | Description |
+|---------|-------------|
+| ✅ **Defines Data Structure** | Specifies properties, types, and relationships. |
+| ✅ **Ensures Data Integrity** | Uses constraints like primary keys, foreign keys, and validations. |
+| ✅ **Facilitates Data Manipulation** | Supports CRUD (Create, Read, Update, Delete) operations. |
+| ✅ **Works with ORMs** | Maps objects to database records using frameworks like EF Core. |
+| ✅ **Supports Different Database Providers** | Works with SQL Server, MySQL, PostgreSQL, SQLite, etc. |
+| ✅ **Enhances Performance** | Optimized queries and indexing strategies improve efficiency. |
+| ✅ **Ensures Scalability** | Structures data to support large-scale applications. |
+
+## 📌 Types of Data Models in .NET
+### 1️⃣ **Conceptual Data Model**
+Represents high-level business entities and relationships, often independent of specific technology or database. This model is typically used in requirement analysis and system design phases.
+
+Example:
+```plaintext
+Customer → Order → Product
+```
+
+### 2️⃣ **Logical Data Model**
+Defines entities, attributes, and relationships in more detail but is still independent of database implementation. This model is more structured and acts as a blueprint for physical implementation.
+
+Example:
+```plaintext
+Customer (Id, Name, Email)
+Order (Id, OrderDate, CustomerId)
+Product (Id, Name, Price)
+```
+
+### 3️⃣ **Physical Data Model**
+Maps the logical model to an actual database schema, including table definitions, columns, indexes, and constraints. It determines how data is stored, retrieved, and managed in the database.
+
+Example (SQL Schema):
+```sql
+CREATE TABLE Customers (
+    Id INT PRIMARY KEY,
+    Name NVARCHAR(100),
+    Email NVARCHAR(255) UNIQUE
+);
+```
+
+## ⚙️ Implementing Data Models in .NET using EF Core
+### 🏗️ 1. Defining a Data Model Class
+In **Entity Framework Core**, data models are defined using **C# classes**. Each class represents a table in the database.
+#### Example: `Product` Entity
+```csharp
+public class Product
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public decimal Price { get; set; }
+    public DateTime CreatedDate { get; set; } // New property added
+}
+```
+
+### 🔄 2. Creating a DbContext
+A `DbContext` class manages the database connection and interactions.
+```csharp
+public class ApplicationDbContext : DbContext
+{
+    public DbSet<Product> Products { get; set; }
+
+    protected override void OnConfiguring(DbContextOptionsBuilder options)
+    {
+        options.UseSqlServer("Server=.;Database=ShopDB;Trusted_Connection=True;");
+    }
+}
+```
+
+### 📌 3. Applying Migrations
+To create the database schema based on the data model:
+
+```sh
+dotnet ef migrations add InitialCreate
+dotnet ef database update
+```
+
+This generates a **Products** table in the database.
+
+## 📊 Data Models and Relationships
+Data models support relationships like:
+### 1️⃣ **One-to-One Relationship**
+Example: Each `User` has one `Profile`.
+```csharp
+public class User
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public Profile Profile { get; set; }
+}
+
+public class Profile
+{
+    public int Id { get; set; }
+    public string Address { get; set; }
+    public int UserId { get; set; }
+    public User User { get; set; }
+}
+```
+
+### 2️⃣ **One-to-Many Relationship**
+Example: A `Category` can have multiple `Products`.
+```csharp
+public class Category
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public List<Product> Products { get; set; }
+}
+```
+
+### 3️⃣ **Many-to-Many Relationship**
+Example: A `Student` can enroll in multiple `Courses`.
+```csharp
+public class Student
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public List<Course> Courses { get; set; }
+}
+
+public class Course
+{
+    public int Id { get; set; }
+    public string Title { get; set; }
+    public List<Student> Students { get; set; }
+}
+```
+
+## 🔍 Data Annotations vs Fluent API
+EF Core provides two ways to configure data models:
+| Feature | Data Annotations | Fluent API |
+|---------|----------------|------------|
+| **Definition** | Uses attributes in entity classes | Uses `OnModelCreating` method |
+| **Usage** | Simple configuration | More advanced customization |
+| **Example** | `[Required]`, `[Key]`, `[MaxLength(50)]` | `modelBuilder.Entity<Product>().Property(p => p.Name).IsRequired();` |
+
+### 📌 Example: Using Data Annotations
+```csharp
+public class Product
+{
+    [Key]
+    public int Id { get; set; }
+    [Required]
+    [MaxLength(100)]
+    public string Name { get; set; }
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal Price { get; set; }
+    public DateTime CreatedDate { get; set; }
+}
+```
+
+### 📌 Example: Using Fluent API
+```csharp
+protected override void OnModelCreating(ModelBuilder modelBuilder)
+{
+    modelBuilder.Entity<Product>()
+        .Property(p => p.Name)
+        .IsRequired()
+        .HasMaxLength(100);
+}
+```
+
+## 🏁 Conclusion
+Data models are fundamental in .NET development, defining how data is structured, stored, and managed. Whether using **Entity Framework Core** or raw SQL, a well-designed data model improves application maintainability, performance, and scalability.
+Choosing the right modeling approach—**Conceptual, Logical, or Physical**—and configuring relationships properly ensures efficient data handling in modern applications. By implementing best practices such as data integrity constraints, performance optimization, and scalability considerations, developers can build robust and efficient systems.
