@@ -2117,3 +2117,106 @@ In modern .NET applications—especially those with UI or high concurrency needs
 ## 📚 References
 - [Microsoft Docs - Saving Data in EF Core](https://learn.microsoft.com/en-us/ef/core/saving/basic)
 - [Async Programming in C#](https://learn.microsoft.com/en-us/dotnet/csharp/async)
+
+---
+# 🚀 FirstAsync vs FirstOrDefaultAsync in .NET Development
+## 📌 Introduction
+In **Entity Framework Core**, both `FirstAsync()` and `FirstOrDefaultAsync()` are asynchronous methods used to **retrieve the first record** that matches a given condition. The key difference lies in how they handle cases where **no elements** match the condition:
+
+- `FirstAsync()` **throws an exception** if **no elements** are found.
+- `FirstOrDefaultAsync()` **returns the default value** (e.g., `null` for reference types) instead of throwing an exception.
+
+Choosing the right method depends on **whether an empty result should be considered an error** or a valid scenario.
+
+## 🔍 Key Characteristics
+| 🔑 Feature               | 🛏️ `FirstAsync`                      | 🔎 `FirstOrDefaultAsync`              |
+| ------------------------ | ------------------------------------ | ------------------------------------- |
+| **Behavior If No Match** | Throws `InvalidOperationException`   | Returns `default(T)` (often `null`)   |
+| **Common Use Case**      | When at least one record is expected | When zero records is a valid scenario |
+| **Query Syntax**         | Asynchronous, `awaitable`            | Asynchronous, `awaitable`             |
+| **Return Type**          | `Task<TEntity>`                      | `Task<TEntity>` (can be `null`)       |
+
+## 🏢 Example Scenarios
+### 1️⃣ Using `FirstAsync()`
+```csharp
+using var context = new ApplicationDbContext();
+
+// Throws if no matching product is found
+var expensiveProduct = await context.Products
+    .Where(p => p.Price > 1000)
+    .FirstAsync();
+
+Console.WriteLine($"Found product: {expensiveProduct.Name}");
+```
+
+#### 📝 Explanation
+- Expects **at least one product** with price > 1000.
+- If none exist, an `InvalidOperationException` is thrown.
+
+### 2️⃣ Using `FirstOrDefaultAsync()`
+```csharp
+using var context = new ApplicationDbContext();
+
+// Returns null if no matching product is found
+var budgetProduct = await context.Products
+    .Where(p => p.Price < 10)
+    .FirstOrDefaultAsync();
+
+if (budgetProduct == null)
+{
+    Console.WriteLine("No budget products found.");
+}
+else
+{
+    Console.WriteLine($"Found product: {budgetProduct.Name}");
+}
+```
+
+#### 📝 Explanation
+- Safely handles the case where **no product** matches the condition.
+- No exception is thrown; checks if result is `null`.
+
+## 🔄 Common Usage Patterns
+1. **Mandatory Data**: Use `FirstAsync()` when data *must* exist. For instance, if you are certain the database will always have a record.
+2. **Optional Data**: Use `FirstOrDefaultAsync()` when **no matching data** is acceptable or expected in certain scenarios.
+3. **Error Handling**: With `FirstAsync()`, wrap calls in **try-catch** to handle the `InvalidOperationException` gracefully.
+4. **Performance Considerations**: Both methods **limit the query to a single record**, making them efficient for retrieving a single row.
+
+## ⚠️ Potential Pitfalls
+1. **Exception Handling**
+   - Forgetting that `FirstAsync()` can throw if no results are found.
+2. **Null Checks**
+   - Failing to handle `null` from `FirstOrDefaultAsync()` can lead to `NullReferenceException`.
+3. **Query Logic**
+   - If multiple items match, **both** methods return the **first** record according to the query’s ordering or default order.
+4. **Asynchronous Overhead**
+   - Always ensure you actually need async. In small or non-UI scenarios, synchronous methods might suffice.
+
+## 🌐 Decision Flow Diagram
+
+```plaintext
+                           +---------------------------+
+                           | Are we sure at least one |
+                           | record ALWAYS exists?    |
+                           +-----------+---------------+
+                                       |
+                             YES       |       NO
+                           +-----------v---------------+------------+
+                           |         FirstAsync        |            |
+                           |  (Throws if no record)    |            |
+                           +---------------------------+            |
+                                                                   |
+                                                                   |
+                                          +------------------------v-----------------------+
+                                          |           FirstOrDefaultAsync                 |
+                                          | (Returns default if no record is found)       |
+                                          +-----------------------------------------------+
+```
+
+## 🏁 Conclusion
+Both `FirstAsync()` and `FirstOrDefaultAsync()` are **asynchronous** methods for retrieving a **single record** from the database in EF Core. The key difference is how they handle **no-match scenarios**:
+- `FirstAsync()` **throws an exception** when no matching record exists.
+- `FirstOrDefaultAsync()` **returns a default value** (`null` for reference types) instead of throwing an error.
+Choosing the right method depends on whether **zero results** is a valid outcome for your query.
+
+---
