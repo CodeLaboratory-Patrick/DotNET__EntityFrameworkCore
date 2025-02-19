@@ -1738,3 +1738,144 @@ Range: High, Count: 1, TotalPrice: 1200
 When working with large datasets, **Entity Framework Core** optimizes LINQ queries by translating them into SQL. Understanding **LINQ filtering and aggregation** will help developers build efficient, scalable applications.
 
 ---
+# 🚀 Executing Methods in C#
+
+## 📖 Introduction
+In C# (part of the .NET ecosystem), **methods** are fundamental building blocks of functionality. Methods encapsulate logic, making code more modular, reusable, and maintainable. Executing a method involves invoking it, passing any necessary parameters, and potentially receiving a return value. Understanding method execution, different method types, and best practices ensures efficient C# application development.
+
+## 🔍 Key Characteristics of C# Methods
+1. **Method Signature**
+   - Defines **return type**, **method name**, and **parameter list**.
+   - Example: `public int Sum(int x, int y)`
+
+2. **Access Modifiers**
+   - Determines the **visibility** of a method (`public`, `private`, `protected`, `internal`).
+
+3. **Static vs. Instance Methods**
+   - **Static methods** belong to a class and can be called without an instance.
+   - **Instance methods** require an object instance to be invoked.
+
+4. **Method Overloading & Optional Parameters**
+   - Methods can have **multiple definitions** (overloading) or **default values** for parameters.
+
+5. **Return Types**
+   - Methods can return **void** (no value) or a specific type (e.g., `int`, `string`).
+
+6. **Asynchronous Methods**
+   - Declared with `async` and often used with `await`.
+   - Helps write non-blocking code (I/O, network calls).
+
+## ⚙️ Declaring and Executing Methods
+### 1️⃣ Basic Example
+```csharp
+public class Calculator
+{
+    public int Add(int x, int y)
+    {
+        return x + y;
+    }
+}
+
+public class Program
+{
+    public static void Main()
+    {
+        Calculator calc = new Calculator();
+        int result = calc.Add(3, 4);
+        Console.WriteLine($"Result is: {result}");
+    }
+}
+```
+
+### 🔄 Explanation
+- `Add(int x, int y)` defines a **return type** (`int`) and takes **two parameters**.
+- `calc.Add(3, 4)` **invokes** the method.
+- The method returns `7`, which is assigned to `result`.
+
+### 2️⃣ Static Method Example
+```csharp
+public class MathUtilities
+{
+    public static int Multiply(int x, int y)
+    {
+        return x * y;
+    }
+}
+
+public class Program
+{
+    public static void Main()
+    {
+        int product = MathUtilities.Multiply(5, 6);
+        Console.WriteLine($"Product is: {product}");
+    }
+}
+```
+
+### 🔄 Explanation
+- `Multiply` is `static`, so it belongs to the `MathUtilities` class itself.
+- It can be called directly via `MathUtilities.Multiply(5, 6)` without an instance.
+
+### 3️⃣ Overloaded Methods
+```csharp
+public class Printer
+{
+    public void PrintMessage(string message)
+    {
+        Console.WriteLine($"Message: {message}");
+    }
+
+    public void PrintMessage(string message, int times)
+    {
+        for (int i = 0; i < times; i++)
+        {
+            Console.WriteLine($"Message [{i+1}]: {message}");
+        }
+    }
+}
+```
+
+### 🔄 Explanation
+- `PrintMessage` is **overloaded**: same method name, different parameters.
+- The runtime determines which method to call based on the arguments passed.
+
+### 4️⃣ Async Method Execution
+```csharp
+public class DataService
+{
+    public async Task<string> GetDataAsync()
+    {
+        await Task.Delay(1000);
+        return "Data retrieved from server";
+    }
+}
+
+public class Program
+{
+    public static async Task Main()
+    {
+        DataService service = new DataService();
+        string result = await service.GetDataAsync();
+        Console.WriteLine(result);
+    }
+}
+```
+
+### 🔄 Explanation
+- `GetDataAsync` is marked `async` and returns `Task<string>`.
+- `await` suspends execution until the task completes, keeping the main thread free.
+
+## 📊 How C# Executes Methods Behind the Scenes
+| Step | Execution Process |
+|------|------------------|
+| 1️⃣  | Method is invoked, and parameters are passed. |
+| 2️⃣  | The **call stack** stores method execution context. |
+| 3️⃣  | Control transfers to the method’s code block. |
+| 4️⃣  | If the method has a return value, it is passed back. |
+| 5️⃣  | The method call is removed from the **call stack**. |
+| 6️⃣  | Execution resumes from where the method was called. |
+
+## 🏁 Conclusion
+Method execution is fundamental in **C#** and plays a crucial role in **code modularity, performance, and maintainability**. By understanding method types, execution flow, and best practices, developers can write **efficient, scalable, and maintainable applications**.
+
+---
