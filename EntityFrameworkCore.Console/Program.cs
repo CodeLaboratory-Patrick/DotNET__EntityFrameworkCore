@@ -37,6 +37,9 @@ await GetAllTeamsQuerySyntax();
 // Grouping and Aggregating
 //GroupByMethod();
 
+// Ordering
+//await OrderByMethods();
+
 #endregion
 
 //Select all record that meet a condition
@@ -181,4 +184,40 @@ void GroupByMethod()
             Console.WriteLine(team.Name);
         }
     }
+}
+
+async Task OrderByMethods()
+{
+    var orderedTeams = await context.Teams
+    .OrderBy(q => q.Name)
+    .ToListAsync();
+
+    foreach (var item in orderedTeams)
+    {
+        Console.WriteLine(item.Name);
+    }
+
+    var descOrderedTeams = await context.Teams
+        .OrderByDescending(q => q.Name)
+        .ToListAsync();
+
+    foreach (var item in descOrderedTeams)
+    {
+        Console.WriteLine(item.Name);
+    }
+
+    // Getting the record with a maximum value
+    var maxByDescendingOrder = await context.Teams
+        .OrderByDescending(q => q.TeamId)
+        .FirstOrDefaultAsync();
+
+    var maxBy = context.Teams.MaxBy(q => q.TeamId);
+
+    // Getting the record with a minimum value
+    var minByDescendingOrder = await context.Teams
+        .OrderBy(q => q.TeamId)
+        .FirstOrDefaultAsync();
+
+    var minBy = context.Teams.MinBy(q => q.TeamId);
+
 }
