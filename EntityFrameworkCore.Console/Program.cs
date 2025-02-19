@@ -23,6 +23,7 @@ using var context = new FootballLeagueDbContext();
 
 //Select all the teams in a database
 //await GetAllTeams();
+await GetAllTeamsQuerySyntax();
 
 //Select one team
 // await GetOneTeam();
@@ -111,5 +112,20 @@ async Task GetOneTeam()
     if (teamBasedOnId != null)
     {
         Console.WriteLine(teamBasedOnId.Name);
+    }
+}
+
+async Task GetAllTeamsQuerySyntax()
+{
+    Console.WriteLine("Enter Search Term");
+    var searchTerm = Console.ReadLine();
+
+    var teams = await (from team in context.Teams
+                       where EF.Functions.Like(team.Name, $"%{searchTerm}%")
+                       select team)
+                    .ToListAsync();
+    foreach (var t in teams)
+    {
+        Console.WriteLine(t.Name);
     }
 }
