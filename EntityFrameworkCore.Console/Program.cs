@@ -34,6 +34,9 @@ await GetAllTeamsQuerySyntax();
 // Aggregate Methods
 //await AggregateMethods();
 
+// Grouping and Aggregating
+//GroupByMethod();
+
 #endregion
 
 //Select all record that meet a condition
@@ -155,4 +158,27 @@ async Task AggregateMethods()
     var avgTeams = await context.Teams.AverageAsync(q => q.TeamId);
     // Sum
     var sumTeams = await context.Teams.SumAsync(q => q.TeamId);
+}
+
+void GroupByMethod()
+{
+    var groupedTeams = context.Teams
+    //.Where(q => q.Name == '') // Translates to a WHERE clause
+    .GroupBy(q => q.CreatedDate.Date);
+    //.Where(q => q.Name == '')// Translates to a HAVING clause;
+    //.ToList(); // Use the executing method to load the results into memory before processing
+
+    // EF Core can iterate through records on demand. Here, there is no executing method, but EF Core is bringing back records per iteration. 
+    // This is convenient, but dangerous when you have several operations to complete per iteration. 
+    // It is generally better to execute with ToList() and then operate on whatever is returned to memory. 
+    foreach (var group in groupedTeams)
+    {
+        Console.WriteLine(group.Key);
+        Console.WriteLine(group.Sum(q => q.TeamId));
+
+        foreach (var team in group)
+        {
+            Console.WriteLine(team.Name);
+        }
+    }
 }
