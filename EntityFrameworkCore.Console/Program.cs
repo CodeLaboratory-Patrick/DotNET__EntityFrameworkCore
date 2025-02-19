@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 //First we need an instance of Context
 using var context = new FootballLeagueDbContext();
+Console.WriteLine(context.DbPath);
 
 #region Read Queries
 //Selecting a single record - First one in the list
@@ -23,7 +24,7 @@ using var context = new FootballLeagueDbContext();
 
 //Select all the teams in a database
 //await GetAllTeams();
-await GetAllTeamsQuerySyntax();
+//await GetAllTeamsQuerySyntax();
 
 //Select one team
 // await GetOneTeam();
@@ -40,33 +41,11 @@ await GetAllTeamsQuerySyntax();
 // Ordering
 //await OrderByMethods();
 
+// Skip and Take - Great for Paging
+//await SkipAndTake();
+
 #endregion
 
-//Select all record that meet a condition
-async Task GetFilteredTeams()
-{
-    Console.WriteLine("Enter Search Term");
-    var searchTerm = Console.ReadLine();
-
-    var teamsFiltered = await context.Teams.Where(q => q.Name == searchTerm)
-        .ToListAsync();
-
-    foreach (var item in teamsFiltered)
-    {
-        Console.WriteLine(item.Name);
-    }
-
-    //Select Partial Matches
-    //var partialMatches = await context.Teams.Where(q => q.Name.Contains(searchTerm)).ToListAsync();
-    
-    // SELECT * FROM Teams WHERE Name LIKE '%F.C.%'
-    var partialMatches = await context.Teams.Where(q => EF.Functions.Like(q.Name, $"%{searchTerm}%"))
-        .ToListAsync();
-    foreach (var item in partialMatches)
-    {
-        Console.WriteLine(item.Name);
-    }
-}
 
 async Task GetAllTeams()
 {
@@ -126,6 +105,32 @@ async Task GetOneTeam()
     if (teamBasedOnId != null)
     {
         Console.WriteLine(teamBasedOnId.Name);
+    }
+}
+
+//Select all record that meet a condition
+async Task GetFilteredTeams()
+{
+    Console.WriteLine("Enter Search Term");
+    var searchTerm = Console.ReadLine();
+
+    var teamsFiltered = await context.Teams.Where(q => q.Name == searchTerm)
+        .ToListAsync();
+
+    foreach (var item in teamsFiltered)
+    {
+        Console.WriteLine(item.Name);
+    }
+
+    //Select Partial Matches
+    //var partialMatches = await context.Teams.Where(q => q.Name.Contains(searchTerm)).ToListAsync();
+
+    // SELECT * FROM Teams WHERE Name LIKE '%F.C.%'
+    var partialMatches = await context.Teams.Where(q => EF.Functions.Like(q.Name, $"%{searchTerm}%"))
+        .ToListAsync();
+    foreach (var item in partialMatches)
+    {
+        Console.WriteLine(item.Name);
     }
 }
 
@@ -220,4 +225,24 @@ async Task OrderByMethods()
 
     var minBy = context.Teams.MinBy(q => q.TeamId);
 
+}
+
+async Task SkipAndTake()
+{
+    var recordCount = 3;
+    var page = 0;
+    var next = true;
+    while (next)
+    {
+        var teams = await context.Teams.Skip(page * recordCount).Take(recordCount).ToListAsync();
+        foreach (var team in teams)
+        {
+            Console.WriteLine(team.Name);
+        }
+        Console.WriteLine("Enter 'true' for the next set of records, 'false' to exit");
+        next = Convert.ToBoolean(Console.ReadLine());
+
+        if (!next) break;
+        page += 1;
+    }
 }
