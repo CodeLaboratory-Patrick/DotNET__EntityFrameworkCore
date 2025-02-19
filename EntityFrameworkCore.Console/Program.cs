@@ -40,6 +40,17 @@ async Task GetFilteredTeams()
     {
         Console.WriteLine(item.Name);
     }
+
+    //Select Partial Matches
+    //var partialMatches = await context.Teams.Where(q => q.Name.Contains(searchTerm)).ToListAsync();
+    
+    // SELECT * FROM Teams WHERE Name LIKE '%F.C.%'
+    var partialMatches = await context.Teams.Where(q => EF.Functions.Like(q.Name, $"%{searchTerm}%"))
+        .ToListAsync();
+    foreach (var item in partialMatches)
+    {
+        Console.WriteLine(item.Name);
+    }
 }
 
 async Task GetAllTeams()
