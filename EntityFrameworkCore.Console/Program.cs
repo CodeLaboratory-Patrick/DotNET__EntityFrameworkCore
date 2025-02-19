@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 //First we need an instance of Context
 using var context = new FootballLeagueDbContext();
 
+#region Read Queries
 //Selecting a single record - First one in the list
 // -> var teamOne = await context.Teams.FirstAsync();
 
@@ -20,13 +21,20 @@ using var context = new FootballLeagueDbContext();
 // -> var TeamBasedOnId = await context.Teams.FindAsync();
 
 
-
 //Select all the teams in a database
 //await GetAllTeams();
 await GetAllTeamsQuerySyntax();
 
 //Select one team
 // await GetOneTeam();
+
+// Select all record that meet a condition
+//await GetFilteredTeams();
+
+// Aggregate Methods
+//await AggregateMethods();
+
+#endregion
 
 //Select all record that meet a condition
 async Task GetFilteredTeams()
@@ -128,4 +136,23 @@ async Task GetAllTeamsQuerySyntax()
     {
         Console.WriteLine(t.Name);
     }
+}
+
+async Task AggregateMethods()
+{
+    // Count
+    var numberOfTeams = await context.Teams.CountAsync();
+    Console.WriteLine($"Number of Teams: {numberOfTeams}");
+
+    var numberOfTeamsWithCondition = await context.Teams.CountAsync(q => q.TeamId == 1);
+    Console.WriteLine($"Number of Teams with condition above: {numberOfTeamsWithCondition}");
+
+    // Max
+    var maxTeams = await context.Teams.MaxAsync(q => q.TeamId);
+    // Min
+    var minTeams = await context.Teams.MinAsync(q => q.TeamId);
+    // Average
+    var avgTeams = await context.Teams.AverageAsync(q => q.TeamId);
+    // Sum
+    var sumTeams = await context.Teams.SumAsync(q => q.TeamId);
 }
