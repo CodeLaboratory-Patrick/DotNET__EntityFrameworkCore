@@ -57,6 +57,24 @@ Console.WriteLine(context.DbPath);
 
 #endregion
 
+#region Write Queries
+
+// Use Console.WriteLine(context.ChangeTracker.DebugView.LongView); to see pending changes
+// Inserting Data 
+/* INSERT INTO Coaches (cols) VALUES (values) */
+
+// Simple Insert
+//await InsertOneRecord();
+
+// Loop Insert
+//await InsertWithLoop();
+
+// Batch Insert
+//await InsertRange();
+
+
+
+#endregion
 
 async Task GetAllTeams()
 {
@@ -328,4 +346,59 @@ async Task ListVsQueryable()
         Console.WriteLine(t.Name);
     }
 
+}
+
+async Task InsertOneRecord()
+{
+    var newCoach = new Coach
+    {
+        Name = "Wayne Rooney",
+        CreatedDate = DateTime.Now,
+    };
+    await context.Coaches.AddAsync(newCoach);
+    await context.SaveChangesAsync();
+}
+async Task InsertWithLoop()
+{
+    var newCoach = new Coach
+    {
+        Name = "Steve Cooper",
+        CreatedDate = DateTime.Now,
+    };
+    var newCoach1 = new Coach
+    {
+        Name = "Chris Wilder",
+        CreatedDate = DateTime.Now,
+    };
+    List<Coach> coaches = new List<Coach>
+    {
+        newCoach1,
+        newCoach
+    };
+    foreach (var coach in coaches)
+    {
+        await context.Coaches.AddAsync(coach);
+    }
+    await context.SaveChangesAsync();
+}
+
+async Task InsertRange()
+{
+    var newCoach = new Coach
+    {
+        Name = "Marco Silva",
+        CreatedDate = DateTime.Now,
+    };
+    var newCoach1 = new Coach
+    {
+        Name = "Carlos Corberan",
+        CreatedDate = DateTime.Now,
+    };
+    List<Coach> coaches = new List<Coach>
+    {
+        newCoach1,
+        newCoach
+    };
+    await context.Coaches.AddRangeAsync(coaches);
+    await context.SaveChangesAsync();
 }
