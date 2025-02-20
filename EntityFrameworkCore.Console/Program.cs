@@ -1,6 +1,7 @@
 ﻿using EntityFrameworkCore.Data;
 using EntityFrameworkCore.Domain;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 
 //First we need an instance of Context
 using var context = new FootballLeagueDbContext();
@@ -43,6 +44,9 @@ Console.WriteLine(context.DbPath);
 
 // Skip and Take - Great for Paging
 //await SkipAndTake();
+
+// Select and Projections - more precise queries
+//await ProjectionsAndSelect();
 
 #endregion
 
@@ -245,4 +249,21 @@ async Task SkipAndTake()
         if (!next) break;
         page += 1;
     }
+}
+
+async Task ProjectionsAndSelect()
+{
+    var teams = await context.Teams
+        .Select(q => new TeamInfo { Name = q.Name, TeamId = q.TeamId })
+        .ToListAsync();
+
+    foreach (var team in teams)
+    {
+        Console.WriteLine($"{team.TeamId} - {team.Name}");
+    }
+}
+class TeamInfo
+{
+    public int TeamId { get; set; }
+    public string Name { get; set; }
 }
