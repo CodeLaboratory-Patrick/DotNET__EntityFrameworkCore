@@ -48,6 +48,10 @@ Console.WriteLine(context.DbPath);
 // Select and Projections - more precise queries
 //await ProjectionsAndSelect();
 
+// No Tracking - EF Core tracks objects that are returned by queries. This is less useful in
+// disconnected applications like APIs and Web apps
+//await NoTracking();
+
 #endregion
 
 
@@ -266,4 +270,16 @@ class TeamInfo
 {
     public int TeamId { get; set; }
     public string Name { get; set; }
+}
+
+async Task NoTracking()
+{
+    var teams = await context.Teams
+        .AsNoTracking()
+        .ToListAsync();
+
+    foreach (var t in teams)
+    {
+        Console.WriteLine(t.Name);
+    }
 }

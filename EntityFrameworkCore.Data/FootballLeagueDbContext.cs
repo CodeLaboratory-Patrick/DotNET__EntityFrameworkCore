@@ -24,6 +24,9 @@ namespace EntityFrameworkCore.Data
 
             //Using SQLite
             optionsBuilder.UseSqlite($"Data Source={DbPath}")
+                //Query Tracking Behavior
+                .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking)
+
                 .LogTo(Console.WriteLine, LogLevel.Information)
 
                 //EnableSensitiveDataLogging + EnableDetailedErrors => Do not use this in production
