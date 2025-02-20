@@ -72,7 +72,9 @@ Console.WriteLine(context.DbPath);
 // Batch Insert
 //await InsertRange();
 
-
+// Update Operations
+//await UpdateWithTracking();
+//await UpdateNoTracking();
 
 #endregion
 
@@ -400,5 +402,27 @@ async Task InsertRange()
         newCoach
     };
     await context.Coaches.AddRangeAsync(coaches);
+    await context.SaveChangesAsync();
+}
+
+async Task UpdateWithTracking()
+{
+    // Find uses tracking
+    var coach = await context.Coaches.FindAsync(9);
+    coach.Name = "Trevoir Williams";
+    await context.SaveChangesAsync();
+}
+
+async Task UpdateNoTracking()
+{
+    // We cannot use find with no tracking enabled, so we look for the FirstOrDefault()
+    var coach1 = await context.Coaches
+        .AsNoTracking()
+        .FirstOrDefaultAsync(q => q.Id == 10);
+    coach1.Name = "Testing No Tracking Behavior - Entity State Modified";
+
+    // We can either call the Update() method or change the Entity State manually
+    //context.Update(coach1);
+    context.Entry(coach1).State = EntityState.Modified;
     await context.SaveChangesAsync();
 }
