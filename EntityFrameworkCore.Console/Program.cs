@@ -76,8 +76,14 @@ Console.WriteLine(context.DbPath);
 //await UpdateWithTracking();
 //await UpdateNoTracking();
 
+// Delete Operations
+//await DeleteRecord();
+
 // Execute Delete
 //await ExecuteDelete();
+
+// Execute Update
+//await ExecuteUpdate();
 
 #endregion
 
@@ -292,6 +298,7 @@ async Task ProjectionsAndSelect()
         Console.WriteLine($"{team.TeamId} - {team.Name}");
     }
 }
+
 class TeamInfo
 {
     public int TeamId { get; set; }
@@ -363,6 +370,7 @@ async Task InsertOneRecord()
     await context.Coaches.AddAsync(newCoach);
     await context.SaveChangesAsync();
 }
+
 async Task InsertWithLoop()
 {
     var newCoach = new Coach
@@ -430,7 +438,24 @@ async Task UpdateNoTracking()
     await context.SaveChangesAsync();
 }
 
+async Task DeleteRecord()
+{
+    /* DELETE FROM Coaches WHERE Id = 1 */
+    var coach = await context.Coaches.FindAsync(10);
+    // context.Remove(coach);
+    context.Entry(coach).State = EntityState.Deleted;
+    await context.SaveChangesAsync();
+}
+
 async Task ExecuteDelete()
 {
-    await context.Coaches.Where(q => q.Name == "Theodore Whitmore").ExecuteDeleteAsync();
+    await context.Coaches.Where(q => q.Name == "Chris Wilder").ExecuteDeleteAsync();
+}
+
+async Task ExecuteUpdate()
+{
+    await context.Coaches.Where(q => q.Name == "Wayne Rooney").ExecuteUpdateAsync(set => set
+    .SetProperty(prop => prop.Name, "Kieran McKenna")
+    //.SetProperty(prop => prop.CreatedDate, DateTime.Now)
+    );
 }
