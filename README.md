@@ -2682,3 +2682,109 @@ By selecting the right method, you ensure **efficient, scalable, and maintainabl
 - [Microsoft Docs - LINQ Aggregation Operators](https://learn.microsoft.com/en-us/dax/aggregation-functions-dax)
 
 ---
+# 🚀 Group By in EF Core .NET Development
+
+## 📊 Introduction
+In **Entity Framework Core (EF Core)**, the `GroupBy` method is a powerful tool that allows developers to **partition data into groups** based on a specific key. This method is frequently used for **aggregations**, **reporting**, and **statistical analysis**, enabling operations such as `Count`, `Sum`, and `Average` on grouped data.
+This document explains how `GroupBy` works in EF Core, demonstrates practical use cases, and highlights best practices for **optimal performance**.
+
+## 🔍 Key Characteristics
+| Feature                  | Description                                                        |
+|--------------------------|--------------------------------------------------------------------|
+| **Data Partitioning**    | Groups query results into subsets based on a specific key.       |
+| **Aggregation Support**  | Enables statistical calculations like sum, average, and count.   |
+| **SQL Translation**      | Converts to `GROUP BY` clauses in SQL when applicable.           |
+| **Potential Client Execution** | Some queries may fall back to in-memory grouping if not fully translatable to SQL. |
+
+## 🏗️ Basic Example: Grouping by a Single Column
+Suppose we have an `Orders` table and we want to count the number of orders per status.
+### 🔹 LINQ Query with `GroupBy`
+```csharp
+using var context = new ApplicationDbContext();
+
+var ordersByStatus = await context.Orders
+    .GroupBy(o => o.Status)
+    .Select(group => new
+    {
+        Status = group.Key,
+        Count = group.Count()
+    })
+    .ToListAsync();
+
+foreach (var item in ordersByStatus)
+{
+    Console.WriteLine($"Status: {item.Status}, Count: {item.Count}");
+}
+```
+
+### 🔹 SQL Translation
+EF Core translates the above LINQ expression into the following SQL query:
+
+```sql
+SELECT [o].[Status], COUNT(*) AS [Count]
+FROM [Orders] AS [o]
+GROUP BY [o].[Status]
+```
+
+## 🔄 Grouping by Multiple Columns
+If you need to **group by more than one column**, such as `Status` and `CustomerId`, you can use an **anonymous type**:
+```csharp
+var multiGroup = await context.Orders
+    .GroupBy(o => new { o.Status, o.CustomerId })
+    .Select(g => new
+    {
+        Status = g.Key.Status,
+        CustomerId = g.Key.CustomerId,
+        Total = g.Sum(x => x.Amount)
+    })
+    .ToListAsync();
+```
+
+### 🔹 SQL Translation
+```sql
+SELECT [o].[Status], [o].[CustomerId], SUM([o].[Amount]) AS [Total]
+FROM [Orders] AS [o]
+GROUP BY [o].[Status], [o].[CustomerId]
+```
+
+## 📊 Diagram: How Group By Works
+
+```plaintext
+ [ Orders Table ]
+ +----+---------+------------+--------+
+ | Id | Status  | CustomerId | Amount |
+ +----+---------+------------+--------+
+ | 1  | Shipped | 10         | 100.00 |
+ | 2  | Pending | 11         | 200.00 |
+ | 3  | Shipped | 10         |  50.00 |
+ | 4  | Cancelled| 10        | 100.00 |
+ +----+---------+------------+--------+
+        |
+        |  group by (Status)
+        v
+ [ Groups ]
+  Shipped -> ( Id=1, Id=3 )
+  Pending -> ( Id=2 )
+  Cancelled -> ( Id=4 )
+```
+
+## ⚖️ Client vs. Server Evaluation
+| **Evaluation**  | **Description**  | **Performance Impact**  |
+|----------------|----------------|------------------|
+| **Server-Side (SQL)** | The database handles the grouping, reducing data transfer. | ✅ Fast & efficient |
+| **Client-Side** | EF Core pulls all data into memory before grouping. | ❌ Can be slow for large datasets |
+
+## ⚠️ Common Pitfalls
+1. **Complex Anonymous Objects:** EF Core may struggle to translate deeply nested groupings into SQL.
+2. **Partial SQL Translation:** If part of the query isn’t translatable, EF Core may execute the grouping in-memory, impacting performance.
+3. **Grouping Large Datasets:** Client-side evaluation on large datasets can significantly slow down applications.
+4. **Null Values:** If grouping keys contain `NULL`, they will form separate groups.
+
+## 📌 Conclusion
+Grouping data in EF Core is a powerful technique for **data aggregation and summarization**. By structuring queries correctly, developers can ensure **optimized performance** while maintaining **clean and readable** code. Understanding when to use **server-side vs. client-side** grouping is crucial for efficiency.
+**Key Takeaways:**
+- Use `GroupBy` for partitioning data.
+- Keep group keys simple and avoid unnecessary complexity.
+- Ensure EF Core translates the query to SQL to prevent performance issues.
+
+---
