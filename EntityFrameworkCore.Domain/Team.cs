@@ -2,7 +2,7 @@
 {
     public class Team : BaseDomainModel
     {
-        public string Name { get; set; }
+        public string? Name { get; set; }
 
         public int LeagueId { get; set; }
 
