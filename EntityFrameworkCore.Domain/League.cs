@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace EntityFrameworkCore.Domain
 {
-    public class Coach : BaseDomainModel
+    public class League : BaseDomainModel
     {
         public string Name { get; set; }
     }
