@@ -3045,3 +3045,153 @@ Whether it’s a simple **DTO** or a sophisticated **value object**, these techn
 - [Projections in LINQ (MS Docs)](https://learn.microsoft.com/en-us/dotnet/csharp/linq/standard-query-operators/projection-operations)
 
 ---
+다음은 **.NET 개발에서 DTO(Data Transfer Object)**를 설명하는 교과서 스타일의 문서입니다. ✅ 이 문서는 DTO의 개념, 필요성, 사용법, 코드 예제, 성능 최적화, AutoMapper 적용법 등을 종합적으로 다룹니다. 🚀🎉
+
+---
+
+# 🚀 DTO (Data Transfer Object) in .NET Development
+
+## 📦 Introduction
+A **DTO (Data Transfer Object)** is a **simple object** designed to **transport data** between processes, layers, or services without the additional behavior found in **entity** or **domain** models. By focusing only on **data carrying**, DTOs help **decouple** your application layers, enable **flexible mapping**, and **improve maintainability**.
+This document dives into **what DTOs are**, **their characteristics**, **when and how to use them**, and common best practices in .NET development.
+
+## 🔍 Key Characteristics of DTOs
+1. **Property-Focused** – Typically only contains **public getters/setters**.
+2. **No Business Logic** – Avoid placing domain rules or business methods in a DTO.
+3. **Serialization-Friendly** – Ideal for **REST APIs**, **web services**, or **message queuing**.
+4. **Enhances Security** – Prevents leaking domain model details by exposing only necessary fields.
+5. **Easy Mapping** – Tools like **AutoMapper** can simplify mapping from entity to DTO.
+
+## 🏗️ Why Use DTOs?
+| 🔹 **Use Case** | 📌 **Description** |
+|----------------|----------------------|
+| **Layer Separation** | DTOs detach domain/database models from presentation or API layers. |
+| **Performance** | Only fetch required fields from the database, reducing payload size. |
+| **API Contracts** | DTOs provide stable, versioned **contracts** for API clients. |
+| **Security** | DTOs expose only necessary fields, hiding sensitive data. |
+| **Maintainability** | DTOs prevent breaking changes in external clients when domain models evolve. |
+
+## 🏠 Simple DTO Example
+```csharp
+public class ProductDto
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public decimal Price { get; set; }
+}
+
+public class ProductService
+{
+    public ProductDto GetProduct(int productId)
+    {
+        // Typically, you'll fetch entity from DB here (e.g., EF Core)
+        // then map to a DTO.
+        return new ProductDto
+        {
+            Id = productId,
+            Name = "Example Product",
+            Price = 19.99m
+        };
+    }
+}
+```
+
+#### 📝 Explanation
+- **DTO**: `ProductDto` contains only data fields.
+- **Business Logic** remains in **`ProductService`** or domain layer.
+
+## 🌐 Using DTOs with EF Core
+### Example: Mapping Entities to DTOs
+```csharp
+public class ProductEntity
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public decimal Price { get; set; }
+    public string InternalNotes { get; set; }
+}
+
+public class ProductDto
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public decimal Price { get; set; }
+}
+
+using var context = new ApplicationDbContext();
+
+var products = await context.ProductEntities
+    .Select(p => new ProductDto
+    {
+        Id = p.Id,
+        Name = p.Name,
+        Price = p.Price,
+        // Notice we do NOT expose `InternalNotes`
+    })
+    .ToListAsync();
+```
+
+#### 📝 Explanation
+- **Projection** using LINQ ensures only relevant fields are returned.
+- **`InternalNotes`** is hidden from external consumption.
+
+## ⚙️ Diagram: Entity → DTO Transformation
+
+```plaintext
+    Database Entity (ProductEntity)
+        +-----+-------------+-----------+------------------+
+        | Id  |  Name       |  Price    |  InternalNotes   |
+        +-----+-------------+-----------+------------------+
+               |
+               |  map (projection)
+               v
+    DTO (ProductDto)
+       +-----+-----------+-----------+
+       | Id  |   Name    |   Price   |
+       +-----+-----------+-----------+
+
+
+```
+
+## 📊 Comparing DTOs vs. Domain Models
+| Aspect              | DTO                             | Domain Model                                    |
+|---------------------|---------------------------------|------------------------------------------------|
+| **Purpose**         | Transfer data only              | Encapsulate business logic + data              |
+| **State**           | Usually flat, property-based    | Might have invariants, private setters, etc.   |
+| **Validation**      | Minimal or none                 | Often includes validation and business rules    |
+| **Data Persistence**| Not usually persisted directly  | Typically mapped to the database (via EF Core) |
+
+## 🔄 Automating DTO Mapping with AutoMapper
+**Manual Mapping Example:**
+```csharp
+public ProductDto MapToDto(Product product)
+{
+    return new ProductDto
+    {
+        Id = product.Id,
+        Name = product.Name,
+        Price = product.Price
+    };
+}
+```
+
+**Using AutoMapper:**
+1. **Configuration:**
+   ```csharp
+   var config = new MapperConfiguration(cfg => {
+       cfg.CreateMap<Product, ProductDto>();
+   });
+   IMapper mapper = config.CreateMapper();
+   ```
+2. **Mapping:**
+   ```csharp
+   ProductDto productDto = mapper.Map<ProductDto>(product);
+   ```
+
+## 🏁 Conclusion
+**DTOs** (Data Transfer Objects) are an essential pattern in .NET development, promoting **loose coupling**, **layered architecture**, and **clean data exposure**. By separating raw entity data from external-facing or internal application layers, you ensure that **domain changes** don’t break external clients while also protecting **sensitive** or **irrelevant** details.
+Leveraging DTOs effectively can result in **performance gains**, **clearer code**, and **better overall maintainability**.
+
+## 📚 References
+- [Microsoft Docs - Data Transfer Objects in ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/mvc/models/model-binding?view=aspnetcore-7.0#model-binding-and-custom-types)
+- [AutoMapper Documentation](https://docs.automapper.org/en/stable/)
