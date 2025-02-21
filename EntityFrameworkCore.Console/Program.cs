@@ -76,6 +76,9 @@ Console.WriteLine(context.DbPath);
 //await UpdateWithTracking();
 //await UpdateNoTracking();
 
+// Execute Delete
+//await ExecuteDelete();
+
 #endregion
 
 async Task GetAllTeams()
@@ -425,4 +428,9 @@ async Task UpdateNoTracking()
     //context.Update(coach1);
     context.Entry(coach1).State = EntityState.Modified;
     await context.SaveChangesAsync();
+}
+
+async Task ExecuteDelete()
+{
+    await context.Coaches.Where(q => q.Name == "Theodore Whitmore").ExecuteDeleteAsync();
 }
