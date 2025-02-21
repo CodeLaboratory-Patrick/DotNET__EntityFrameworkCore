@@ -2947,3 +2947,101 @@ var topProducts = await context.Products
 - [Microsoft Docs - EF Core Querying](https://learn.microsoft.com/en-us/ef/core/querying/)
 
 ---
+# 🚀 Projections and Custom Data Types in .NET Development
+
+## 🎨 Introduction
+In .NET development, **Projections** refer to the process of transforming data from one shape (e.g., database entities) into another (e.g., DTOs, view models, or custom data structures). This technique is crucial for **decoupling** application layers, **optimizing performance**, and **improving maintainability**. Meanwhile, **Custom Data Types** allow you to define **domain-specific** types that encapsulate logic, enhance readability, and reduce bugs.
+This document explores how to leverage **projections** and **custom types** effectively in .NET, with examples demonstrating best practices.
+
+## 🔍 Key Characteristics
+1. **Separation of Concerns** – Projections reduce coupling between data persistence and presentation.
+2. **Performance Optimization** – Fetch only needed fields, improving query and network efficiency.
+3. **Type-Safety** – Custom data types model domain concepts more explicitly.
+4. **Maintainability** – Changes in underlying data structures won’t necessarily affect consuming layers if projection is used.
+5. **Testability** – Isolated transformation logic simplifies unit testing.
+
+## 🏗️ Projections
+### What are Projections?
+Projections transform an **entity (or source)** into another form—often a **DTO (Data Transfer Object)** or **ViewModel**. In EF Core, you can use LINQ’s **Select** to **project** database entities into custom shapes.
+### Example: Projecting to a DTO
+```csharp
+public class ProductDto
+{
+    public string Name { get; set; }
+    public decimal Price { get; set; }
+    public string CategoryName { get; set; }
+}
+
+using var context = new ApplicationDbContext();
+
+var products = await context.Products
+    .Select(p => new ProductDto
+    {
+        Name = p.Name,
+        Price = p.Price,
+        CategoryName = p.Category.Name
+    })
+    .ToListAsync();
+```
+
+#### 📝 Explanation:
+- The **Select** clause **projects** each Product into a **ProductDto**.
+- **CategoryName** is pulled from a related entity (Category), but only the **Name** is retrieved.
+- Improves **performance** by fetching fewer fields.
+
+## 🌐 Custom Data Types
+### Why Use Custom Types?
+- Encapsulate **domain logic** (e.g., a `Money` type that ensures currency format consistency).
+- Improve **readability** and **intent** (e.g., `EmailAddress` type that validates format).
+
+### Example: A `Money` Value Object
+```csharp
+public struct Money
+{
+    public decimal Amount { get; }
+    public string Currency { get; }
+
+    public Money(decimal amount, string currency)
+    {
+        if (amount < 0) throw new ArgumentException("Amount cannot be negative");
+        if (string.IsNullOrWhiteSpace(currency)) throw new ArgumentNullException(nameof(currency));
+
+        Amount = amount;
+        Currency = currency;
+    }
+
+    public override string ToString() => $"{Currency} {Amount:N2}";
+}
+```
+
+#### 📝 Explanation:
+- The **`Money`** struct ensures **valid amounts** and **non-empty** currency codes.
+- Centralizes **business logic** in one place.
+
+## 📊 Diagram: Projection and Custom Type Flow
+
+```plaintext
+    Database Entities (Product, Category)          
+          |           
+          |  EF Core + LINQ (Projection)  
+          v           
+   DTO / ViewModel (subset or rearranged fields)
+          |
+          |  Additional Domain Logic
+          v
+   Domain-Specific Custom Types (e.g., Money)
+```
+
+1. **Database** holds raw data.
+2. **Projection** extracts relevant fields, forming a **DTO** or **ViewModel**.
+3. **Custom Types** (e.g., `Money`) enforce domain rules on the projected data.
+
+## 🏁 Conclusion
+**Projections** and **Custom Data Types** are essential for **clean architecture** in .NET. By **transforming** database entities into **domain-friendly** shapes and **encapsulating** domain logic into dedicated types, you can build **maintainable**, **scalable**, and **readable** solutions.
+Whether it’s a simple **DTO** or a sophisticated **value object**, these techniques **bridge** the gap between raw data storage and business logic, ensuring your application is robust and future-proof.
+
+## 📚 References
+- [Microsoft Docs - Value Conversions in EF Core](https://learn.microsoft.com/en-us/ef/core/modeling/value-conversions)
+- [Projections in LINQ (MS Docs)](https://learn.microsoft.com/en-us/dotnet/csharp/linq/standard-query-operators/projection-operations)
+
+---
