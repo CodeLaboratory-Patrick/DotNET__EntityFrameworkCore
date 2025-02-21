@@ -2342,3 +2342,109 @@ These methods are excellent for **data integrity checks** and help enforce **str
 - [Microsoft Docs - SingleOrDefaultAsync](https://docs.microsoft.com/en-us/dotnet/api/microsoft.entityframeworkcore.entityframeworkqueryableextensions.singleordefaultasync)
 
 ---
+# 🚀 How to Retrieve a Single Record from the Database in .NET
+## 📘 Introduction
+When developing .NET applications with **Entity Framework Core**, there are scenarios where you need to **fetch a single record** from the database, such as retrieving a user by ID or getting a unique product by SKU. Different methods exist to accomplish this, each with its own characteristics regarding **error handling**, **default values**, and **performance**.
+This guide explores the common techniques for retrieving a single record, their typical usage, and best practices.
+
+## ⚙️ Methods to Retrieve One Record
+### 1️⃣ **First / FirstOrDefault**
+- **`First()`** throws an exception if the sequence is empty.
+- **`FirstOrDefault()`** returns the default value (`null` for reference types) if empty.
+### 2️⃣ **Single / SingleOrDefault**
+- **`Single()`** expects exactly one match, throwing an exception if zero or multiple matches exist.
+- **`SingleOrDefault()`** returns `null` (if zero matches) or throws an exception if multiple matches exist.
+### 3️⃣ **Find** (Entity Framework Core Specific)
+- **`context.Entity.Find(id)`** quickly looks up by primary key.
+- Returns `null` if no entity is found.
+- Bypasses certain EF query logic and uses the **Change Tracker** if available.
+### 4️⃣ **Asynchronous Methods**
+- **`FirstAsync / FirstOrDefaultAsync`**
+- **`SingleAsync / SingleOrDefaultAsync`**
+- Run asynchronously, freeing the calling thread while the database operation is in progress.
+
+## 🏗️ Code Examples
+### 1️⃣ Using `FirstOrDefaultAsync`
+```csharp
+using var context = new ApplicationDbContext();
+
+var product = await context.Products
+    .Where(p => p.SKU == "ABC123")
+    .FirstOrDefaultAsync();
+
+if (product == null)
+{
+    Console.WriteLine("Product not found.");
+}
+else
+{
+    Console.WriteLine($"Found Product: {product.Name}");
+}
+```
+
+### 2️⃣ Using `SingleAsync`
+```csharp
+using var context = new ApplicationDbContext();
+
+// Throws if multiple products have the same SKU or if none is found.
+var product = await context.Products
+    .Where(p => p.SKU == "XYZ999")
+    .SingleAsync();
+
+Console.WriteLine($"Found Product: {product.Name}");
+```
+
+### 3️⃣ Using `Find`
+```csharp
+using var context = new ApplicationDbContext();
+
+// Assuming 'Id' is the primary key for the 'Products' table.
+var product = context.Products.Find(1);
+
+if (product == null)
+{
+    Console.WriteLine("No product found with ID = 1");
+}
+else
+{
+    Console.WriteLine($"Found Product: {product.Name}");
+}
+```
+
+## 📊 Comparison Table
+| Method                           | Use Case                                  | If No Match  | If Multiple Matches | Complexity Level |
+|----------------------------------|------------------------------------------|--------------|---------------------|------------------|
+| `First/FirstAsync`               | Get first match, ignoring rest           | Throws       | Returns first match | Low              |
+| `FirstOrDefault/FirstOrDefaultAsync` | Get first match, or `null` if none       | Returns `null` | Returns first match | Low              |
+| `Single/SingleAsync`             | Exactly one match expected               | Throws       | Throws              | Moderate         |
+| `SingleOrDefault/SingleOrDefaultAsync` | Zero or one match valid                 | Returns `null` | Throws              | Moderate         |
+| `Find`                           | Primary key lookup in EF Core            | Returns `null` | Not applicable     | Low              |
+
+## 🌍 Diagram: Decision Flow
+
+```plaintext
+    +------------------------------+
+    | Are you sure only one match |
+    | can exist for this query?   |
+    +--------------+---------------+
+                   |               
+          YES      |      NO       
+                   |               
+    +--------------v--------------+---------------+
+    |   Single / SingleOrDefault  | First / FirstOrDefault |
+    |   (throws if multiple)      | (ignores multiple)     |
+    +-----------------------------+-------------------------+
+
+    +------------------------+
+    | Do you rely on PK?    |
+    +-----------+------------+
+                |  yes
+                v
+         Use context.Find()
+```
+
+## 🏁 Conclusion
+**Retrieving a single record** is a common need in .NET development, especially when using **Entity Framework Core**. The best method depends on whether you expect multiple matches, zero matches, or want a strict guarantee of a single match. Choose **`Single/SingleAsync`** if you want **strict enforcement**, or **`First/FirstAsync`** if you only need one item but can tolerate multiple. Use **`Find`** for **primary key** lookups.
+By selecting the **right approach**, you ensure readable, maintainable, and robust data access logic.
+
+---
