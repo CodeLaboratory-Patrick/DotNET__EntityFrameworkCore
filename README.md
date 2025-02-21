@@ -2448,3 +2448,105 @@ else
 By selecting the **right approach**, you ensure readable, maintainable, and robust data access logic.
 
 ---
+# 🚀 EF.Functions.Like vs. .Contains() in .NET Development
+
+## 🔍 Introduction
+When querying data in **Entity Framework Core (EF Core)**, developers often need to filter records by checking if a certain string is contained within a database column. Two common approaches to accomplish this are:
+1. **`EF.Functions.Like`**: Uses a SQL `LIKE` pattern match.
+2. **`.Contains()`**: A LINQ method that translates to SQL `LIKE '%value%'` by default.
+
+While both techniques achieve partial string matching, they differ in **characteristics**, **performance considerations**, and **use cases**.
+
+## 🔍 Key Differences
+| 🔑 Aspect                          | 🏷️ EF.Functions.Like                                       | 💻 .Contains()                      |
+|-----------------------------------|------------------------------------------------------------|------------------------------------|
+| **Implementation**                | Directly calls SQL `LIKE`                                  | Translated to SQL `LIKE '%value%'` |
+| **Escape Handling**               | Must manually handle wildcards (`%`, `_`) in patterns    | Managed by EF Core automatically   |
+| **Null-Safety**                   | Must ensure expression is not `null` to avoid exceptions   | Typically handles `null` gracefully|
+| **Use Case**                      | Complex pattern matching (wildcards)                      | Simple substring match             |
+
+## 🏗️ Example Usage
+### 1️⃣ Using `EF.Functions.Like`
+```csharp
+using var context = new ApplicationDbContext();
+
+string pattern = "%Laptop%"; // searching for any record containing 'Laptop'
+
+var results = await context.Products
+    .Where(p => EF.Functions.Like(p.Name, pattern))
+    .ToListAsync();
+
+foreach (var item in results)
+{
+    Console.WriteLine(item.Name);
+}
+```
+
+#### 📝 Explanation:
+- **`EF.Functions.Like`** directly translates to SQL `LIKE`.
+- You explicitly define your pattern, including `'%value%'` for partial matches.
+- Allows advanced usage (e.g., `_` for single character wildcards).
+
+### 2️⃣ Using `.Contains()`
+```csharp
+using var context = new ApplicationDbContext();
+
+string searchTerm = "Laptop"; // we'll search in product names
+
+var results = await context.Products
+    .Where(p => p.Name.Contains(searchTerm))
+    .ToListAsync();
+
+foreach (var item in results)
+{
+    Console.WriteLine(item.Name);
+}
+```
+
+#### 📝 Explanation:
+- **`.Contains()`** is a **LINQ** method that EF translates into `LIKE '%Laptop%'`.
+- Easy to read, but limited to simple substring checks.
+- Manages escape characters under the hood.
+
+## 🔄 Extended Pattern Matching with EF.Functions.Like
+`EF.Functions.Like` supports more advanced pattern matching by leveraging SQL syntax:
+
+| Operator | Meaning                           | Example           | Matches               |
+|----------|-----------------------------------|-------------------|-----------------------|
+| `%`      | Wildcard (any length of chars)    | `%Laptop%`        | `ULaptopX`, etc.      |
+| `_`      | Single character wildcard         | `L_ptop`          | `Laptop`, `Lptop`     |
+| `[ ]`    | Character range or set            | `[CM]ar`          | `Car`, `Mar`          |
+
+**Note**: Not all providers fully support bracket expressions.
+
+## 🌍 Diagram: Query Translation Flow
+
+```plaintext
+        C# Code (LINQ)                          SQL Command
++------------------------------------+   +----------------------------------+
+| 1. Developer writes:               |   | SELECT * FROM Products           |
+|    context.Products               |   | WHERE Name LIKE '%Laptop%'       |
+|        .Where(p =>                |   +----------------------------------+
+|        EF.Functions.Like(         |
+|            p.Name, "%Laptop%"))   |
++------------------------+-----------+
+                         |
+                         v
+                EF Core translates   
+             EF.Functions.Like -> LIKE
+```
+
+## 🏁 Conclusion
+1. **`.Contains()`**
+   - Simpler to use.
+   - Automatically escapes user input.
+   - Equivalent to SQL `LIKE '%value%'`.
+2. **`EF.Functions.Like`**
+   - Explicitly calls SQL `LIKE`.
+   - Allows custom patterns (`_`, `%`), advanced wildcard usage.
+   - Must handle escaping carefully.
+Both approaches **perform substring matches**, but `EF.Functions.Like` offers more control over the pattern. For **simple** cases, **`.Contains()`** is often **easier**. For **complex** patterns, **`EF.Functions.Like`** is the way to go.
+
+## 📚 References
+- [Microsoft Docs: EF.Functions.Like](https://learn.microsoft.com/en-us/dotnet/api/microsoft.entityframeworkcore.ef.functions?view=efcore-9.0)
+- [Microsoft Docs: String.Contains Method](https://docs.microsoft.com/en-us/dotnet/api/system.string.contains)
