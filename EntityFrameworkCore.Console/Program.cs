@@ -6,6 +6,8 @@ using System.Globalization;
 //First we need an instance of Context
 using var context = new FootballLeagueDbContext();
 Console.WriteLine(context.DbPath);
+//await context.Database.EnsureDeletedAsync();
+//await context.Database.MigrateAsync();
 
 #region Read Queries
 //Selecting a single record - First one in the list
@@ -452,7 +454,6 @@ async Task GetAllTeamsQuerySyntax()
         Console.WriteLine(t.Name);
     }
 }
-
 
 class TeamInfo
 {
