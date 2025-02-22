@@ -3195,3 +3195,121 @@ Leveraging DTOs effectively can result in **performance gains**, **clearer code*
 ## 📚 References
 - [Microsoft Docs - Data Transfer Objects in ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/mvc/models/model-binding?view=aspnetcore-7.0#model-binding-and-custom-types)
 - [AutoMapper Documentation](https://docs.automapper.org/en/stable/)
+
+---
+다음은 **Tracking vs. No Tracking in .NET Development**을 설명하는 교과서 스타일의 문서입니다. ✅ 이 문서는 **Entity Framework Core (EF Core)**에서 **Tracking과 No Tracking의 차이점**, **사용법**, **성능 비교**, **베스트 프랙티스** 등을 다룹니다. 🚀🎉
+
+---
+
+# 🚀 Tracking vs. No Tracking in .NET Development
+## 🔍 Introduction
+In **Entity Framework Core (EF Core)**, **tracking** refers to the process by which the `DbContext` monitors changes to entity instances. This enables EF Core to automatically detect modifications and persist those changes back to the database when `SaveChanges()` is called. Conversely, **no-tracking** queries do not keep track of the retrieved entities, which can result in significant performance improvements when you only need to read data without updating it.
+This guide explains **what tracking is**, **when to use no-tracking**, **their key differences**, and **best practices** for efficient EF Core usage.
+
+## 🔍 What Is Tracking?
+### ✅ **Tracking Queries**
+- **Definition:**  
+  A tracking query is one where the `DbContext` monitors the state of each entity retrieved from the database. Any changes made to these entities are tracked, and when `SaveChanges()` is invoked, EF Core generates the appropriate SQL commands to update the database.
+- **Characteristics:**
+  - **Automatic Change Detection:**  
+    The context automatically detects modifications to tracked entities.
+  - **State Management:**  
+    Each entity is associated with a state (e.g., `Unchanged`, `Modified`, `Added`, `Deleted`).
+  - **Update Support:**  
+    Ideal for scenarios where you intend to **update or delete** the retrieved data.
+  - **Performance Overhead:**  
+    Tracking adds overhead because the context maintains a snapshot of each entity.
+
+### 🏗️ **Example: Tracking Query**
+```csharp
+using (var context = new ApplicationDbContext())
+{
+    // This query is tracked by default.
+    var products = context.Products.Where(p => p.Price > 100).ToList();
+
+    // Modify an entity
+    var firstProduct = products.First();
+    firstProduct.Price = firstProduct.Price + 50;
+
+    // EF Core will detect the change and update the database upon SaveChanges.
+    context.SaveChanges();
+}
+```
+
+#### 📝 **Explanation**
+- EF Core **tracks** the retrieved products.
+- **Modifications** are detected automatically and persisted when calling `SaveChanges()`.
+
+## ❌ What Is No Tracking?
+### 🚀 **No-Tracking Queries**
+- **Definition:**  
+  No-tracking queries retrieve entities **without** storing them in the `DbContext`'s change tracker. This makes them ideal for **read-only** operations.
+- **Characteristics:**
+  - **Improved Performance:**  
+    Reduced memory usage and faster query execution because the context does not monitor the entities.
+  - **Read-Only:**  
+    Since entities are **not tracked**, any modifications to them will **not** be saved to the database.
+  - **Use Cases:**  
+    Best suited for **read-only views**, **reporting**, or **large dataset queries**.
+
+### 🏗️ **Example: No-Tracking Query**
+```csharp
+using (var context = new ApplicationDbContext())
+{
+    // AsNoTracking() tells EF Core not to track the returned entities.
+    var products = context.Products.AsNoTracking().Where(p => p.Price > 100).ToList();
+
+    // Any modifications here will NOT be saved.
+    var firstProduct = products.First();
+    firstProduct.Price += 50;
+
+    // context.SaveChanges(); // No effect: The entity is not tracked!
+}
+```
+
+#### 📝 **Explanation**
+- **`.AsNoTracking()`** ensures the retrieved entities are **not monitored**.
+- **Modifications** are ignored when calling `SaveChanges()`.
+
+## 📊 Comparison: Tracking vs. No Tracking
+| **Feature**            | **Tracking**                                                     | **No Tracking**                                                  |
+|------------------------|------------------------------------------------------------------|------------------------------------------------------------------|
+| **Change Detection**   | Automatically detects entity modifications.                     | Does not track changes; entities are read-only.                  |
+| **Memory Usage**       | Higher (stores state information for each entity).              | Lower (does not store entity state).                             |
+| **Use Case**           | Best for **update**, **delete**, and **insert** operations.     | Ideal for **read-only** queries and large datasets.              |
+| **Performance**        | Slightly slower due to tracking overhead.                       | Faster, especially for large result sets.                        |
+| **Database Updates**   | Changes are **saved** to the database via `SaveChanges()`.      | Changes are **ignored** by EF Core (no effect on `SaveChanges()`). |
+| **Default Behavior**   | **Enabled** by default for queries.                             | Requires explicit use of `AsNoTracking()`.                        |
+
+## ⚙️ Diagram: Tracking vs. No Tracking
+
+```mermaid
+flowchart TD
+    A[Start Query] --> B[Execute Query in DbContext]
+    B --> C[Entities Retrieved]
+    C --> D[Tracking Query] --> E[Entities Tracked in Change Tracker]
+    C --> F[No Tracking Query] --> G[Entities Not Tracked]
+    E --> H[Modify Entities & Call SaveChanges()]
+    G --> I[Entities remain unchanged, no updates made]
+```
+
+- **Tracking Query:** Entities are **monitored**, and changes are **saved** to the database.
+- **No Tracking Query:** Entities are **not monitored**, and changes are **ignored**.
+
+## 🏁 When to Use Tracking vs. No Tracking
+| **Scenario**                   | **Use Tracking** ✅                     | **Use No Tracking** ❌                    |
+|--------------------------------|--------------------------------|--------------------------------|
+| **CRUD Operations**            | ✅ Yes - Needed for `SaveChanges()`. | ❌ No - Updates won't persist. |
+| **Read-Only Queries**          | ❌ No - Unnecessary overhead.    | ✅ Yes - Faster performance.   |
+| **Large Dataset Queries**      | ❌ No - High memory usage.      | ✅ Yes - Efficient query execution. |
+| **Detached Objects**           | ❌ No - Won’t work for manual state changes. | ✅ Yes - Good for caching/display. |
+
+## 🎯 Conclusion
+**Tracking** in EF Core enables **automatic change detection** and is essential for **modifying and persisting** entity changes. However, it comes with **memory overhead**. In contrast, **No Tracking** queries offer **better performance** for **read-only** scenarios.
+
+## 📚 References
+- [Microsoft Docs: Querying Data - Change Tracking](https://learn.microsoft.com/en-us/ef/core/querying/tracking)
+- [Microsoft Docs: AsNoTracking Method](https://learn.microsoft.com/en-us/dotnet/api/microsoft.entityframeworkcore.entityframeworkqueryableextensions.asnotracking)
+- [Entity Framework Core Performance Considerations](https://learn.microsoft.com/en-us/ef/core/performance/)
+
+---
