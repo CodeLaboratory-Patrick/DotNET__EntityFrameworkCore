@@ -3979,3 +3979,142 @@ Choosing the right insert strategy depends on the **dataset size, performance re
 - [EFCore.BulkExtensions GitHub Repository](https://github.com/borisdj/EFCore.BulkExtensions)
 
 ---
+# 🚀 Update Operations in .NET Development
+## 📌 Introduction
+In **.NET Development**, particularly with **Entity Framework Core (EF Core)**, performing **update operations** involves adjusting existing data in the database. Understanding how updates work—both in **tracked** and **no-tracking** scenarios—is vital for building efficient, predictable, and robust data layers. By learning the differences between automatic change tracking and manual or partial updates, you can tailor your approach to specific application requirements.
+
+## 1. Overview
+In EF Core, update operations follow these general steps:
+1. **Retrieval of Data:**  
+   The entity is queried from the database. This can be done with tracking or no-tracking:
+   - **Tracking:** The `DbContext` keeps track of the entity’s state.
+   - **No-Tracking:** The entity is retrieved without being monitored by the context.
+2. **Modification:**  
+   The properties of the retrieved entity are modified as needed.
+3. **Persisting Changes:**  
+   Calling `SaveChanges()` (or `SaveChangesAsync()`) updates the corresponding records in the database.
+
+## 2. Update Operations with Tracking
+### 2.1. How It Works
+- **Tracking Behavior:**  
+  When you query entities with tracking (the default behavior), EF Core monitors the changes to these entities. As you modify the entity properties, EF Core marks them as `Modified`.
+- **Automatic Change Detection:**  
+  When you call `SaveChanges()`, EF Core automatically detects these changes (using `DetectChanges()`) and generates the appropriate SQL `UPDATE` statements.
+
+### 2.2. Example
+```csharp
+using (var context = new ApplicationDbContext())
+{
+    // Retrieve a tracked entity.
+    var product = context.Products.FirstOrDefault(p => p.ProductId == 1);
+    
+    if (product != null)
+    {
+        // Modify the entity.
+        product.Price += 50;
+        product.Name = "Updated " + product.Name;
+        
+        // EF Core tracks these changes automatically.
+        context.SaveChanges(); // Updates the record in the database.
+    }
+}
+```
+
+### 2.3. Characteristics
+| **Aspect**             | **Tracking Update**                                                             |
+|------------------------|---------------------------------------------------------------------------------|
+| **Change Detection**   | Automatic via change tracker; modifications are monitored in real-time.         |
+| **Ease of Use**        | Simple: modify properties and call `SaveChanges()`.                           |
+| **Performance**        | Suitable for moderate workloads; may consume more memory with many tracked entities. |
+| **Use Case**           | Ideal when you plan to update data retrieved from the database.                 |
+
+## 3. Update Operations without Tracking
+### 3.1. How It Works
+- **No-Tracking Behavior:**  
+  When entities are retrieved using `AsNoTracking()`, they are not monitored by the `DbContext`. Consequently, changes made to these entities are not automatically detected.
+- **Manual Attachment:**  
+  To update a no-tracking entity, you must attach it to the context and explicitly mark its state as `Modified`.
+
+### 3.2. Example
+```csharp
+using (var context = new ApplicationDbContext())
+{
+    // Retrieve an entity without tracking.
+    var product = context.Products.AsNoTracking().FirstOrDefault(p => p.ProductId == 1);
+    
+    if (product != null)
+    {
+        // Modify the entity.
+        product.Price += 50;
+        product.Name = "Updated " + product.Name;
+        
+        // Attach the entity and mark it as Modified.
+        context.Products.Attach(product);
+        context.Entry(product).State = EntityState.Modified;
+        
+        // Persist the changes.
+        context.SaveChanges(); // Executes an UPDATE statement.
+    }
+}
+```
+
+### 3.3. Characteristics
+| **Aspect**             | **No-Tracking Update**                                                         |
+|------------------------|--------------------------------------------------------------------------------|
+| **Change Detection**   | Manual: must attach the entity and set its state explicitly to `Modified`.      |
+| **Performance**        | Better for read-only queries; extra steps needed for updates may add complexity. |
+| **Use Case**           | Useful when working with read-only queries that later need to be updated or for detached entities. |
+
+## 4. Diagram: Update Operation Flow
+
+```mermaid
+flowchart TD
+    A[Retrieve Entity from Database]
+    B[Is Entity Tracked?]
+    C[Yes: Entity is Tracked]
+    D[Modify Entity Properties]
+    E[Call SaveChanges()]
+    F[EF Core Detects Changes & Executes UPDATE]
+    G[No: Entity is Not Tracked (AsNoTracking)]
+    H[Modify Entity Properties]
+    I[Attach Entity to Context]
+    J[Mark Entity as Modified]
+    K[Call SaveChanges()]
+    L[EF Core Executes UPDATE Based on Manual State]
+
+    A --> B
+    B -- Yes --> C
+    C --> D
+    D --> E
+    E --> F
+    B -- No --> G
+    G --> H
+    H --> I
+    I --> J
+    J --> K
+    K --> L
+```
+
+- **Explanation:**  
+  - For **tracking updates**, the entity is automatically monitored, and calling `SaveChanges()` is sufficient.  
+  - For **no-tracking updates**, you must manually attach the entity and mark it as modified before saving changes.
+
+## 5. Summary
+- **Tracking Update Operations:**  
+  - Retrieve entities normally.
+  - Modify properties.
+  - Call `SaveChanges()`.
+  - EF Core automatically detects changes via the change tracker.
+- **No-Tracking Update Operations:**  
+  - Retrieve entities using `AsNoTracking()`.
+  - Modify properties.
+  - Attach the entity to the context and set its state to `Modified`.
+  - Call `SaveChanges()` to persist updates.
+Understanding the differences between tracking and no-tracking update operations is essential for writing efficient and maintainable .NET applications. Choosing the right approach depends on your specific scenario—whether you prioritize performance for read-only operations or need the simplicity of automatic change tracking for updates.
+
+## 6. Resources and References
+- [Microsoft Docs: Change Tracking in EF Core](https://docs.microsoft.com/en-us/ef/core/change-tracking/)
+- [Microsoft Docs: AsNoTracking Method](https://docs.microsoft.com/en-us/dotnet/api/microsoft.entityframeworkcore.entityframeworkqueryableextensions.asnotracking)
+- [EF Core Performance Considerations](https://docs.microsoft.com/en-us/ef/core/performance/)
+
+---
