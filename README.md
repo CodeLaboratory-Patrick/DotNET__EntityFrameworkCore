@@ -3872,3 +3872,110 @@ flowchart TD
 - [Understanding Asynchronous Programming in C#](https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/async/)
 
 ---
+# 🚀 Efficient Insert Operations in .NET Development
+## 📌 Introduction
+In **.NET development**, inserting data into a database is a fundamental operation. Depending on the scenario and performance requirements, insert operations can be handled in different ways:
+- **Single Insert:** Adding a single record at a time.
+- **Loop Insert:** Iteratively adding records in a loop.
+- **Batch Insert:** Adding multiple records in a single operation.
+- **Bulk Insert:** Optimizing large-scale insertions using specialized libraries.
+Understanding these approaches allows developers to optimize performance, minimize database load, and improve application responsiveness.
+
+## 🔍 Key Characteristics of Insert Operations
+| **Insert Type**     | **Execution Model** | **Performance** | **Use Case** |
+|---------------------|-------------------|-----------------|--------------|
+| **Single Insert**  | Synchronous, one entity at a time | Suitable for infrequent inserts | Isolated record insertion (e.g., user registration) |
+| **Loop Insert**    | Iterates over collection, inserts individually | Inefficient due to multiple round trips | Small dataset inserts |
+| **Batch Insert**   | Multiple entities added, single `SaveChanges()` | More efficient, fewer round trips | Moderate dataset inserts |
+| **Bulk Insert**    | Uses specialized libraries for optimized insertion | Best performance for large datasets | Large-scale data imports, ETL |
+
+## 🏗️ Implementing Insert Operations in EF Core
+### 1️⃣ Single Insert
+```csharp
+using (var context = new ApplicationDbContext())
+{
+    var product = new Product { Name = "Laptop", Price = 1200.00M };
+    context.Products.Add(product);
+    context.SaveChanges();
+}
+```
+🔹 **Pros:** Simple, easy to implement.
+🔹 **Cons:** Not optimal for large-scale insertions.
+
+### 2️⃣ Loop Insert
+```csharp
+using (var context = new ApplicationDbContext())
+{
+    var products = new List<Product>
+    {
+        new Product { Name = "Smartphone", Price = 800.00M },
+        new Product { Name = "Tablet", Price = 500.00M }
+    };
+
+    foreach (var product in products)
+    {
+        context.Products.Add(product);
+    }
+    
+    context.SaveChanges();
+}
+```
+🔹 **Pros:** Flexible for dynamically generated data.
+🔹 **Cons:** Inefficient if `SaveChanges()` is called inside the loop.
+
+### 3️⃣ Batch Insert
+```csharp
+using (var context = new ApplicationDbContext())
+{
+    var products = new List<Product>
+    {
+        new Product { Name = "Keyboard", Price = 50.00M },
+        new Product { Name = "Mouse", Price = 25.00M }
+    };
+
+    context.Products.AddRange(products);
+    context.SaveChanges();
+}
+```
+🔹 **Pros:** Reduces database round trips, better performance.
+🔹 **Cons:** Can still be suboptimal for extremely large datasets.
+
+### 4️⃣ Bulk Insert (Using EFCore.BulkExtensions)
+```csharp
+using EFCore.BulkExtensions;
+using (var context = new ApplicationDbContext())
+{
+    var largeProductList = GetLargeProductList();
+    await context.BulkInsertAsync(largeProductList);
+}
+```
+🔹 **Pros:** Best performance for large-scale insertions.
+🔹 **Cons:** Requires third-party libraries.
+
+## 📊 Diagram: Insert Operations Workflow
+
+```mermaid
+flowchart TD
+    A[Start] --> B[Prepare Data]
+    B --> C[Choose Insertion Method]
+    C --> D1[Single Insert]
+    C --> D2[Loop Insert]
+    C --> D3[Batch Insert]
+    C --> D4[Bulk Insert]
+    D1 --> E[Add Entity to DbContext]
+    D2 --> E
+    D3 --> E
+    D4 --> E
+    E --> F[Call SaveChanges() or BulkInsertAsync()]
+    F --> G[Data Persisted to Database]
+```
+
+## 🏁 Conclusion
+Choosing the right insert strategy depends on the **dataset size, performance requirements, and application architecture**. While **single inserts** are great for **isolated** transactions, **batch inserts** and **bulk operations** significantly improve performance for **large-scale** data processing. By applying best practices, you can ensure **efficient**, **scalable**, and **optimized** insert operations in .NET applications. 🚀
+
+## 📚 References
+- [Microsoft Docs: DbContext.Add Method](https://docs.microsoft.com/en-us/dotnet/api/microsoft.entityframeworkcore.dbcontext.add)
+- [EF Core Performance Considerations](https://docs.microsoft.com/en-us/ef/core/performance/)
+- [EFCore.BulkExtensions GitHub Repository](https://github.com/borisdj/EFCore.BulkExtensions)
+
+---
