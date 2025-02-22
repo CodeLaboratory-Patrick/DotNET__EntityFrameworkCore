@@ -3631,3 +3631,138 @@ flowchart TD
 Understanding **Entity States** in EF Core is pivotal for building **predictable**, **maintainable** data layers. By recognizing how states progress—from **Detached** to **Added**, **Unchanged**, **Modified**, or **Deleted**—you can orchestrate **inserts**, **updates**, and **deletes** with greater control. Properly managing states also helps avert unintended database operations, optimizing performance in **enterprise-grade** .NET applications.
 
 ---
+# 🚀 SaveChanges() and DetectChanges() in .NET Development: A Comprehensive Guide
+## 📘 Introduction
+In **Entity Framework Core (EF Core)**, managing the state of entities and persisting changes to the database are fundamental operations. Two key methods that facilitate this process are **SaveChanges()** and **DetectChanges()**. This guide explains in detail what each method does, their characteristics, and how to use them effectively in your application.
+
+## 🔍 Overview
+| **Method**       | **Purpose**                                               | **Key Characteristics**                                   |
+|-----------------|-----------------------------------------------------------|----------------------------------------------------------|
+| `SaveChanges()`  | Persists all changes to the database                     | Calls `DetectChanges()` automatically before execution  |
+| `DetectChanges()` | Identifies entity state modifications                   | Updates internal entity states for accurate tracking    |
+
+## 🏗️ Understanding SaveChanges()
+### 📌 What is `SaveChanges()`?
+- A method on the `DbContext` that commits **all tracked changes** (inserts, updates, and deletes) to the database.
+- Aggregates modifications into a **single transaction** to maintain consistency.
+- Automatically calls `DetectChanges()` before executing database commands.
+### 📌 Example Usage
+```csharp
+using (var context = new ApplicationDbContext())
+{
+    var newProduct = new Product { Name = "Smartwatch", Price = 199.99M };
+    context.Products.Add(newProduct);
+    
+    var product = context.Products.FirstOrDefault(p => p.ProductId == 1);
+    if (product != null)
+    {
+        product.Price += 20;
+    }
+    
+    var obsoleteProduct = context.Products.FirstOrDefault(p => p.Name == "Old Phone");
+    if (obsoleteProduct != null)
+    {
+        context.Products.Remove(obsoleteProduct);
+    }
+    
+    int affectedRows = context.SaveChanges();
+    Console.WriteLine($"Number of rows affected: {affectedRows}");
+}
+```
+
+### 📌 How It Works
+- **Entities marked as Added → INSERT SQL**
+- **Entities marked as Modified → UPDATE SQL**
+- **Entities marked as Deleted → DELETE SQL**
+- **Unchanged entities → No action**
+
+## 🕵️ Understanding DetectChanges()
+### 📌 What is `DetectChanges()`?
+- Scans the `DbContext` for **modified, added, or deleted** entities.
+- Updates entity states accordingly before saving changes.
+- Called automatically by `SaveChanges()`, but can be manually invoked.
+### 📌 Example Usage
+```csharp
+using (var context = new ApplicationDbContext())
+{
+    var product = context.Products.FirstOrDefault(p => p.ProductId == 1);
+    if (product != null)
+    {
+        product.Price += 50;
+        
+        context.ChangeTracker.DetectChanges();
+        
+        var state = context.Entry(product).State;
+        Console.WriteLine($"Entity state after modification: {state}"); // Output: Modified
+    }
+}
+```
+
+### 📌 When to Manually Call `DetectChanges()`?
+- In **bulk operations**, where frequent automatic change tracking may slow down performance.
+- When explicitly modifying entity states in disconnected scenarios.
+
+## 📊 SaveChanges() and DetectChanges() Workflow
+
+```mermaid
+flowchart TD
+    A[Start with a DbContext]
+    B[Entity Operations (Add, Update, Delete)]
+    C[Call SaveChanges()]
+    D[Automatically calls DetectChanges()]
+    E[Change Tracker Updates Entity States]
+    F[Generate SQL Commands based on States]
+    G[Execute SQL Commands within a Transaction]
+    H[Return number of rows affected]
+    
+    A --> B
+    B --> C
+    C --> D
+    D --> E
+    E --> F
+    F --> G
+    G --> H
+```
+
+## 🚀 Best Practices for Efficient Usage
+### ✅ Optimize Performance
+1. **Bulk Updates**:
+   - Disable automatic change tracking for bulk updates.
+   ```csharp
+   context.ChangeTracker.AutoDetectChangesEnabled = false;
+   
+   foreach (var item in itemsToUpdate)
+   {
+       context.Entry(item).State = EntityState.Modified;
+   }
+   
+   context.ChangeTracker.DetectChanges();
+   context.SaveChanges();
+   
+   context.ChangeTracker.AutoDetectChangesEnabled = true;
+   ```
+   
+2. **Use `AsNoTracking()` for Read-Only Queries**:
+   - Reduces overhead by skipping change tracking.
+   ```csharp
+   var products = context.Products.AsNoTracking().Where(p => p.Price > 100).ToList();
+   ```
+
+### ✅ When to Use SaveChanges() vs. DetectChanges()
+| Scenario              | Recommended Method |
+|----------------------|------------------|
+| Persisting all entity changes | `SaveChanges()` |
+| Manually verifying entity states | `DetectChanges()` |
+| Bulk processing updates | `DetectChanges()` manually |
+| Read-only queries | `AsNoTracking()` |
+
+## 🏁 Conclusion
+- **SaveChanges()** commits all pending changes to the database.
+- **DetectChanges()** ensures EF Core accurately tracks modifications.
+- Using them effectively **improves performance** and **ensures data consistency** in your .NET applications.
+
+## 📚 References
+- [Microsoft Docs: SaveChanges()](https://docs.microsoft.com/en-us/dotnet/api/microsoft.entityframeworkcore.dbcontext.savechanges)
+- [Microsoft Docs: DetectChanges()](https://docs.microsoft.com/en-us/dotnet/api/microsoft.entityframeworkcore.changetracking.changetracker.detectchanges)
+- [Entity Framework Core Documentation](https://docs.microsoft.com/en-us/ef/core/)
+
