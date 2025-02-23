@@ -4264,3 +4264,122 @@ flowchart TD
 - **Soft Delete:** Implement soft deletion by marking records as deleted (e.g., using an `IsDeleted` flag) and filtering them out via global query filters.
 
 ---
+# 🚀 ExecuteUpdate and ExecuteDelete in .NET Development: A Comprehensive Guide
+## 📌 Introduction
+In **Entity Framework Core (EF Core) 7** and later, two powerful methods—**`ExecuteUpdate`** and **`ExecuteDelete`**—enable high-performance, set-based update and delete operations directly in the database. These methods allow modifying or removing multiple records in a **single** database round trip, reducing memory overhead and significantly improving efficiency. This guide explores their characteristics, use cases, and implementation with examples, tables, and diagrams.
+
+## 1️⃣ What Are ExecuteUpdate and ExecuteDelete?
+| **Method**         | **Functionality**                                                                 |
+|--------------------|---------------------------------------------------------------------------------|
+| **`ExecuteUpdate`** | Performs a bulk **update** operation on database records using a LINQ predicate. |
+| **`ExecuteDelete`** | Deletes multiple records from the database based on a specified condition.      |
+
+### Why Use Them?
+✔ **Performance Boost**: Bypasses EF Core's **change tracker**, reducing memory consumption.  
+✔ **Efficiency**: Directly translates LINQ expressions into optimized SQL statements.  
+✔ **Simplicity**: Provides a declarative syntax for bulk updates/deletes without loading entities.  
+✔ **Transactional Integrity**: Operates within transactions, ensuring data consistency.  
+
+## 2️⃣ How to Use ExecuteUpdate
+`ExecuteUpdate` allows modifying records **without loading them into memory**. You specify new values using **lambda expressions**.
+### Example: Increase Product Prices by 10%
+```csharp
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+
+public async Task<int> IncreaseLowPriceProductsAsync(ApplicationDbContext context)
+{
+    int affectedRows = await context.Products
+        .Where(p => p.Price < 100)
+        .ExecuteUpdateAsync(setters => setters
+            .SetProperty(p => p.Price, p => p.Price * 1.1m)); // Increase price by 10%
+    return affectedRows;
+}
+```
+
+#### SQL Generated:
+```sql
+UPDATE Products
+SET Price = Price * 1.1
+WHERE Price < 100;
+```
+
+📌 **Note**: The method updates only **specified** properties.
+
+## 3️⃣ How to Use ExecuteDelete
+`ExecuteDelete` removes multiple records **without fetching them first**, making it ideal for **bulk deletions**.
+### Example: Delete Discontinued Products
+```csharp
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+
+public async Task<int> DeleteDiscontinuedProductsAsync(ApplicationDbContext context)
+{
+    int affectedRows = await context.Products
+        .Where(p => p.Discontinued == true)
+        .ExecuteDeleteAsync();
+    return affectedRows;
+}
+```
+
+#### SQL Generated:
+```sql
+DELETE FROM Products
+WHERE Discontinued = 1;
+```
+
+📌 **Note**: No need to load entities into memory before deleting them.
+
+## 4️⃣ Execution Flow Diagram
+
+```mermaid
+flowchart TD
+    A[Define IQueryable with Filter Predicate]
+    B[Call ExecuteUpdateAsync/ExecuteDeleteAsync]
+    C[EF Core Translates to SQL UPDATE/DELETE]
+    D[SQL Command Executed on Database]
+    E[Return Number of Affected Rows]
+
+    A --> B
+    B --> C
+    C --> D
+    D --> E
+```
+
+## 5️⃣ Comparison Table: ExecuteUpdate vs. ExecuteDelete
+| **Aspect**                | **ExecuteUpdate**                                   | **ExecuteDelete**                                |
+|---------------------------|-----------------------------------------------------|-------------------------------------------------|
+| **Operation Type**        | Bulk update of records                            | Bulk deletion of records                       |
+| **Execution Model**       | Directly executes an SQL `UPDATE` command         | Directly executes an SQL `DELETE` command      |
+| **Change Tracking**       | Bypasses the change tracker; does not load entities | Bypasses the change tracker; does not load entities |
+| **Return Value**          | `int` (number of affected rows)                    | `int` (number of affected rows)                |
+| **Ideal Use Case**        | Bulk property updates, e.g., adjusting product prices | Bulk removals, e.g., deleting inactive users  |
+| **EF Core Version**       | Available in EF Core 7+                           | Available in EF Core 7+                        |
+
+## 6️⃣ Advantages and Limitations
+### ✅ **Advantages**
+- **🚀 Faster Performance**: No need to load entities before updating/deleting.
+- **🔄 Efficient Transactions**: Executes in a single transaction, reducing database overhead.
+- **📌 Simple and Declarative**: Use LINQ expressions to define updates/deletions.
+### ❌ **Limitations**
+- **🚫 No Change Tracking**: Changes are **not** tracked by EF Core.
+- **🔍 Limited Complex Logic**: Cannot update relationships or perform entity-level logic.
+- **🛑 EF Core 7+ Only**: Not available in older versions.
+
+## 7️⃣ When to Use ExecuteUpdate & ExecuteDelete
+| Scenario                          | Recommended Approach |
+|----------------------------------|---------------------|
+| Update thousands of records at once | ✅ Use `ExecuteUpdate()` |
+| Delete large batches of records    | ✅ Use `ExecuteDelete()` |
+| Need to trigger EF Core hooks      | ❌ Use `context.Remove()` instead |
+| Tracking entity state is necessary  | ❌ Use standard EF Core updates |
+
+## 8️⃣ Resources and References
+- [Microsoft Docs: ExecuteUpdate & ExecuteDelete](https://learn.microsoft.com/en-us/ef/core/saving/execute-insert-update-delete)
+
+## 🎯 Conclusion
+**ExecuteUpdate** and **ExecuteDelete** are powerful **bulk processing methods** introduced in **EF Core 7**, offering **high-performance updates and deletions** at the database level. By avoiding unnecessary entity tracking, these methods significantly reduce **memory usage** and **database round trips**, making them ideal for **large-scale** data modifications. Use them wisely to **improve efficiency** while ensuring **data integrity** in your .NET applications. 🚀
+
+---
