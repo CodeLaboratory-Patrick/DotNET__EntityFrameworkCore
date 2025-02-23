@@ -3195,3 +3195,1072 @@ Leveraging DTOs effectively can result in **performance gains**, **clearer code*
 ## 📚 References
 - [Microsoft Docs - Data Transfer Objects in ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/mvc/models/model-binding?view=aspnetcore-7.0#model-binding-and-custom-types)
 - [AutoMapper Documentation](https://docs.automapper.org/en/stable/)
+
+---
+다음은 **Tracking vs. No Tracking in .NET Development**을 설명하는 교과서 스타일의 문서입니다. ✅ 이 문서는 **Entity Framework Core (EF Core)**에서 **Tracking과 No Tracking의 차이점**, **사용법**, **성능 비교**, **베스트 프랙티스** 등을 다룹니다. 🚀🎉
+
+---
+
+# 🚀 Tracking vs. No Tracking in .NET Development
+## 🔍 Introduction
+In **Entity Framework Core (EF Core)**, **tracking** refers to the process by which the `DbContext` monitors changes to entity instances. This enables EF Core to automatically detect modifications and persist those changes back to the database when `SaveChanges()` is called. Conversely, **no-tracking** queries do not keep track of the retrieved entities, which can result in significant performance improvements when you only need to read data without updating it.
+This guide explains **what tracking is**, **when to use no-tracking**, **their key differences**, and **best practices** for efficient EF Core usage.
+
+## 🔍 What Is Tracking?
+### ✅ **Tracking Queries**
+- **Definition:**  
+  A tracking query is one where the `DbContext` monitors the state of each entity retrieved from the database. Any changes made to these entities are tracked, and when `SaveChanges()` is invoked, EF Core generates the appropriate SQL commands to update the database.
+- **Characteristics:**
+  - **Automatic Change Detection:**  
+    The context automatically detects modifications to tracked entities.
+  - **State Management:**  
+    Each entity is associated with a state (e.g., `Unchanged`, `Modified`, `Added`, `Deleted`).
+  - **Update Support:**  
+    Ideal for scenarios where you intend to **update or delete** the retrieved data.
+  - **Performance Overhead:**  
+    Tracking adds overhead because the context maintains a snapshot of each entity.
+
+### 🏗️ **Example: Tracking Query**
+```csharp
+using (var context = new ApplicationDbContext())
+{
+    // This query is tracked by default.
+    var products = context.Products.Where(p => p.Price > 100).ToList();
+
+    // Modify an entity
+    var firstProduct = products.First();
+    firstProduct.Price = firstProduct.Price + 50;
+
+    // EF Core will detect the change and update the database upon SaveChanges.
+    context.SaveChanges();
+}
+```
+
+#### 📝 **Explanation**
+- EF Core **tracks** the retrieved products.
+- **Modifications** are detected automatically and persisted when calling `SaveChanges()`.
+
+## ❌ What Is No Tracking?
+### 🚀 **No-Tracking Queries**
+- **Definition:**  
+  No-tracking queries retrieve entities **without** storing them in the `DbContext`'s change tracker. This makes them ideal for **read-only** operations.
+- **Characteristics:**
+  - **Improved Performance:**  
+    Reduced memory usage and faster query execution because the context does not monitor the entities.
+  - **Read-Only:**  
+    Since entities are **not tracked**, any modifications to them will **not** be saved to the database.
+  - **Use Cases:**  
+    Best suited for **read-only views**, **reporting**, or **large dataset queries**.
+
+### 🏗️ **Example: No-Tracking Query**
+```csharp
+using (var context = new ApplicationDbContext())
+{
+    // AsNoTracking() tells EF Core not to track the returned entities.
+    var products = context.Products.AsNoTracking().Where(p => p.Price > 100).ToList();
+
+    // Any modifications here will NOT be saved.
+    var firstProduct = products.First();
+    firstProduct.Price += 50;
+
+    // context.SaveChanges(); // No effect: The entity is not tracked!
+}
+```
+
+#### 📝 **Explanation**
+- **`.AsNoTracking()`** ensures the retrieved entities are **not monitored**.
+- **Modifications** are ignored when calling `SaveChanges()`.
+
+## 📊 Comparison: Tracking vs. No Tracking
+| **Feature**            | **Tracking**                                                     | **No Tracking**                                                  |
+|------------------------|------------------------------------------------------------------|------------------------------------------------------------------|
+| **Change Detection**   | Automatically detects entity modifications.                     | Does not track changes; entities are read-only.                  |
+| **Memory Usage**       | Higher (stores state information for each entity).              | Lower (does not store entity state).                             |
+| **Use Case**           | Best for **update**, **delete**, and **insert** operations.     | Ideal for **read-only** queries and large datasets.              |
+| **Performance**        | Slightly slower due to tracking overhead.                       | Faster, especially for large result sets.                        |
+| **Database Updates**   | Changes are **saved** to the database via `SaveChanges()`.      | Changes are **ignored** by EF Core (no effect on `SaveChanges()`). |
+| **Default Behavior**   | **Enabled** by default for queries.                             | Requires explicit use of `AsNoTracking()`.                        |
+
+## ⚙️ Diagram: Tracking vs. No Tracking
+
+```mermaid
+flowchart TD
+    A[Start Query] --> B[Execute Query in DbContext]
+    B --> C[Entities Retrieved]
+    C --> D[Tracking Query] --> E[Entities Tracked in Change Tracker]
+    C --> F[No Tracking Query] --> G[Entities Not Tracked]
+    E --> H[Modify Entities & Call SaveChanges()]
+    G --> I[Entities remain unchanged, no updates made]
+```
+
+- **Tracking Query:** Entities are **monitored**, and changes are **saved** to the database.
+- **No Tracking Query:** Entities are **not monitored**, and changes are **ignored**.
+
+## 🏁 When to Use Tracking vs. No Tracking
+| **Scenario**                   | **Use Tracking** ✅                     | **Use No Tracking** ❌                    |
+|--------------------------------|--------------------------------|--------------------------------|
+| **CRUD Operations**            | ✅ Yes - Needed for `SaveChanges()`. | ❌ No - Updates won't persist. |
+| **Read-Only Queries**          | ❌ No - Unnecessary overhead.    | ✅ Yes - Faster performance.   |
+| **Large Dataset Queries**      | ❌ No - High memory usage.      | ✅ Yes - Efficient query execution. |
+| **Detached Objects**           | ❌ No - Won’t work for manual state changes. | ✅ Yes - Good for caching/display. |
+
+## 🎯 Conclusion
+**Tracking** in EF Core enables **automatic change detection** and is essential for **modifying and persisting** entity changes. However, it comes with **memory overhead**. In contrast, **No Tracking** queries offer **better performance** for **read-only** scenarios.
+
+## 📚 References
+- [Microsoft Docs: Querying Data - Change Tracking](https://learn.microsoft.com/en-us/ef/core/querying/tracking)
+- [Microsoft Docs: AsNoTracking Method](https://learn.microsoft.com/en-us/dotnet/api/microsoft.entityframeworkcore.entityframeworkqueryableextensions.asnotracking)
+- [Entity Framework Core Performance Considerations](https://learn.microsoft.com/en-us/ef/core/performance/)
+
+---
+# 🚀 Understanding IQueryable vs. List in .NET Development
+## 📌 Introduction
+In .NET, `IQueryable<T>` and `List<T>` serve different purposes when working with collections and data. **IQueryable** is designed for **deferred execution** and **remote querying**, while **List** is an in-memory collection used for **immediate** or **eager** data operations. Understanding the differences is crucial for **performance optimization**, **scalable architecture**, and **efficient data handling** in .NET applications.
+
+## 🔍 What is IQueryable?
+### ✅ **Definition:**
+`IQueryable<T>` is an interface that enables the construction of LINQ queries that can be executed against different data sources, such as **databases, APIs, or other query providers**.
+### 🏗️ **Key Features:**
+- **Deferred Execution**: Queries are **not executed immediately**, but only when the data is needed.
+- **Remote Querying**: Often used by **Entity Framework Core (EF Core)** to translate LINQ into **SQL queries**.
+- **Composable**: Multiple LINQ operations can be chained before execution.
+- **Optimized Execution**: The database executes only the required operations, reducing memory usage and improving performance.
+
+### 🏗️ **Example: Using IQueryable in EF Core**
+```csharp
+using var context = new ApplicationDbContext();
+
+// IQueryable query - not yet executed
+IQueryable<Product> queryableProducts = context.Products
+    .Where(p => p.Price > 100)
+    .OrderByDescending(p => p.Rating);
+
+// Execution happens here
+var productList = await queryableProducts.ToListAsync();
+Console.WriteLine($"Total Products: {productList.Count}");
+```
+
+#### 📝 **Explanation**
+- The query is **deferred** until `.ToListAsync()` is called.
+- EF Core **translates** the LINQ expression into **SQL** before execution.
+
+## 📌 What is List<T>?
+### ✅ **Definition:**
+`List<T>` is a concrete **in-memory** collection that holds elements in memory and allows **immediate** data operations.
+
+### 🏗️ **Key Features:**
+- **Immediate Execution**: Operations are performed as soon as they are called.
+- **In-Memory Collection**: The data is **already loaded** into memory.
+- **Fast Iteration**: Once materialized, iterating through a list is **efficient**.
+- **Best for Small Data Sets**: Useful for working with final results.
+
+### 🏗️ **Example: Using List<T>**
+```csharp
+var numbers = new List<int> { 1, 2, 3, 4, 5 };
+
+// No deferred execution
+int sum = numbers.Sum();
+Console.WriteLine($"Sum of list = {sum}");
+```
+
+#### 📝 **Explanation**
+- `numbers` is **already in memory**, so there is **no deferred execution**.
+- Operations like `.Sum()` happen **immediately**.
+
+## 📊 Comparison: IQueryable vs. List<T>
+| **Feature**            | **IQueryable<T>**                                        | **List<T>**                                      |
+|------------------------|---------------------------------------------------------|--------------------------------------------------|
+| **Execution**         | Deferred until materialized (`.ToList()`, `.First()`)  | Immediate Execution                             |
+| **Data Source**       | Remote (DB, API, etc.)                                  | In-memory Collection                            |
+| **Query Optimization** | Translates into SQL or optimized query                 | Operations happen on already fetched data       |
+| **Performance**       | More efficient for filtering, sorting, paging           | Fast iteration but requires all data to be loaded first |
+| **When to Use?**      | Querying large datasets, using EF Core                  | Manipulating already loaded data, small datasets |
+
+## 📜 Diagram: Execution Flow
+
+```mermaid
+flowchart TD
+    A[Define IQueryable Query]
+    B[Build Expression Tree (Deferred)]
+    C[Materialize Query (e.g., ToList())]
+    D[Resulting List<T> in Memory]
+
+    A --> B
+    B --> C
+    C --> D
+```
+
+- **IQueryable<T>** enables **deferred execution**, allowing query **optimization**.
+- **List<T>** is an **already materialized collection**, ready for **in-memory operations**.
+
+## 📦 When to Use Which?
+| **Scenario**                 | **Recommended Choice** |
+|------------------------------|------------------------|
+| Querying a database          | `IQueryable<T>`        |
+| Filtering and sorting before execution | `IQueryable<T>` |
+| Working with an in-memory collection | `List<T>`        |
+| Performing local manipulations | `List<T>`        |
+| Avoiding multiple round-trips | `IQueryable<T>` |
+
+## 🎯 Conclusion
+- **IQueryable<T>** is ideal for **database queries**, **remote data access**, and **deferred execution**.
+- **List<T>** is best for **in-memory operations**, **quick data manipulations**, and **finalized data sets**.
+- **Choosing the right approach ensures optimal performance, reduces memory usage, and keeps code maintainable.** 🚀
+
+## 📚 References
+- [Microsoft Docs: IQueryable Interface](https://docs.microsoft.com/en-us/dotnet/api/system.linq.iqueryable)
+- [Microsoft Docs: LINQ in C#](https://docs.microsoft.com/en-us/dotnet/csharp/linq/)
+- [Entity Framework Core Documentation](https://docs.microsoft.com/en-us/ef/core/)
+
+---
+# 🚀 Understanding IQueryable vs. List in .NET Development
+## 📌 Introduction
+In .NET, `IQueryable<T>` and `List<T>` serve different purposes when working with collections and data. **IQueryable** is designed for **deferred execution** and **remote querying**, while **List** is an in-memory collection used for **immediate** or **eager** data operations. Understanding the differences is crucial for **performance optimization**, **scalable architecture**, and **efficient data handling** in .NET applications.
+
+## 🔍 What is IQueryable?
+### ✅ **Definition:**
+`IQueryable<T>` is an interface that enables the construction of LINQ queries that can be executed against different data sources, such as **databases, APIs, or other query providers**.
+### 🏗️ **Key Features:**
+- **Deferred Execution**: Queries are **not executed immediately**, but only when the data is needed.
+- **Remote Querying**: Often used by **Entity Framework Core (EF Core)** to translate LINQ into **SQL queries**.
+- **Composable**: Multiple LINQ operations can be chained before execution.
+- **Optimized Execution**: The database executes only the required operations, reducing memory usage and improving performance.
+
+### 🏗️ **Example: Using IQueryable in EF Core**
+```csharp
+using var context = new ApplicationDbContext();
+
+// IQueryable query - not yet executed
+IQueryable<Product> queryableProducts = context.Products
+    .Where(p => p.Price > 100)
+    .OrderByDescending(p => p.Rating);
+
+// Execution happens here
+var productList = await queryableProducts.ToListAsync();
+Console.WriteLine($"Total Products: {productList.Count}");
+```
+
+#### 📝 **Explanation**
+- The query is **deferred** until `.ToListAsync()` is called.
+- EF Core **translates** the LINQ expression into **SQL** before execution.
+
+## 📌 What is List<T>?
+### ✅ **Definition:**
+`List<T>` is a concrete **in-memory** collection that holds elements in memory and allows **immediate** data operations.
+### 🏗️ **Key Features:**
+- **Immediate Execution**: Operations are performed as soon as they are called.
+- **In-Memory Collection**: The data is **already loaded** into memory.
+- **Fast Iteration**: Once materialized, iterating through a list is **efficient**.
+- **Best for Small Data Sets**: Useful for working with final results.
+
+### 🏗️ **Example: Using List<T>**
+```csharp
+var numbers = new List<int> { 1, 2, 3, 4, 5 };
+
+// No deferred execution
+int sum = numbers.Sum();
+Console.WriteLine($"Sum of list = {sum}");
+```
+
+#### 📝 **Explanation**
+- `numbers` is **already in memory**, so there is **no deferred execution**.
+- Operations like `.Sum()` happen **immediately**.
+
+## 📊 Comparison: IQueryable vs. List<T>
+| **Feature**            | **IQueryable<T>**                                        | **List<T>**                                      |
+|------------------------|---------------------------------------------------------|--------------------------------------------------|
+| **Execution**         | Deferred until materialized (`.ToList()`, `.First()`)  | Immediate Execution                             |
+| **Data Source**       | Remote (DB, API, etc.)                                  | In-memory Collection                            |
+| **Query Optimization** | Translates into SQL or optimized query                 | Operations happen on already fetched data       |
+| **Performance**       | More efficient for filtering, sorting, paging           | Fast iteration but requires all data to be loaded first |
+| **When to Use?**      | Querying large datasets, using EF Core                  | Manipulating already loaded data, small datasets |
+
+## 📜 Diagram: Execution Flow
+
+```mermaid
+flowchart TD
+    A[Define IQueryable Query]
+    B[Build Expression Tree (Deferred)]
+    C[Materialize Query (e.g., ToList())]
+    D[Resulting List<T> in Memory]
+
+    A --> B
+    B --> C
+    C --> D
+```
+
+- **IQueryable<T>** enables **deferred execution**, allowing query **optimization**.
+- **List<T>** is an **already materialized collection**, ready for **in-memory operations**.
+
+## 📦 When to Use Which?
+| **Scenario**                 | **Recommended Choice** |
+|------------------------------|------------------------|
+| Querying a database          | `IQueryable<T>`        |
+| Filtering and sorting before execution | `IQueryable<T>` |
+| Working with an in-memory collection | `List<T>`        |
+| Performing local manipulations | `List<T>`        |
+| Avoiding multiple round-trips | `IQueryable<T>` |
+
+## 🎯 Conclusion
+- **IQueryable<T>** is ideal for **database queries**, **remote data access**, and **deferred execution**.
+- **List<T>** is best for **in-memory operations**, **quick data manipulations**, and **finalized data sets**.
+- **Choosing the right approach ensures optimal performance, reduces memory usage, and keeps code maintainable.** 🚀
+
+---
+# 🚀 Understanding Entity States in .NET Development
+## 📦 Introduction
+In **Entity Framework Core (EF Core)**, **Entity States** signify how the **DbContext** perceives and manages your entities throughout their lifecycle. These states are fundamental to orchestrating **CRUD** (Create, Read, Update, Delete) operations efficiently, as EF Core relies on them to identify modifications that need to be persisted to the database.
+By understanding how entity states transition—such as from `Detached` to `Added`, or `Modified` to `Deleted`—you can design predictable data flows and minimize performance overhead.
+
+## 1. What Are Entity States?
+In EF Core, every entity instance tracked by the `DbContext` is assigned a state that indicates its current status in relation to the database. The primary states are:
+
+- **Detached:**  
+  The entity is not being tracked by the context. It might have been created manually or removed from the context.
+
+- **Unchanged:**  
+  The entity is being tracked by the context, and its values match the values in the database. No modifications have been made since it was loaded.
+
+- **Added:**  
+  The entity is new and has been added to the context. It does not yet exist in the database; it will be inserted upon calling `SaveChanges()`.
+
+- **Modified:**  
+  The entity exists in the database and has been altered. EF Core tracks the changes, and an update will be issued upon calling `SaveChanges()`.
+
+- **Deleted:**  
+  The entity is marked for deletion. It will be removed from the database when `SaveChanges()` is called.
+
+## 2. Characteristics of Entity States
+| **State**     | **Description**                                                                                                          | **Usage Scenario**                                     |
+|--------------|--------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------|
+| Detached     | Not tracked by the `DbContext`.                                                                                          | New objects not yet added or objects removed from the context. |
+| Unchanged    | Tracked by the `DbContext` with no modifications since loading from the database.                                      | Data loaded from the database without changes.         |
+| Added        | Tracked by the `DbContext` and scheduled for insertion into the database.                                               | New entities created in the application.               |
+| Modified     | Tracked by the `DbContext` and changes have been made compared to the database values.                                   | Existing entities that have been updated.              |
+| Deleted      | Tracked by the `DbContext` and marked for removal from the database.                                                     | Entities that are to be removed.                       |
+
+## 3. Entity State Transitions
+### 3.1. Change Tracking
+EF Core uses a change tracker to monitor the state of entities. This tracker:
+- **Automatically detects changes:** When you modify a property on a tracked entity, EF Core marks the entity as `Modified`.
+- **Manages state transitions:** When you add a new entity, its state becomes `Added`; when you remove an entity, its state becomes `Deleted`.
+
+### 3.2. SaveChanges() and State Transitions
+When you call `SaveChanges()`, EF Core processes entities based on their state:
+- **Added:** Inserts new rows into the database.
+- **Modified:** Updates existing rows.
+- **Deleted:** Removes rows from the database.
+- **Unchanged:** No action is taken.
+- **Detached:** Not considered since they're not tracked.
+
+After `SaveChanges()` completes, the state of processed entities typically changes to `Unchanged`.
+
+## 4. Practical Example
+Consider a scenario where you retrieve, modify, and then delete an entity.
+```csharp
+using System;
+using System.Linq;
+using Microsoft.EntityFrameworkCore;
+
+public class Product
+{
+    public int ProductId { get; set; }
+    public string Name { get; set; }
+    public decimal Price { get; set; }
+}
+
+public class ApplicationDbContext : DbContext
+{
+    public DbSet<Product> Products { get; set; }
+}
+
+public class EntityStateExample
+{
+    public static void Main()
+    {
+        using (var context = new ApplicationDbContext())
+        {
+            // Retrieve an entity (state: Unchanged)
+            var product = context.Products.FirstOrDefault(p => p.ProductId == 1);
+            Console.WriteLine($"Initial State: {context.Entry(product).State}"); // Output: Unchanged
+
+            // Modify the entity (state changes to Modified)
+            product.Price += 50;
+            Console.WriteLine($"After Modification: {context.Entry(product).State}"); // Output: Modified
+
+            // Add a new entity (state: Added)
+            var newProduct = new Product { Name = "New Product", Price = 200 };
+            context.Products.Add(newProduct);
+            Console.WriteLine($"New Product State: {context.Entry(newProduct).State}"); // Output: Added
+
+            // Delete an entity (state: Deleted)
+            context.Products.Remove(product);
+            Console.WriteLine($"After Deletion Mark: {context.Entry(product).State}"); // Output: Deleted
+
+            // Commit changes to the database
+            context.SaveChanges();
+
+            // Check state after SaveChanges
+            Console.WriteLine($"New Product Post-Save: {context.Entry(newProduct).State}"); // Output: Unchanged
+        }
+    }
+}
+```
+
+## 5. Diagram: Entity State Transitions
+
+```mermaid
+flowchart TD
+    A[Detached] -- Add --> B[Added]
+    B -- SaveChanges --> C[Unchanged]
+    C -- Modify --> D[Modified]
+    D -- SaveChanges --> C[Unchanged]
+    C -- Remove --> E[Deleted]
+    E -- SaveChanges --> A[Detached]
+```
+
+- **Explanation:**
+  - **Detached to Added:** When a new entity is added to the context.
+  - **Added to Unchanged:** After `SaveChanges()`, new entities become unchanged.
+  - **Unchanged to Modified:** When an existing entity is updated.
+  - **Modified to Unchanged:** After saving changes, modifications are persisted.
+  - **Unchanged to Deleted:** When an entity is marked for deletion.
+  - **Deleted to Detached:** After `SaveChanges()`, deleted entities are no longer tracked.
+
+## 7. Conclusion
+Understanding **Entity States** in EF Core is pivotal for building **predictable**, **maintainable** data layers. By recognizing how states progress—from **Detached** to **Added**, **Unchanged**, **Modified**, or **Deleted**—you can orchestrate **inserts**, **updates**, and **deletes** with greater control. Properly managing states also helps avert unintended database operations, optimizing performance in **enterprise-grade** .NET applications.
+
+---
+# 🚀 SaveChanges() and DetectChanges() in .NET Development: A Comprehensive Guide
+## 📘 Introduction
+In **Entity Framework Core (EF Core)**, managing the state of entities and persisting changes to the database are fundamental operations. Two key methods that facilitate this process are **SaveChanges()** and **DetectChanges()**. This guide explains in detail what each method does, their characteristics, and how to use them effectively in your application.
+
+## 🔍 Overview
+| **Method**       | **Purpose**                                               | **Key Characteristics**                                   |
+|-----------------|-----------------------------------------------------------|----------------------------------------------------------|
+| `SaveChanges()`  | Persists all changes to the database                     | Calls `DetectChanges()` automatically before execution  |
+| `DetectChanges()` | Identifies entity state modifications                   | Updates internal entity states for accurate tracking    |
+
+## 🏗️ Understanding SaveChanges()
+### 📌 What is `SaveChanges()`?
+- A method on the `DbContext` that commits **all tracked changes** (inserts, updates, and deletes) to the database.
+- Aggregates modifications into a **single transaction** to maintain consistency.
+- Automatically calls `DetectChanges()` before executing database commands.
+### 📌 Example Usage
+```csharp
+using (var context = new ApplicationDbContext())
+{
+    var newProduct = new Product { Name = "Smartwatch", Price = 199.99M };
+    context.Products.Add(newProduct);
+    
+    var product = context.Products.FirstOrDefault(p => p.ProductId == 1);
+    if (product != null)
+    {
+        product.Price += 20;
+    }
+    
+    var obsoleteProduct = context.Products.FirstOrDefault(p => p.Name == "Old Phone");
+    if (obsoleteProduct != null)
+    {
+        context.Products.Remove(obsoleteProduct);
+    }
+    
+    int affectedRows = context.SaveChanges();
+    Console.WriteLine($"Number of rows affected: {affectedRows}");
+}
+```
+
+### 📌 How It Works
+- **Entities marked as Added → INSERT SQL**
+- **Entities marked as Modified → UPDATE SQL**
+- **Entities marked as Deleted → DELETE SQL**
+- **Unchanged entities → No action**
+
+## 🕵️ Understanding DetectChanges()
+### 📌 What is `DetectChanges()`?
+- Scans the `DbContext` for **modified, added, or deleted** entities.
+- Updates entity states accordingly before saving changes.
+- Called automatically by `SaveChanges()`, but can be manually invoked.
+### 📌 Example Usage
+```csharp
+using (var context = new ApplicationDbContext())
+{
+    var product = context.Products.FirstOrDefault(p => p.ProductId == 1);
+    if (product != null)
+    {
+        product.Price += 50;
+        
+        context.ChangeTracker.DetectChanges();
+        
+        var state = context.Entry(product).State;
+        Console.WriteLine($"Entity state after modification: {state}"); // Output: Modified
+    }
+}
+```
+
+### 📌 When to Manually Call `DetectChanges()`?
+- In **bulk operations**, where frequent automatic change tracking may slow down performance.
+- When explicitly modifying entity states in disconnected scenarios.
+
+## 📊 SaveChanges() and DetectChanges() Workflow
+
+```mermaid
+flowchart TD
+    A[Start with a DbContext]
+    B[Entity Operations (Add, Update, Delete)]
+    C[Call SaveChanges()]
+    D[Automatically calls DetectChanges()]
+    E[Change Tracker Updates Entity States]
+    F[Generate SQL Commands based on States]
+    G[Execute SQL Commands within a Transaction]
+    H[Return number of rows affected]
+    
+    A --> B
+    B --> C
+    C --> D
+    D --> E
+    E --> F
+    F --> G
+    G --> H
+```
+
+## 🚀 Best Practices for Efficient Usage
+### ✅ Optimize Performance
+1. **Bulk Updates**:
+   - Disable automatic change tracking for bulk updates.
+   ```csharp
+   context.ChangeTracker.AutoDetectChangesEnabled = false;
+   
+   foreach (var item in itemsToUpdate)
+   {
+       context.Entry(item).State = EntityState.Modified;
+   }
+   
+   context.ChangeTracker.DetectChanges();
+   context.SaveChanges();
+   
+   context.ChangeTracker.AutoDetectChangesEnabled = true;
+   ```
+   
+2. **Use `AsNoTracking()` for Read-Only Queries**:
+   - Reduces overhead by skipping change tracking.
+   ```csharp
+   var products = context.Products.AsNoTracking().Where(p => p.Price > 100).ToList();
+   ```
+
+### ✅ When to Use SaveChanges() vs. DetectChanges()
+| Scenario              | Recommended Method |
+|----------------------|------------------|
+| Persisting all entity changes | `SaveChanges()` |
+| Manually verifying entity states | `DetectChanges()` |
+| Bulk processing updates | `DetectChanges()` manually |
+| Read-only queries | `AsNoTracking()` |
+
+## 🏁 Conclusion
+- **SaveChanges()** commits all pending changes to the database.
+- **DetectChanges()** ensures EF Core accurately tracks modifications.
+- Using them effectively **improves performance** and **ensures data consistency** in your .NET applications.
+
+## 📚 References
+- [Microsoft Docs: SaveChanges()](https://docs.microsoft.com/en-us/dotnet/api/microsoft.entityframeworkcore.dbcontext.savechanges)
+- [Microsoft Docs: DetectChanges()](https://docs.microsoft.com/en-us/dotnet/api/microsoft.entityframeworkcore.changetracking.changetracker.detectchanges)
+- [Entity Framework Core Documentation](https://docs.microsoft.com/en-us/ef/core/)
+
+---
+# 🚀 Add() vs. AddAsync() in .NET Development: A Comprehensive Guide
+
+## 📌 Introduction
+In **Entity Framework Core (EF Core)**, adding new entities to the `DbContext` is a fundamental operation when inserting data into a database. EF Core provides two primary methods for this: **Add()** and **AddAsync()**. Understanding the difference between these methods is crucial for optimizing performance and ensuring efficient data processing.
+This guide explores their **definitions**, **key characteristics**, **use cases**, and **best practices**, supplemented with examples, diagrams, and comparisons.
+
+## 🔍 Key Characteristics
+### ✅ `Add()`
+- **Definition:**
+  - A **synchronous** method that adds an entity to the `DbContext` and marks it as `Added`.
+  - The actual insertion occurs when `SaveChanges()` is called.
+- **Key Features:**
+  - **Synchronous Execution** - Blocks the calling thread.
+  - **Immediate State Change** - Entity's state is updated instantly.
+  - **Use Case** - Suitable for **simple console apps** or **batch processing** where thread blocking is acceptable.
+### 🔄 `AddAsync()`
+- **Definition:**
+  - The **asynchronous** counterpart to `Add()`, which adds an entity **without blocking the thread**.
+- **Key Features:**
+  - **Asynchronous Execution** - Returns a `Task` that can be awaited.
+  - **Non-Blocking** - Enhances responsiveness in UI applications.
+  - **Use Case** - Ideal for **ASP.NET Core**, **high-concurrency applications**, or when **asynchronous database operations** are preferred.
+
+## 📊 Comparison Table
+| **Aspect**             | **Add()**                                    | **AddAsync()**                                |
+|------------------------|---------------------------------------------|----------------------------------------------|
+| **Execution Model**    | Synchronous                                | Asynchronous (`Task<EntityEntry<TEntity>>`) |
+| **Thread Blocking**    | Yes                                        | No                                          |
+| **Use Case**          | Console apps, batch processing              | UI apps, web servers                        |
+| **Underlying I/O**     | Minimal, since adding is in-memory         | Useful if key generation involves I/O       |
+| **Paired With**       | `SaveChanges()`                             | `SaveChangesAsync()`                        |
+
+## 🏗️ How to Use Them
+### 1️⃣ Using `Add()`
+```csharp
+using (var context = new ApplicationDbContext())
+{
+    var product = new Product { Name = "Laptop", Price = 1200.00M };
+    
+    // Synchronously add the entity
+    context.Products.Add(product);
+    
+    // Commit changes to persist in the database
+    context.SaveChanges();
+}
+```
+
+### 2️⃣ Using `AddAsync()`
+```csharp
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+
+public async Task AddProductAsync()
+{
+    using (var context = new ApplicationDbContext())
+    {
+        var product = new Product { Name = "Smartphone", Price = 800.00M };
+        
+        // Asynchronously add the entity
+        await context.Products.AddAsync(product);
+        
+        // Asynchronously save changes
+        await context.SaveChangesAsync();
+    }
+}
+```
+
+## 📌 Diagram: Add() vs. AddAsync() Workflow
+
+```mermaid
+flowchart TD
+    A[Start]
+    B[Create Entity Instance]
+    C[Call Add() / AddAsync()]
+    D[Entity Marked as 'Added' in DbContext]
+    E[Call SaveChanges() / SaveChangesAsync()]
+    F[Entity Inserted into Database]
+    
+    A --> B
+    B --> C
+    C --> D
+    D --> E
+    E --> F
+```
+
+- **Explanation:**
+  - **A to B:** Create a new entity.
+  - **B to C:** Add using `Add()` or `AddAsync()`.
+  - **C to D:** Entity is marked as *Added*.
+  - **D to E:** Call `SaveChanges()` / `SaveChangesAsync()`.
+  - **E to F:** Entity is inserted into the database.
+
+## 🔥 Summary
+| Feature        | Add() | AddAsync() |
+|---------------|------|-----------|
+| **Execution** | Synchronous | Asynchronous |
+| **Threading** | Blocks execution | Non-blocking |
+| **Use Case**  | Small-scale operations | High-performance, UI apps |
+| **Pair With** | SaveChanges() | SaveChangesAsync() |
+
+## 📚 References
+- [Microsoft Docs: DbSet.AddAsync Method](https://docs.microsoft.com/en-us/dotnet/api/microsoft.entityframeworkcore.dbset-1.addasync)
+- [Understanding Asynchronous Programming in C#](https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/async/)
+
+---
+# 🚀 Efficient Insert Operations in .NET Development
+## 📌 Introduction
+In **.NET development**, inserting data into a database is a fundamental operation. Depending on the scenario and performance requirements, insert operations can be handled in different ways:
+- **Single Insert:** Adding a single record at a time.
+- **Loop Insert:** Iteratively adding records in a loop.
+- **Batch Insert:** Adding multiple records in a single operation.
+- **Bulk Insert:** Optimizing large-scale insertions using specialized libraries.
+Understanding these approaches allows developers to optimize performance, minimize database load, and improve application responsiveness.
+
+## 🔍 Key Characteristics of Insert Operations
+| **Insert Type**     | **Execution Model** | **Performance** | **Use Case** |
+|---------------------|-------------------|-----------------|--------------|
+| **Single Insert**  | Synchronous, one entity at a time | Suitable for infrequent inserts | Isolated record insertion (e.g., user registration) |
+| **Loop Insert**    | Iterates over collection, inserts individually | Inefficient due to multiple round trips | Small dataset inserts |
+| **Batch Insert**   | Multiple entities added, single `SaveChanges()` | More efficient, fewer round trips | Moderate dataset inserts |
+| **Bulk Insert**    | Uses specialized libraries for optimized insertion | Best performance for large datasets | Large-scale data imports, ETL |
+
+## 🏗️ Implementing Insert Operations in EF Core
+### 1️⃣ Single Insert
+```csharp
+using (var context = new ApplicationDbContext())
+{
+    var product = new Product { Name = "Laptop", Price = 1200.00M };
+    context.Products.Add(product);
+    context.SaveChanges();
+}
+```
+🔹 **Pros:** Simple, easy to implement.
+🔹 **Cons:** Not optimal for large-scale insertions.
+
+### 2️⃣ Loop Insert
+```csharp
+using (var context = new ApplicationDbContext())
+{
+    var products = new List<Product>
+    {
+        new Product { Name = "Smartphone", Price = 800.00M },
+        new Product { Name = "Tablet", Price = 500.00M }
+    };
+
+    foreach (var product in products)
+    {
+        context.Products.Add(product);
+    }
+    
+    context.SaveChanges();
+}
+```
+🔹 **Pros:** Flexible for dynamically generated data.
+🔹 **Cons:** Inefficient if `SaveChanges()` is called inside the loop.
+
+### 3️⃣ Batch Insert
+```csharp
+using (var context = new ApplicationDbContext())
+{
+    var products = new List<Product>
+    {
+        new Product { Name = "Keyboard", Price = 50.00M },
+        new Product { Name = "Mouse", Price = 25.00M }
+    };
+
+    context.Products.AddRange(products);
+    context.SaveChanges();
+}
+```
+🔹 **Pros:** Reduces database round trips, better performance.
+🔹 **Cons:** Can still be suboptimal for extremely large datasets.
+
+### 4️⃣ Bulk Insert (Using EFCore.BulkExtensions)
+```csharp
+using EFCore.BulkExtensions;
+using (var context = new ApplicationDbContext())
+{
+    var largeProductList = GetLargeProductList();
+    await context.BulkInsertAsync(largeProductList);
+}
+```
+🔹 **Pros:** Best performance for large-scale insertions.
+🔹 **Cons:** Requires third-party libraries.
+
+## 📊 Diagram: Insert Operations Workflow
+
+```mermaid
+flowchart TD
+    A[Start] --> B[Prepare Data]
+    B --> C[Choose Insertion Method]
+    C --> D1[Single Insert]
+    C --> D2[Loop Insert]
+    C --> D3[Batch Insert]
+    C --> D4[Bulk Insert]
+    D1 --> E[Add Entity to DbContext]
+    D2 --> E
+    D3 --> E
+    D4 --> E
+    E --> F[Call SaveChanges() or BulkInsertAsync()]
+    F --> G[Data Persisted to Database]
+```
+
+## 🏁 Conclusion
+Choosing the right insert strategy depends on the **dataset size, performance requirements, and application architecture**. While **single inserts** are great for **isolated** transactions, **batch inserts** and **bulk operations** significantly improve performance for **large-scale** data processing. By applying best practices, you can ensure **efficient**, **scalable**, and **optimized** insert operations in .NET applications. 🚀
+
+## 📚 References
+- [Microsoft Docs: DbContext.Add Method](https://docs.microsoft.com/en-us/dotnet/api/microsoft.entityframeworkcore.dbcontext.add)
+- [EF Core Performance Considerations](https://docs.microsoft.com/en-us/ef/core/performance/)
+- [EFCore.BulkExtensions GitHub Repository](https://github.com/borisdj/EFCore.BulkExtensions)
+
+---
+# 🚀 Update Operations in .NET Development
+## 📌 Introduction
+In **.NET Development**, particularly with **Entity Framework Core (EF Core)**, performing **update operations** involves adjusting existing data in the database. Understanding how updates work—both in **tracked** and **no-tracking** scenarios—is vital for building efficient, predictable, and robust data layers. By learning the differences between automatic change tracking and manual or partial updates, you can tailor your approach to specific application requirements.
+
+## 1. Overview
+In EF Core, update operations follow these general steps:
+1. **Retrieval of Data:**  
+   The entity is queried from the database. This can be done with tracking or no-tracking:
+   - **Tracking:** The `DbContext` keeps track of the entity’s state.
+   - **No-Tracking:** The entity is retrieved without being monitored by the context.
+2. **Modification:**  
+   The properties of the retrieved entity are modified as needed.
+3. **Persisting Changes:**  
+   Calling `SaveChanges()` (or `SaveChangesAsync()`) updates the corresponding records in the database.
+
+## 2. Update Operations with Tracking
+### 2.1. How It Works
+- **Tracking Behavior:**  
+  When you query entities with tracking (the default behavior), EF Core monitors the changes to these entities. As you modify the entity properties, EF Core marks them as `Modified`.
+- **Automatic Change Detection:**  
+  When you call `SaveChanges()`, EF Core automatically detects these changes (using `DetectChanges()`) and generates the appropriate SQL `UPDATE` statements.
+
+### 2.2. Example
+```csharp
+using (var context = new ApplicationDbContext())
+{
+    // Retrieve a tracked entity.
+    var product = context.Products.FirstOrDefault(p => p.ProductId == 1);
+    
+    if (product != null)
+    {
+        // Modify the entity.
+        product.Price += 50;
+        product.Name = "Updated " + product.Name;
+        
+        // EF Core tracks these changes automatically.
+        context.SaveChanges(); // Updates the record in the database.
+    }
+}
+```
+
+### 2.3. Characteristics
+| **Aspect**             | **Tracking Update**                                                             |
+|------------------------|---------------------------------------------------------------------------------|
+| **Change Detection**   | Automatic via change tracker; modifications are monitored in real-time.         |
+| **Ease of Use**        | Simple: modify properties and call `SaveChanges()`.                           |
+| **Performance**        | Suitable for moderate workloads; may consume more memory with many tracked entities. |
+| **Use Case**           | Ideal when you plan to update data retrieved from the database.                 |
+
+## 3. Update Operations without Tracking
+### 3.1. How It Works
+- **No-Tracking Behavior:**  
+  When entities are retrieved using `AsNoTracking()`, they are not monitored by the `DbContext`. Consequently, changes made to these entities are not automatically detected.
+- **Manual Attachment:**  
+  To update a no-tracking entity, you must attach it to the context and explicitly mark its state as `Modified`.
+
+### 3.2. Example
+```csharp
+using (var context = new ApplicationDbContext())
+{
+    // Retrieve an entity without tracking.
+    var product = context.Products.AsNoTracking().FirstOrDefault(p => p.ProductId == 1);
+    
+    if (product != null)
+    {
+        // Modify the entity.
+        product.Price += 50;
+        product.Name = "Updated " + product.Name;
+        
+        // Attach the entity and mark it as Modified.
+        context.Products.Attach(product);
+        context.Entry(product).State = EntityState.Modified;
+        
+        // Persist the changes.
+        context.SaveChanges(); // Executes an UPDATE statement.
+    }
+}
+```
+
+### 3.3. Characteristics
+| **Aspect**             | **No-Tracking Update**                                                         |
+|------------------------|--------------------------------------------------------------------------------|
+| **Change Detection**   | Manual: must attach the entity and set its state explicitly to `Modified`.      |
+| **Performance**        | Better for read-only queries; extra steps needed for updates may add complexity. |
+| **Use Case**           | Useful when working with read-only queries that later need to be updated or for detached entities. |
+
+## 4. Diagram: Update Operation Flow
+
+```mermaid
+flowchart TD
+    A[Retrieve Entity from Database]
+    B[Is Entity Tracked?]
+    C[Yes: Entity is Tracked]
+    D[Modify Entity Properties]
+    E[Call SaveChanges()]
+    F[EF Core Detects Changes & Executes UPDATE]
+    G[No: Entity is Not Tracked (AsNoTracking)]
+    H[Modify Entity Properties]
+    I[Attach Entity to Context]
+    J[Mark Entity as Modified]
+    K[Call SaveChanges()]
+    L[EF Core Executes UPDATE Based on Manual State]
+
+    A --> B
+    B -- Yes --> C
+    C --> D
+    D --> E
+    E --> F
+    B -- No --> G
+    G --> H
+    H --> I
+    I --> J
+    J --> K
+    K --> L
+```
+
+- **Explanation:**  
+  - For **tracking updates**, the entity is automatically monitored, and calling `SaveChanges()` is sufficient.  
+  - For **no-tracking updates**, you must manually attach the entity and mark it as modified before saving changes.
+
+## 5. Summary
+- **Tracking Update Operations:**  
+  - Retrieve entities normally.
+  - Modify properties.
+  - Call `SaveChanges()`.
+  - EF Core automatically detects changes via the change tracker.
+- **No-Tracking Update Operations:**  
+  - Retrieve entities using `AsNoTracking()`.
+  - Modify properties.
+  - Attach the entity to the context and set its state to `Modified`.
+  - Call `SaveChanges()` to persist updates.
+Understanding the differences between tracking and no-tracking update operations is essential for writing efficient and maintainable .NET applications. Choosing the right approach depends on your specific scenario—whether you prioritize performance for read-only operations or need the simplicity of automatic change tracking for updates.
+
+## 6. Resources and References
+- [Microsoft Docs: Change Tracking in EF Core](https://docs.microsoft.com/en-us/ef/core/change-tracking/)
+- [Microsoft Docs: AsNoTracking Method](https://docs.microsoft.com/en-us/dotnet/api/microsoft.entityframeworkcore.entityframeworkqueryableextensions.asnotracking)
+- [EF Core Performance Considerations](https://docs.microsoft.com/en-us/ef/core/performance/)
+
+---
+# 🚀 Delete Operations in .NET Development: A Comprehensive Guide
+In .NET development, deleting data from a database is as important as creating and updating data. Efficient and effective delete operations ensure data integrity and support application requirements such as data cleanup, record removal, or soft deletion. This guide thoroughly explains delete operations, their characteristics, and how to implement them in .NET—particularly using Entity Framework Core (EF Core). We'll cover basic deletion, bulk deletion, and best practices, along with examples, diagrams, and tables for clarity.
+
+## 1. What Are Delete Operations?
+**Delete operations** refer to the process of removing data from a database. In EF Core and similar ORMs, this typically involves:
+- **Hard Delete:**  
+  Permanently removing a record from the database.
+- **Soft Delete:**  
+  Marking a record as deleted (e.g., setting a flag) without actually removing it, which is useful for audit trails and data recovery.
+### Key Aspects:
+- **Entity State Management:**  
+  When an entity is marked for deletion, its state changes to `Deleted` in the `DbContext`.
+- **Execution:**  
+  The actual deletion occurs when `SaveChanges()` or `SaveChangesAsync()` is called.
+- **Cascading Deletions:**  
+  Related entities can be automatically deleted if configured via cascading rules.
+- **Bulk Deletions:**  
+  Deleting multiple records at once either through looping constructs, `RemoveRange()`, or specialized bulk delete libraries.
+
+## 2. Characteristics of Delete Operations
+| **Characteristic**            | **Description**                                                                                           |
+|-------------------------------|-----------------------------------------------------------------------------------------------------------|
+| **Entity State Change**       | An entity's state is set to `Deleted` when removed from the context.                                      |
+| **Transaction Support**       | Delete operations are executed within a transaction when `SaveChanges()` is called, ensuring atomicity.  |
+| **Cascading Rules**           | EF Core can cascade delete related entities based on configured relationships (e.g., foreign key constraints).|
+| **Performance Considerations**| Bulk deletes can be optimized using `RemoveRange()` or third-party libraries to minimize round trips.  |
+| **Soft vs. Hard Delete**      | Soft delete preserves data (by marking it as deleted), while hard delete permanently removes the record.    |
+
+## 3. How to Perform Delete Operations in EF Core
+### 3.1. Single (Hard) Delete
+#### Example: Deleting a Single Entity
+```csharp
+using (var context = new ApplicationDbContext())
+{
+    var product = context.Products.FirstOrDefault(p => p.ProductId == 1);
+    
+    if (product != null)
+    {
+        context.Products.Remove(product);
+        context.SaveChanges();
+    }
+}
+```
+- **Explanation:**  
+  The entity is retrieved and then removed using `Remove()`. Calling `SaveChanges()` executes the corresponding SQL `DELETE` statement.
+
+### 3.2. Bulk Delete Using RemoveRange()
+#### Example: Bulk Deleting Multiple Entities
+```csharp
+using (var context = new ApplicationDbContext())
+{
+    var oldProducts = context.Products.Where(p => p.Price < 50).ToList();
+    
+    if (oldProducts.Any())
+    {
+        context.Products.RemoveRange(oldProducts);
+        context.SaveChanges();
+    }
+}
+```
+- **Explanation:**  
+  This approach minimizes database round trips by deleting all matching records in one go.
+
+### 3.3. Soft Delete Implementation
+#### Example: Soft Delete Implementation
+```csharp
+public class Product
+{
+    public int ProductId { get; set; }
+    public string Name { get; set; }
+    public decimal Price { get; set; }
+    public bool IsDeleted { get; set; }  // Soft delete flag
+}
+
+using (var context = new ApplicationDbContext())
+{
+    var product = context.Products.FirstOrDefault(p => p.ProductId == 1);
+    
+    if (product != null)
+    {
+        product.IsDeleted = true;
+        context.SaveChanges();
+    }
+}
+```
+- **Filtering Out Soft-Deleted Records:**  
+  You can use a global query filter in EF Core to automatically exclude soft-deleted records:
+```csharp
+protected override void OnModelCreating(ModelBuilder modelBuilder)
+{
+    modelBuilder.Entity<Product>().HasQueryFilter(p => !p.IsDeleted);
+}
+```
+
+### 3.4. Bulk Delete Using Third-Party Libraries
+#### Example: Bulk Delete with EFCore.BulkExtensions
+```csharp
+using EFCore.BulkExtensions;
+using System.Threading.Tasks;
+
+public async Task BulkDeleteOldProductsAsync()
+{
+    using (var context = new ApplicationDbContext())
+    {
+        var condition = p => p.Price < 50;
+        await context.BulkDeleteAsync(context.Products.Where(condition).ToList());
+    }
+}
+```
+- **Explanation:**  
+  Bulk deletion methods can significantly reduce execution time by bypassing some of the EF Core change tracking overhead.
+
+## 4. Diagram: Delete Operations Workflow
+
+```mermaid
+flowchart TD
+    A[Start: Retrieve Entity/Entities]
+    B[Decision: Single vs. Bulk Delete]
+    C[Single Delete]
+    D[Bulk Delete (RemoveRange / BulkExtensions)]
+    E[Option: Soft Delete (Mark as Deleted)]
+    F[Call SaveChanges() or BulkDeleteAsync()]
+    G[Entity(ies) Deleted from Database or Marked as Deleted]
+
+    A --> B
+    B -- Single --> C
+    B -- Bulk --> D
+    B -- Soft Delete --> E
+    C --> F
+    D --> F
+    E --> F
+    F --> G
+```
+
+## 6. Resources and References
+- [Microsoft Docs: EF Core Delete Operations](https://docs.microsoft.com/en-us/ef/core/saving/basic)
+- [Microsoft Docs: Global Query Filters](https://docs.microsoft.com/en-us/ef/core/querying/filters)
+- [EFCore.BulkExtensions GitHub Repository](https://github.com/borisdj/EFCore.BulkExtensions)
+- [Entity Framework Core Documentation](https://docs.microsoft.com/en-us/ef/core/)
+
+## Summary
+- **Single Delete:** Use `Remove()` for individual records.
+- **Bulk Delete:** Use `RemoveRange()` or third-party libraries for deleting multiple records efficiently.
+- **Soft Delete:** Implement soft deletion by marking records as deleted (e.g., using an `IsDeleted` flag) and filtering them out via global query filters.
+
+---
