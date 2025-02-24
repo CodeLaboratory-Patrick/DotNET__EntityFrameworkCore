@@ -60,7 +60,6 @@ Console.WriteLine(context.DbPath);
 #endregion
 
 #region Write Queries
-
 // Use Console.WriteLine(context.ChangeTracker.DebugView.LongView); to see pending changes
 // Inserting Data 
 /* INSERT INTO Coaches (cols) VALUES (values) */
@@ -88,6 +87,99 @@ Console.WriteLine(context.DbPath);
 //await ExecuteUpdate();
 
 #endregion
+
+#region Related Data
+// Insert record with FK
+//await InsertMatch();
+
+//Insert Parent/Child
+//await InsertTeamWithCoach();
+
+//Insert Parent with Children
+//await InsertLeagueWithTeams();
+
+#endregion
+
+async Task InsertMatch()
+{
+    var match = new Match
+    {
+        AwayTeamId = 1,
+        HomeTeamId = 2,
+        HomeTeamScore = 0,
+        AwayTeamScore = 0,
+        Date = new DateTime(2023, 10, 1),
+        TicketPrice = 20,
+    };
+
+    await context.AddAsync(match);
+    await context.SaveChangesAsync();
+
+    /* Incorrect reference data  - Will give error*/
+    var match1 = new Match
+    {
+        AwayTeamId = 0,
+        HomeTeamId = 0,
+        HomeTeamScore = 0,
+        AwayTeamScore = 0,
+        Date = new DateTime(2023, 10, 1),
+        TicketPrice = 20,
+    };
+
+    await context.AddAsync(match1);
+    await context.SaveChangesAsync();
+}
+
+async Task InsertTeamWithCoach()
+{
+    var team = new Team
+    {
+        Name = "New Team",
+        Coach = new Coach
+        {
+            Name = "Johnson"
+        },
+    };
+    await context.AddAsync(team);
+    await context.SaveChangesAsync();
+}
+
+async Task InsertLeagueWithTeams()
+{
+    var league = new League
+    {
+        Name = "Serie A",
+        Teams = new List<Team>
+                {
+                    new Team
+                    {
+                        Name = "Juventus",
+                        Coach = new Coach
+                        {
+                            Name = "Juve Coach"
+                        },
+                    },
+                    new Team
+                    {
+                        Name = "AC Milan",
+                        Coach = new Coach
+                        {
+                            Name = "Milan Coach"
+                        },
+                    },
+                    new Team
+                    {
+                        Name = "AS Roma",
+                        Coach = new Coach
+                        {
+                            Name = "Roma Coach"
+                        },
+                    }
+                }
+    };
+    await context.AddAsync(league);
+    await context.SaveChangesAsync();
+}
 
 async Task ExecuteDelete()
 {
