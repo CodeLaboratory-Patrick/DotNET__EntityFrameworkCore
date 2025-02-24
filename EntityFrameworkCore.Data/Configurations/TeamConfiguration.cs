@@ -1,13 +1,6 @@
 ﻿using EntityFrameworkCore.Domain;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection.Emit;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace EntityFrameworkCore.Data.Configurations
 {
@@ -15,6 +8,20 @@ namespace EntityFrameworkCore.Data.Configurations
     {
         public void Configure(EntityTypeBuilder<Team> builder)
         {
+            builder.HasIndex(m => m.Name).IsUnique();
+
+            builder.HasMany(e => e.HomeMatches)
+                .WithOne(e => e.HomeTeam)
+                .HasForeignKey(e => e.HomeTeamId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasMany(m => m.AwayMatches)
+                .WithOne(e => e.AwayTeam)
+                .HasForeignKey(e => e.AwayTeamId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Restrict);
+
             builder.HasData(
                new Team
                {
@@ -39,7 +46,7 @@ namespace EntityFrameworkCore.Data.Configurations
                    Id = 4,
                    Name = "Manchester City",
                    CreatedDate = new DateTime(2023, 1, 1, 04, 04, 04, DateTimeKind.Utc)
-               }   
+               }
             );
         }
     }
