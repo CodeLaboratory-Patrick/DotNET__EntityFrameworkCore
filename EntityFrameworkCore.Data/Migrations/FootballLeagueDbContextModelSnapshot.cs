@@ -42,6 +42,43 @@ namespace EntityFrameworkCore.Data.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Coaches");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            CreatedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            ModifiedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Name = "Arsène Wenger"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            CreatedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            ModifiedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Name = "Didier Deschamps"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            CreatedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            ModifiedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Name = "Albert Batteux"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            CreatedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            ModifiedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Name = "Laurent Blanc"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            CreatedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            ModifiedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Name = "Carlo Ancelotti"
+                        });
                 });
 
             modelBuilder.Entity("EntityFrameworkCore.Domain.League", b =>
@@ -196,32 +233,36 @@ namespace EntityFrameworkCore.Data.Migrations
                         new
                         {
                             Id = 1,
-                            CoachId = 0,
+                            CoachId = 1,
                             CreatedDate = new DateTime(2023, 1, 1, 1, 1, 1, 0, DateTimeKind.Utc),
+                            LeagueId = 1,
                             ModifiedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Name = "Liverpool"
                         },
                         new
                         {
                             Id = 2,
-                            CoachId = 0,
+                            CoachId = 2,
                             CreatedDate = new DateTime(2023, 1, 1, 2, 2, 2, 0, DateTimeKind.Utc),
+                            LeagueId = 1,
                             ModifiedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Name = "Arsenal"
                         },
                         new
                         {
                             Id = 3,
-                            CoachId = 0,
+                            CoachId = 3,
                             CreatedDate = new DateTime(2023, 1, 1, 3, 3, 3, 0, DateTimeKind.Utc),
+                            LeagueId = 1,
                             ModifiedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Name = "Tottenham Hotspur"
                         },
                         new
                         {
                             Id = 4,
-                            CoachId = 0,
+                            CoachId = 4,
                             CreatedDate = new DateTime(2023, 1, 1, 4, 4, 4, 0, DateTimeKind.Utc),
+                            LeagueId = 1,
                             ModifiedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Name = "Manchester City"
                         });

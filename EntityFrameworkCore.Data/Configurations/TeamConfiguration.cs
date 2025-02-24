@@ -27,25 +27,33 @@ namespace EntityFrameworkCore.Data.Configurations
                {
                    Id = 1,
                    Name = "Liverpool",
-                   CreatedDate = new DateTime(2023, 1, 1, 01, 01, 01, DateTimeKind.Utc)
+                   CreatedDate = new DateTime(2023, 1, 1, 01, 01, 01, DateTimeKind.Utc),
+                   LeagueId = 1,
+                   CoachId = 1
                },
                new Team
                {
                    Id = 2,
                    Name = "Arsenal",
-                   CreatedDate = new DateTime(2023, 1, 1, 02, 02, 02, DateTimeKind.Utc)
+                   CreatedDate = new DateTime(2023, 1, 1, 02, 02, 02, DateTimeKind.Utc),
+                   LeagueId = 1,
+                   CoachId = 2
                },
                new Team
                {
                    Id = 3,
                    Name = "Tottenham Hotspur",
-                   CreatedDate = new DateTime(2023, 1, 1, 03, 03, 03, DateTimeKind.Utc)
+                   CreatedDate = new DateTime(2023, 1, 1, 03, 03, 03, DateTimeKind.Utc),
+                   LeagueId = 1,
+                   CoachId = 3
                },
                new Team
                {
                    Id = 4,
                    Name = "Manchester City",
-                   CreatedDate = new DateTime(2023, 1, 1, 04, 04, 04, DateTimeKind.Utc)
+                   CreatedDate = new DateTime(2023, 1, 1, 04, 04, 04, DateTimeKind.Utc),
+                   LeagueId = 1,
+                   CoachId = 4
                }
             );
         }
