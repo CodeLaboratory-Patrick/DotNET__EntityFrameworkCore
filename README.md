@@ -4948,3 +4948,96 @@ Database migrations in EF Core provide a powerful framework for evolving your da
 - [EF Core GitHub Repository](https://github.com/dotnet/efcore)
 
 ---
+# 🚀 EF Bundles in .NET Development: A Comprehensive Guide
+Entity Framework (EF) Bundles are a powerful feature in modern .NET development that optimize database interactions by grouping multiple queries into a single round trip. Introduced in EF Core 7, this feature significantly reduces database latency and enhances performance, particularly for read-heavy applications.
+
+## 1️⃣ Overview
+### 🔍 What Are EF Bundles?
+EF Bundles allow multiple LINQ queries to be executed as a single composite SQL statement. Instead of making multiple round trips to the database, the queries are bundled together, and the database returns multiple result sets in a single response.
+### 💡 Why Use EF Bundles?
+- **📉 Reduced Round Trips**: Minimizes network latency by executing queries in a single call.
+- **⚡ Improved Performance**: Particularly useful in scenarios with multiple related queries.
+- **🧑‍💻 Simplified Code**: Eliminates the need for multiple separate calls within application logic.
+- **🔄 Asynchronous Support**: Seamlessly integrates with EF Core's asynchronous query execution.
+- **🗂️ Organized Query Execution**: Ensures related queries are executed together, improving consistency.
+- **📊 Better Resource Utilization**: Reduces strain on the database server by optimizing query execution.
+
+## 2️⃣ Key Characteristics
+| Feature                  | Description |
+|--------------------------|-------------|
+| **Bundling Queries**     | Groups multiple queries into a single database call |
+| **Deferred Execution**   | Executes queries only when materialized (e.g., `ToListAsync()`) |
+| **Performance Boost**    | Reduces the number of separate round trips, improving efficiency |
+| **Seamless Integration** | Works with existing EF Core LINQ queries without major refactoring |
+| **Asynchronous Support** | Fully compatible with EF Core's async methods |
+| **Reduced Query Parsing**| The database engine processes fewer distinct query requests, enhancing efficiency |
+| **Lower Transaction Overhead** | Reduces transaction locking times and improves concurrency |
+
+## 3️⃣ Implementing EF Bundles
+### ❌ Without EF Bundles
+Each query makes a separate round trip to the database:
+```csharp
+var expensiveProducts = await context.Products
+    .Where(p => p.Price > 100)
+    .ToListAsync();
+
+var activeCustomers = await context.Customers
+    .Where(c => c.IsActive)
+    .ToListAsync();
+```
+
+### ✅ Using EF Bundles
+Bundling queries into a single database call:
+```csharp
+var expensiveProductsQuery = context.Products.Where(p => p.Price > 100);
+var activeCustomersQuery = context.Customers.Where(c => c.IsActive);
+
+var bundle = context.Bundle(expensiveProductsQuery, activeCustomersQuery);
+var (expensiveProducts, activeCustomers) = await bundle.ExecuteAsync();
+```
+
+### 📌 Additional Considerations
+- **Ensure Query Compatibility**: Some EF queries may not be supported in bundled execution.
+- **Test Performance Gains**: Measure execution speed before and after applying bundling.
+- **Monitor Database Load**: Bundling may increase the complexity of SQL execution plans.
+
+## 4️⃣ EF Bundles Workflow Diagram
+
+```mermaid
+flowchart TD
+    A[Define Query 1: Expensive Products]
+    B[Define Query 2: Active Customers]
+    C[Bundle Queries using EF Bundles]
+    D[Generate Composite SQL Command]
+    E[Single Database Round Trip]
+    F[Return Multiple Result Sets]
+    G[Map Result Sets to Objects]
+
+    A --> C
+    B --> C
+    C --> D
+    D --> E
+    E --> F
+    F --> G
+```
+
+## 5️⃣ Comparison Table
+| Aspect                  | Without Bundles | With EF Bundles |
+|-------------------------|----------------|----------------|
+| **Database Calls**      | Multiple round trips | Single round trip |
+| **Latency**            | Higher | Lower |
+| **Performance**        | Moderate | Optimized |
+| **Code Complexity**    | Higher | Lower |
+| **Transaction Handling** | Each query may trigger its own transaction | Queries execute within a shared context |
+| **Network Overhead**   | Increased due to multiple calls | Reduced due to batch processing |
+| **Error Handling**     | Errors handled per query | Errors may require batch rollback |
+
+## 📌 Summary
+EF Bundles offer a streamlined way to optimize database interactions in EF Core applications. By bundling multiple queries into a single round trip, they improve **performance**, **reduce latency**, and **simplify code**. This feature is especially useful for applications that execute multiple related queries frequently.
+✅ **Key Takeaways:**
+- Reduce multiple query calls into a **single execution**.
+- Decrease **network latency** and database **round trips**.
+- Ensure **scalability** and **optimized query execution**.
+- Improve **code maintainability** by reducing redundancy.
+
+---
