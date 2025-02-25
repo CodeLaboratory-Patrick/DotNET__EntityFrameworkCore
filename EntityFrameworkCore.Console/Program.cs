@@ -98,7 +98,124 @@ Console.WriteLine(context.DbPath);
 //Insert Parent with Children
 //await InsertLeagueWithTeams();
 
+// Eager Loading Data
+//await EagerLoadingData();
+
+// Explicit Loading Data
+//await ExplicitLoadingData();
+
+// Lazy Loading
+//await LazyLoadingData();
+
+// Filtering Includes
+// Get all teams and only home matches where they have scored
+//await FilteringIncludes();
+
+// Projects and Anonymous types
+//await AnonymousTypesAndRelatedData();
+
 #endregion
+
+
+async Task AnonymousTypesAndRelatedData()
+{
+    var teams = await context.Teams
+    .Select(q => new TeamDetails
+    {
+        TeamId = q.Id,
+        TeamName = q.Name,
+        CoachName = q.Coach.Name,
+        TotalHomeGoals = q.HomeMatches.Sum(x => x.HomeTeamScore),
+        TotalAwayGoals = q.AwayMatches.Sum(x => x.AwayTeamScore),
+    })
+    .ToListAsync();
+
+    foreach (var team in teams)
+    {
+        Console.WriteLine($"{team.TeamName} - {team.CoachName} | Home Goals: {team.TotalHomeGoals} | Away Goals: {team.TotalAwayGoals}");
+    }
+
+}
+
+async Task FilteringIncludes()
+{
+    //await InsertMoreMatches();
+    var teams = await context.Teams
+        //.Where(q => q.HomeMatches.First().HomeTeamScore > 0)
+        //-> Not recommend due to NullException
+
+        .Include("Coach")
+        .Include(q => q.HomeMatches.Where(q => q.HomeTeamScore > 0))
+        .ToListAsync();
+
+    foreach (var team in teams)
+    {
+        Console.WriteLine($"{team.Name} - {team.Coach.Name}");
+        foreach (var match in team.HomeMatches)
+        {
+            Console.WriteLine($"Score - {match.HomeTeamScore}");
+        }
+    }
+}
+
+async Task LazyLoadingData()
+{
+    var league = await context.FindAsync<League>(1);
+    foreach (var team in league.Teams)
+    {
+        Console.WriteLine($"{team.Name}");
+    }
+
+    // Example of N+1 Problem
+    //foreach (var league in context.Leagues)
+    //{
+    //    foreach (var team in league.Teams)
+    //    {
+    //        Console.WriteLine($"{team.Name} - {team.Coach.Name}");
+    //    }
+    //}
+
+}
+
+async Task ExplicitLoadingData()
+{
+    var league = await context.FindAsync<League>(1);
+    if (!league.Teams.Any())
+    {
+        Console.WriteLine("Teams have not been loaded");
+    }
+
+    await context.Entry(league)
+        .Collection(q => q.Teams)
+        .LoadAsync();
+
+    if (league.Teams.Any())
+    {
+        foreach (var team in league.Teams)
+        {
+            Console.WriteLine($"{team.Name}");
+        }
+    }
+}
+
+async Task EagerLoadingData()
+{
+    var leagues = await context.Leagues
+        //.Include("Teams") // You can also use the name of the property
+
+        .Include(q => q.Teams)
+            .ThenInclude(q => q.Coach) // Use for tables realted to the related table
+        .ToListAsync();
+
+    foreach (var league in leagues)
+    {
+        Console.WriteLine($"League - {league.Name}");
+        foreach (var team in league.Teams)
+        {
+            Console.WriteLine($"{team.Name} - {team.Coach.Name}");
+        }
+    }
+}
 
 async Task InsertMatch()
 {
@@ -553,21 +670,12 @@ class TeamInfo
     public string Name { get; set; }
 }
 
+class TeamDetails
+{
+    public int TeamId { get; set; }
+    public string TeamName { get; set; }
+    public string CoachName { get; set; }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    public int TotalHomeGoals { get; set; }
+    public int TotalAwayGoals { get; set; }
+}
