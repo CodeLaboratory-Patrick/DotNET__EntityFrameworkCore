@@ -6120,3 +6120,101 @@ By configuring many-to-many relationships properly using EF Core's Fluent API an
 ## 6. References
 - [Microsoft Docs: EF Core Relationships](https://docs.microsoft.com/en-us/ef/core/modeling/relationships)
 - [Microsoft Docs: Many-to-Many Relationships in EF Core](https://docs.microsoft.com/en-us/ef/core/modeling/relationships/many-to-many)
+
+---
+# 🚀 Comprehensive Guide to Configuring the Team Entity in EF Core
+## 📘 Introduction
+This guide provides a deep dive into configuring the `Team` entity using **Entity Framework Core (EF Core)** Fluent API. The provided code snippet defines a **unique index** on the `Team.Name` property and establishes a **one-to-many relationship** with another entity (e.g., `Match`). 
+### ✅ Code Example
+```csharp
+public void Configure(EntityTypeBuilder<Team> builder)
+{
+    builder.HasIndex(e => e.Name).IsUnique();
+    builder.HasMany(e => e.HomeMatches)
+        .WithOne(e => e.HomeTeam)
+        .HasForeignKey(e => e.HomeTeamId)
+        .IsRequired()
+        .OnDelete(DeleteBehavior.Restrict);
+}
+```
+This document will explain each part of the configuration, why it is used, and how it affects the database schema and behavior.
+
+## 📌 Key Configurations Explained
+### 🔹 Unique Index on `Name`
+```csharp
+builder.HasIndex(e => e.Name).IsUnique();
+```
+- **Purpose**: Ensures that team names are unique.
+- **Database Effect**: Creates a `UNIQUE INDEX` constraint on the `Team.Name` column.
+- **Benefits**:
+  - Prevents duplicate team names.
+  - Enhances query performance.
+- **Usage Scenario**: Suitable for sports league applications where teams must have unique names.
+
+### 🔹 One-to-Many Relationship with Matches
+```csharp
+builder.HasMany(e => e.HomeMatches)
+    .WithOne(e => e.HomeTeam)
+    .HasForeignKey(e => e.HomeTeamId)
+    .IsRequired()
+    .OnDelete(DeleteBehavior.Restrict);
+```
+#### Breakdown:
+| Configuration | Purpose |
+|--------------|---------|
+| `HasMany(e => e.HomeMatches)` | A `Team` can have multiple `HomeMatches`. |
+| `WithOne(e => e.HomeTeam)` | Each `Match` has a single `HomeTeam`. |
+| `HasForeignKey(e => e.HomeTeamId)` | Specifies that `HomeTeamId` is the foreign key in `Match`. |
+| `IsRequired()` | Ensures `HomeTeamId` cannot be `NULL`. |
+| `OnDelete(DeleteBehavior.Restrict)` | Prevents deleting a `Team` if it has associated `HomeMatches`. |
+
+### 🏗️ Entity Context
+#### **Team Entity**
+```csharp
+public class Team
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public List<Match> HomeMatches { get; set; } = new();
+}
+```
+#### **Match Entity**
+```csharp
+public class Match
+{
+    public int Id { get; set; }
+    public DateTime MatchDate { get; set; }
+    public int HomeTeamId { get; set; }
+    public Team HomeTeam { get; set; }
+}
+```
+
+## 🔍 Database Schema Representation
+```plaintext
+     (Team)                     (Match)
+   +-----------+               +-----------+
+   | Id (PK)   |   1  ----->   | Id (PK)   |
+   | Name (UQ) |               | HomeTeamId (FK, NOT NULL) |
+   +-----------+               +-----------+
+           ^
+           | (one Team)
+ (many Matches)
+
+ OnDelete: Restrict => Cannot delete a Team if any Match references it
+ Unique Index on Name => Team name is unique
+```
+
+## 📊 Table Summary of Configurations
+| Configuration | Effect in Database |
+|--------------|--------------------|
+| `HasIndex(e => e.Name).IsUnique()` | Creates a unique constraint on `Team.Name`. |
+| `HasMany(e => e.HomeMatches).WithOne(e => e.HomeTeam)` | Defines a one-to-many relationship. |
+| `HasForeignKey(e => e.HomeTeamId)` | Ensures `HomeTeamId` is the foreign key in `Match`. |
+| `IsRequired()` | Makes `HomeTeamId` NOT NULL. |
+| `OnDelete(DeleteBehavior.Restrict)` | Prevents deletion of `Team` if referenced in `Match`. |
+
+## 🏆 Conclusion
+This EF Core Fluent API configuration ensures:
+1. **Unique Index on `Team.Name`**: Prevents duplicate team names, ensuring data integrity.
+2. **One-to-Many Relationship with `Match`**: Each `Match` must have a valid `HomeTeam`, preventing orphaned records.
+3. **Restricted Deletion**: A `Team` cannot be deleted if referenced by `Match` entries, protecting historical data.
