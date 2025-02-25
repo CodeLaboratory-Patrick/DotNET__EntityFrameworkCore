@@ -33,6 +33,9 @@ namespace EntityFrameworkCore.Data
 
             //Using SQLite
             optionsBuilder.UseSqlite($"Data Source={DbPath}")
+                //Lazy Loading Proxies
+                .UseLazyLoadingProxies()
+
                 //Query Tracking Behavior
                 .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking)
 

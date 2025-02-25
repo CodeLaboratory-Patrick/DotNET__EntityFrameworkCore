@@ -104,7 +104,29 @@ Console.WriteLine(context.DbPath);
 // Explicit Loading Data
 //await ExplicitLoadingData();
 
+// Lazy Loading
+//await LazyLoadingData();
+
 #endregion
+
+async Task LazyLoadingData()
+{
+    var league = await context.FindAsync<League>(1);
+    foreach (var team in league.Teams)
+    {
+        Console.WriteLine($"{team.Name}");
+    }
+
+    // Example of N+1 Problem
+    //foreach (var league in context.Leagues)
+    //{
+    //    foreach (var team in league.Teams)
+    //    {
+    //        Console.WriteLine($"{team.Name} - {team.Coach.Name}");
+    //    }
+    //}
+
+}
 
 async Task ExplicitLoadingData()
 {
