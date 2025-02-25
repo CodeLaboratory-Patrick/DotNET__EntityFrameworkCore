@@ -101,7 +101,31 @@ Console.WriteLine(context.DbPath);
 // Eager Loading Data
 //await EagerLoadingData();
 
+// Explicit Loading Data
+//await ExplicitLoadingData();
+
 #endregion
+
+async Task ExplicitLoadingData()
+{
+    var league = await context.FindAsync<League>(1);
+    if (!league.Teams.Any())
+    {
+        Console.WriteLine("Teams have not been loaded");
+    }
+
+    await context.Entry(league)
+        .Collection(q => q.Teams)
+        .LoadAsync();
+
+    if (league.Teams.Any())
+    {
+        foreach (var team in league.Teams)
+        {
+            Console.WriteLine($"{team.Name}");
+        }
+    }
+}
 
 async Task EagerLoadingData()
 {
