@@ -6218,3 +6218,129 @@ This EF Core Fluent API configuration ensures:
 1. **Unique Index on `Team.Name`**: Prevents duplicate team names, ensuring data integrity.
 2. **One-to-Many Relationship with `Match`**: Each `Match` must have a valid `HomeTeam`, preventing orphaned records.
 3. **Restricted Deletion**: A `Team` cannot be deleted if referenced by `Match` entries, protecting historical data.
+
+---
+# 🚀 Comprehensive Guide to Configuring Delete Behavior in EF Core
+## 📘 Introduction
+This guide provides an in-depth exploration of the `.OnDelete(DeleteBehavior.…)` method in **Entity Framework Core (EF Core)**. It explains how different delete behaviors impact relationships between entities and offers practical examples with Fluent API configurations.
+### ✅ Code Example
+```csharp
+protected override void OnModelCreating(ModelBuilder modelBuilder)
+{
+    modelBuilder.Entity<Order>()
+        .HasOne(o => o.Customer)
+        .WithMany(c => c.Orders)
+        .HasForeignKey(o => o.CustomerId)
+        .OnDelete(DeleteBehavior.Cascade); // or Restrict, SetNull, etc.
+}
+```
+This document will explain each delete behavior, why it is used, and how it affects the database schema and business logic.
+
+## 📌 Key Delete Behaviors Explained
+### 🔹 Overview of DeleteBehavior Options
+EF Core provides multiple options for handling foreign key relationships when a principal entity is deleted:
+| **DeleteBehavior Option**  | **Description**                                                                                                        | **Use Case**                                                  |
+|----------------------------|------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------|
+| **Cascade**                | Automatically deletes all dependent entities when the principal entity is deleted.                                    | When related data should be removed with the parent (e.g., OrderItems for an Order). |
+| **Restrict**               | Prevents deletion of the principal entity if there are any related dependents.                                          | When deletion should be blocked if dependents exist.          |
+| **SetNull**                | Sets the foreign key in the dependent entities to `NULL` upon deletion of the principal.                                | When you want to disassociate dependents from the deleted parent without removing them. |
+| **NoAction**               | No action is taken; the database enforces its default behavior, which may raise an error if dependents exist.           | When you want the database to handle referential integrity, often used with manually maintained constraints. |
+| **ClientSetNull**          | Sets the foreign key to `NULL` on the client side during change tracking, without issuing a corresponding command to the database. | When you want client-side behavior but prefer database constraints for deletion. |
+
+## 🏗️ Example Configurations
+### 🔹 One-to-Many Relationship with Restrict Delete
+**Scenario:** Preventing a `Customer` from being deleted if they have existing `Orders`.
+#### **Domain Models:**
+```csharp
+public class Customer
+{
+    public int CustomerId { get; set; }
+    public string Name { get; set; }
+    public ICollection<Order> Orders { get; set; } = new List<Order>();
+}
+
+public class Order
+{
+    public int OrderId { get; set; }
+    public DateTime OrderDate { get; set; }
+    public int CustomerId { get; set; }
+    public Customer Customer { get; set; }
+}
+```
+
+#### **Fluent API Configuration:**
+```csharp
+protected override void OnModelCreating(ModelBuilder modelBuilder)
+{
+    modelBuilder.Entity<Customer>()
+        .HasMany(c => c.Orders)
+        .WithOne(o => o.Customer)
+        .HasForeignKey(o => o.CustomerId)
+        .IsRequired()
+        .OnDelete(DeleteBehavior.Restrict); // Prevents deletion if orders exist
+}
+```
+
+### 🔹 One-to-Many Relationship with Cascade Delete
+**Scenario:** Ensuring that deleting a `Department` automatically deletes all its associated `Employees`.
+#### **Domain Models:**
+```csharp
+public class Department
+{
+    public int DepartmentId { get; set; }
+    public string DepartmentName { get; set; }
+    public ICollection<Employee> Employees { get; set; } = new List<Employee>();
+}
+
+public class Employee
+{
+    public int EmployeeId { get; set; }
+    public string Name { get; set; }
+    public int DepartmentId { get; set; }
+    public Department Department { get; set; }
+}
+```
+
+#### **Fluent API Configuration:**
+```csharp
+protected override void OnModelCreating(ModelBuilder modelBuilder)
+{
+    modelBuilder.Entity<Department>()
+        .HasMany(d => d.Employees)
+        .WithOne(e => e.Department)
+        .HasForeignKey(e => e.DepartmentId)
+        .OnDelete(DeleteBehavior.Cascade); // Deletes all employees when a department is deleted
+}
+```
+
+## 🔍 Diagram: DeleteBehavior Options
+```mermaid
+flowchart TD
+    A[Principal Entity]
+    B[Dependent Entity]
+    
+    subgraph Cascade Delete
+        A -->|Delete Customer| B[All related dependents are deleted]
+    end
+    
+    subgraph Restrict Delete
+        A -->|Delete Customer| B[Deletion is prevented if dependents exist]
+    end
+    
+    subgraph SetNull Delete
+        A -->|Delete Customer| B[Foreign key set to NULL]
+    end
+    
+    subgraph NoAction / ClientSetNull
+        A -->|Delete Customer| B[Database does nothing / Client sets FK to NULL]
+    end
+```
+
+## 🏆 Conclusion
+This EF Core Fluent API configuration ensures:
+1. **Cascade Delete:** Automatically deletes dependent entities.
+2. **Restrict Delete:** Prevents deletion of the principal if dependents exist.
+3. **SetNull Delete:** Sets the foreign key in dependents to `NULL` upon deletion of the principal.
+4. **NoAction / ClientSetNull:** Delegate delete actions to the database or handle them on the client side.
+
+---
