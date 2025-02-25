@@ -111,7 +111,31 @@ Console.WriteLine(context.DbPath);
 // Get all teams and only home matches where they have scored
 //await FilteringIncludes();
 
+// Projects and Anonymous types
+//await AnonymousTypesAndRelatedData();
+
 #endregion
+
+
+async Task AnonymousTypesAndRelatedData()
+{
+    var teams = await context.Teams
+    .Select(q => new TeamDetails
+    {
+        TeamId = q.Id,
+        TeamName = q.Name,
+        CoachName = q.Coach.Name,
+        TotalHomeGoals = q.HomeMatches.Sum(x => x.HomeTeamScore),
+        TotalAwayGoals = q.AwayMatches.Sum(x => x.AwayTeamScore),
+    })
+    .ToListAsync();
+
+    foreach (var team in teams)
+    {
+        Console.WriteLine($"{team.TeamName} - {team.CoachName} | Home Goals: {team.TotalHomeGoals} | Away Goals: {team.TotalAwayGoals}");
+    }
+
+}
 
 async Task FilteringIncludes()
 {
@@ -646,21 +670,12 @@ class TeamInfo
     public string Name { get; set; }
 }
 
+class TeamDetails
+{
+    public int TeamId { get; set; }
+    public string TeamName { get; set; }
+    public string CoachName { get; set; }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    public int TotalHomeGoals { get; set; }
+    public int TotalAwayGoals { get; set; }
+}
