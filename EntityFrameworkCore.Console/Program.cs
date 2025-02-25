@@ -107,7 +107,32 @@ Console.WriteLine(context.DbPath);
 // Lazy Loading
 //await LazyLoadingData();
 
+// Filtering Includes
+// Get all teams and only home matches where they have scored
+//await FilteringIncludes();
+
 #endregion
+
+async Task FilteringIncludes()
+{
+    //await InsertMoreMatches();
+    var teams = await context.Teams
+        //.Where(q => q.HomeMatches.First().HomeTeamScore > 0)
+        //-> Not recommend due to NullException
+
+        .Include("Coach")
+        .Include(q => q.HomeMatches.Where(q => q.HomeTeamScore > 0))
+        .ToListAsync();
+
+    foreach (var team in teams)
+    {
+        Console.WriteLine($"{team.Name} - {team.Coach.Name}");
+        foreach (var match in team.HomeMatches)
+        {
+            Console.WriteLine($"Score - {match.HomeTeamScore}");
+        }
+    }
+}
 
 async Task LazyLoadingData()
 {
