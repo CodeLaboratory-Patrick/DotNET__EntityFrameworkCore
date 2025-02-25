@@ -98,7 +98,29 @@ Console.WriteLine(context.DbPath);
 //Insert Parent with Children
 //await InsertLeagueWithTeams();
 
+// Eager Loading Data
+//await EagerLoadingData();
+
 #endregion
+
+async Task EagerLoadingData()
+{
+    var leagues = await context.Leagues
+        //.Include("Teams") // You can also use the name of the property
+
+        .Include(q => q.Teams)
+            .ThenInclude(q => q.Coach) // Use for tables realted to the related table
+        .ToListAsync();
+
+    foreach (var league in leagues)
+    {
+        Console.WriteLine($"League - {league.Name}");
+        foreach (var team in league.Teams)
+        {
+            Console.WriteLine($"{team.Name} - {team.Coach.Name}");
+        }
+    }
+}
 
 async Task InsertMatch()
 {
