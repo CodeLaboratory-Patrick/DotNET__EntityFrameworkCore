@@ -6446,4 +6446,131 @@ A **One-to-One Relationship** in EF Core is useful for scenarios where **each re
 
 ## 📚 References
 - [Microsoft Docs - One-to-One Relationships](https://learn.microsoft.com/en-us/ef/core/modeling/relationships/one-to-one)
-- [Entity Framework Core GitHub Repository](https://github.com/dotnet/efcore)
+
+---
+# 🚀 Comprehensive Guide to Inserting Related Data in EF Core
+## 📘 Introduction
+In **Entity Framework Core (EF Core)**, inserting **related data** involves creating records in multiple tables that are linked by **foreign keys** or **navigation properties**. This is a crucial operation when working with **one-to-one, one-to-many, and many-to-many** relationships in a relational database. Understanding how to handle related data properly ensures data integrity and improves performance.
+### ✅ Why Insert Related Data?
+- **Data Integrity**: Ensures that relationships between tables are maintained.
+- **Automatic Foreign Key Assignment**: EF Core assigns foreign keys when using navigation properties.
+- **Batch Insertion**: Reduces the number of database roundtrips by inserting multiple related entities at once.
+- **Change Tracking**: EF Core manages relationships and inserts records in the correct order.
+
+## 📌 Key Concepts
+| **Concept**                 | **Description**                                                                         |
+|-----------------------------|-----------------------------------------------------------------------------------------|
+| **Foreign Keys (FKs)**      | The child table references the parent’s primary key using a foreign key column.        |
+| **Navigation Properties**   | Allow EF Core to automatically handle relationships in memory.                         |
+| **Change Tracking**         | EF monitors related entity changes and persists them together when `SaveChanges()` is called. |
+| **Cascade Operations**      | Determines whether related records are deleted when a parent record is removed.        |
+
+## 🏗️ Scenario 1: Insert Record with an Existing Foreign Key
+### Description
+When inserting a child record that references an existing parent, you can manually set the **foreign key** value.
+### Example: Adding an `Order` for an Existing `Customer`
+```csharp
+using var context = new AppDbContext();
+
+// Suppose a Customer with ID=1 already exists
+int existingCustomerId = 1;
+
+var order = new Order
+{
+    OrderDate = DateTime.UtcNow,
+    CustomerId = existingCustomerId  // Setting the FK directly
+};
+
+context.Orders.Add(order);
+await context.SaveChangesAsync();
+```
+#### 📝 Explanation
+- **Foreign Key Approach**: We set the `CustomerId` manually.
+- **Efficient for Disconnected Scenarios**: When you receive a foreign key from an API request, this method avoids extra database queries.
+
+## 🏗️ Scenario 2: Insert Parent and Child Together
+### Description
+When both **parent and child** entities are new, you can assign the child entity to the parent’s **navigation property**.
+### Example: Adding a New `Customer` with a `Profile`
+```csharp
+using var context = new AppDbContext();
+
+var customer = new Customer
+{
+    Name = "Alice",
+    Profile = new Profile { Bio = "Software Engineer" } // One-to-One Relationship
+};
+
+context.Customers.Add(customer);
+await context.SaveChangesAsync();
+```
+#### 📝 Explanation
+- **Navigation Property Approach**: `Profile` is assigned to `customer.Profile`.
+- **EF Core Automatically Handles FK Assignment**: The generated `CustomerId` is automatically set in `Profile`.
+- **EF Inserts Parent First, Then Child**: Ensures proper relational integrity.
+
+## 🏗️ Scenario 3: Insert Parent with Multiple Children (One-to-Many)
+### Description
+Inserting a **parent** entity with multiple **child** entities ensures that all records are added in a single transaction.
+### Example: Adding a `Customer` with Multiple `Orders`
+```csharp
+using var context = new AppDbContext();
+
+var customer = new Customer
+{
+    Name = "Bob",
+    Orders = new List<Order>
+    {
+        new Order { OrderDate = DateTime.UtcNow },
+        new Order { OrderDate = DateTime.UtcNow.AddDays(-1) },
+    }
+};
+
+context.Customers.Add(customer);
+await context.SaveChangesAsync();
+```
+#### 📝 Explanation
+- **Collection Navigation Property**: The `Orders` list is populated with new `Order` entities.
+- **EF Core Automatically Sets Foreign Keys**: `Order.CustomerId` is assigned after `Customer` is inserted.
+- **Single `SaveChanges()` Call**: Reduces the number of database operations.
+
+## 🌐 Diagram: Insert Flow for Parent with Children
+```mermaid
+flowchart TD
+    A[New Customer]
+    B[New Order 1]
+    C[New Order 2]
+    A --> B
+    A --> C
+```
+
+## 📊 Summary of Insertion Scenarios
+| **Scenario**                  | **Method**                                          | **Advantages**                                      |
+|--------------------------------|----------------------------------------------------|----------------------------------------------------|
+| Insert Child with FK           | Set `ForeignKeyId` manually                        | No need to load parent entity                     |
+| Insert Parent & Child          | Use navigation property (`entity.Property = value`) | Ensures relational integrity, automatic FK assignment |
+| Insert Parent with Children    | Assign collection (`entity.Children = List<T>()`)  | Inserts everything in one transaction, efficient |
+
+## ⚙️ Additional Considerations
+### 1️⃣ **Primary Key Handling**
+- EF assigns the **primary key** to the parent before inserting child records.
+- Ensure primary keys are properly configured (`[Key]` or `Fluent API`).
+### 2️⃣ **Foreign Key Constraints**
+- If using manual FK assignment, ensure the referenced record exists to avoid errors.
+- Use **navigation properties** when working within the same `DbContext` instance.
+### 3️⃣ **Cascading Deletions**
+- Define `.OnDelete(DeleteBehavior.Cascade)` in Fluent API for automatic child deletions.
+- Use `.OnDelete(DeleteBehavior.Restrict)` to prevent accidental cascading deletions.
+### 4️⃣ **Performance Optimizations**
+- **Batch Inserts**: EF Core optimizes bulk insert operations.
+- **Use `AsNoTracking()`**: If reading data without modifying it, disable change tracking to improve performance.
+
+## 🏆 Conclusion
+When **inserting related data** in EF Core, you can set **foreign keys** manually or rely on **navigation properties** for parent-child relationships. Whether you’re adding a single new `Order` referencing an existing `Customer`, creating a **parent** and **child** together, or populating a **parent** with multiple children, EF Core manages the behind-the-scenes linkages. By leveraging **change tracking and batch processing**, you can efficiently handle complex data insertions.
+
+## 📚 References
+- [Microsoft Docs - EF Core Saving Related Data](https://learn.microsoft.com/en-us/ef/core/saving/related-data)
+
+---
+
+
