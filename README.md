@@ -6572,5 +6572,144 @@ When **inserting related data** in EF Core, you can set **foreign keys** manuall
 - [Microsoft Docs - EF Core Saving Related Data](https://learn.microsoft.com/en-us/ef/core/saving/related-data)
 
 ---
+# 🚀 Comprehensive Guide to Loading Related Data in EF Core
+## 📘 Introduction
+When working with **Entity Framework Core (EF Core)**, retrieving **related data** is a fundamental task. EF Core provides **three primary strategies** for loading related entities efficiently:
+1. **Eager Loading** 🚀 – Retrieves related data up front with `Include()`.
+2. **Explicit Loading** 🎯 – Loads related data manually on demand using `Load()`.
+3. **Lazy Loading** 🕰️ – Automatically loads related data when the navigation property is accessed.
+Each method has distinct advantages and trade-offs, and choosing the right approach can significantly impact application performance.
 
+## 📌 Key Concepts
+| **Concept**               | **Description**                                                                         |
+|---------------------------|-----------------------------------------------------------------------------------------|
+| **Eager Loading** 🚀     | Loads all related data **immediately** via `Include()`.                                |
+| **Explicit Loading** 🎯   | Manually loads related data using `context.Entry(entity).Collection().Load()`.        |
+| **Lazy Loading** 🕰️     | Automatically loads related data when the property is accessed (requires configuration).|
+| **Performance Impact**    | Proper choice prevents the `N+1` problem and unnecessary data retrieval.              |
 
+## 🏗️ Scenario 1: Eager Loading with `.Include()`
+### ✅ Definition
+Eager loading fetches **related data** in a **single query** using the `Include()` method. This is ideal when related data is **always needed**.
+### 📌 Characteristics
+✔ **Single Query** – Retrieves both the main entity and its related entities at once.  
+✔ **Minimizes N+1 Problem** – Reduces extra database calls.  
+✔ **Potential Overhead** – Can retrieve more data than necessary.  
+
+### 🏗️ Example: Loading `Orders` for `Customers`
+```csharp
+using var context = new AppDbContext();
+
+var customers = await context.Customers
+    .Include(c => c.Orders) // Eagerly load Orders
+    .ToListAsync();
+```
+
+### 📊 Diagram
+```mermaid
+flowchart TD
+    A[Customer Table] --> B[Order Table]
+    A -- "Eager Loading via Include" --> C[Single SQL Query retrieving Customers + Orders]
+```
+
+## 🏗️ Scenario 2: Explicit Loading
+### ✅ Definition
+Explicit loading requires you to **manually load related data** **after** querying the main entity.
+### 📌 Characteristics
+✔ **On-Demand** – Loads related data only when needed.  
+✔ **Multiple Queries** – Additional database queries may be needed.  
+✔ **More Control** – Useful when related data is conditionally required.  
+
+### 🏗️ Example: Loading `Orders` for a `Customer`
+```csharp
+using var context = new AppDbContext();
+
+var customer = await context.Customers
+    .FirstOrDefaultAsync(c => c.Id == 1);
+
+// Orders are not loaded yet
+await context.Entry(customer)
+    .Collection(c => c.Orders)
+    .LoadAsync();
+```
+
+### 📊 Diagram
+```mermaid
+flowchart TD
+    A[Customer Table]
+    B[Order Table]
+    A -- "Initial Query (No related data)" --> C[Customer]
+    C -- "Explicit Load: Collection(c => c.Orders)" --> D[Separate SQL Query for Orders]
+```
+
+## 🏗️ Scenario 3: Lazy Loading
+### ✅ Definition
+Lazy loading **defers the retrieval of related data** **until it is accessed** for the first time. EF Core supports lazy loading through **proxies** that automatically trigger a query when a navigation property is accessed.
+### 📌 Characteristics
+✔ **On-Demand** – Data loads only when needed.  
+✔ **Transparent** – Simplifies code, but can cause hidden performance issues.  
+✔ **Requires Configuration** – Must enable lazy loading proxies.  
+
+### 🏗️ Example: Enabling Lazy Loading
+Enable lazy loading in `DbContext`:
+```csharp
+protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+{
+    optionsBuilder
+        .UseLazyLoadingProxies()
+        .UseSqlServer("YourConnectionString");
+}
+```
+
+Define navigation properties as **virtual**:
+```csharp
+public class Customer
+{
+    public int CustomerId { get; set; }
+    public string Name { get; set; }
+    
+    // Virtual navigation property for lazy loading
+    public virtual ICollection<Order> Orders { get; set; }
+}
+```
+
+Accessing the property triggers **lazy loading**:
+```csharp
+var customer = await context.Customers.FirstOrDefaultAsync(c => c.CustomerId == 1);
+
+// Accessing Orders triggers a separate SQL query
+var orders = customer.Orders;
+```
+
+### 📊 Diagram
+```mermaid
+flowchart TD
+    A[Customer Table] --> B[Order Table]
+    A -- "Initial Query" --> C[Customer without Orders]
+    C -- "Access Virtual Navigation Property" --> D[Lazy Load Orders with Separate Query]
+```
+
+## 📊 Comparison Table
+| **Aspect**              | **Eager Loading 🚀**                      | **Explicit Loading 🎯**                 | **Lazy Loading 🕰️**                     |
+|-------------------------|--------------------------------|--------------------------------|---------------------------------|
+| **Query Execution**    | Single query (`Include()`)     | Multiple queries (`Load()`)    | Multiple queries (on demand)  |
+| **Control Over Loading** | Automatic                     | Manual                         | Automatic (via property access) |
+| **Performance**         | Can retrieve excess data      | Optimized but requires extra queries | Risk of `N+1` query issues    |
+| **Use Case**           | When related data is always needed | When related data is optional | When flexibility is required  |
+
+## 🏆 Best Practices
+✔ **Use Eager Loading** when related data is frequently needed.  
+✔ **Use Explicit Loading** for conditional scenarios or when avoiding unnecessary data retrieval.  
+✔ **Use Lazy Loading** cautiously, ensuring it does not introduce performance issues (e.g., `N+1` problem).  
+✔ **Profile Queries** using EF Core logging to monitor query execution.  
+✔ **Optimize Performance** by selectively combining strategies where appropriate.  
+
+## 🏁 Conclusion
+EF Core provides **three distinct methods** for loading related data: **Eager**, **Explicit**, and **Lazy Loading**. Each has its own strengths and weaknesses:
+- **Eager Loading (`Include()`)** – Best when related data is always required upfront.
+- **Explicit Loading (`Load()`)** – Provides manual control over when and how data is loaded.
+- **Lazy Loading (`virtual` properties)** – Offers convenience but requires careful use to avoid performance pitfalls.
+By selecting the **right loading strategy** based on your application needs, you can **optimize database queries**, **reduce overhead**, and **improve performance** in your EF Core applications. 🚀
+
+## 📚 References
+- [Microsoft Docs - Loading Related Data](https://learn.microsoft.com/en-us/ef/core/querying/related-data)
