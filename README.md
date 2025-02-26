@@ -6344,3 +6344,106 @@ This EF Core Fluent API configuration ensures:
 4. **NoAction / ClientSetNull:** Delegate delete actions to the database or handle them on the client side.
 
 ---
+# 🚀 Comprehensive Guide to One-to-One Relationships in EF Core
+## 📘 Introduction
+One-to-one relationships in **Entity Framework Core (EF Core)** represent a unique association where one entity instance is related to **only one** instance of another entity. This type of relationship is useful for **data organization, security, performance, and normalization**. Understanding how to properly configure one-to-one relationships can lead to a more efficient database design and improved application performance.
+### ✅ What Is a One-to-One Relationship?
+- **Definition**: A single instance of one entity (the principal) is associated with **exactly one** instance of another entity (the dependent).
+- **Purpose**:
+  - **Data Organization**: Splitting data across multiple tables.
+  - **Normalization**: Reducing redundancy and improving database efficiency.
+  - **Performance**: Optimizing queries by loading only necessary data, reducing payload.
+- **Key Points**:
+  - The dependent entity usually holds the **foreign key**.
+  - Can be configured using **Fluent API** or **Data Annotations**.
+  - EF Core supports one-to-one relationships **naturally**.
+  - Cascading behaviors like `Cascade`, `Restrict`, or `SetNull` determine what happens when the principal entity is deleted.
+
+## 📌 Key Characteristics
+| **Characteristic**         | **Description**                                                                                                    |
+|----------------------------|--------------------------------------------------------------------------------------------------------------------|
+| **Uniqueness**             | Each entity on both sides of the relationship can have only one related entity.                                    |
+| **Foreign Key Location**   | The dependent entity typically contains the foreign key that points to the principal entity.                       |
+| **Navigation Properties**  | Both entities usually have navigation properties referencing each other.|
+| **Optional vs. Required**  | The relationship can be **required** (non-nullable FK) or **optional** (nullable FK).|
+| **Cascading Behavior**     | Delete behaviors (`Cascade`, `Restrict`, `SetNull`) can be configured.|
+| **Loading Strategy**       | Relationships can be loaded using **Eager**, **Lazy**, or **Explicit** loading based on application needs. |
+
+## 🏗️ Example: User & UserProfile
+### 1️⃣ Entity Classes
+```csharp
+public class User
+{
+    public int UserId { get; set; }
+    public string Username { get; set; }
+    public UserProfile Profile { get; set; }
+}
+
+public class UserProfile
+{
+    public int UserProfileId { get; set; }
+    public string Bio { get; set; }
+    public int UserId { get; set; }
+    public User User { get; set; }
+}
+```
+
+### 2️⃣ Fluent API Configuration
+```csharp
+protected override void OnModelCreating(ModelBuilder modelBuilder)
+{
+    modelBuilder.Entity<User>()
+        .HasOne(u => u.Profile)
+        .WithOne(p => p.User)
+        .HasForeignKey<UserProfile>(p => p.UserId)
+        .IsRequired();
+}
+```
+#### 📝 Explanation
+- `.HasOne(u => u.Profile).WithOne(p => p.User)`: Declares a one-to-one relationship.
+- `.HasForeignKey<UserProfile>(p => p.UserId)`: Configures `UserProfile.UserId` as the foreign key.
+- `.IsRequired()`: Ensures every `UserProfile` **must** be associated with a `User`.
+
+## 🌐 Diagram: One-to-One Association
+```mermaid
+flowchart TD
+    A[User]
+    B[UserProfile]
+    A -- "has one" --> B
+    B -- "belongs to" --> A
+```
+
+### Shared Primary Key Approach
+In some cases, `UserProfile.Id` can **share the same primary key** as `User.Id`, ensuring a strict 1:1 mapping.
+```csharp
+public class UserProfile
+{
+    [Key]
+    public int Id { get; set; }  // same as the User.Id
+    public User User { get; set; }
+}
+```
+
+#### 📝 Explanation
+- The `UserProfile` **primary key is the same** as `User.Id`.
+- EF requires additional Fluent API configuration to enforce this.
+
+## 📊 Table: One-to-One Options
+| Approach                  | Foreign Key Placement           | Additional Notes                                 |
+|---------------------------|---------------------------------|-------------------------------------------------|
+| **Separate PK**          | Dependent has its own PK + FK   | Easiest to implement (like the `UserProfile` sample).|
+| **Shared PK**            | Dependent PK = principal PK     | Requires additional Fluent API configuration.|
+| **Cascade or Restrict**  | `.OnDelete(DeleteBehavior.???)` | Controls if child is removed if parent is deleted.|
+| **Lazy vs. Eager Loading** | `Include()` or `Proxy` Loading | Determines how data is retrieved at runtime. |
+
+## 🔍 Additional Considerations
+- **Performance Optimization**: Avoid unnecessary eager loading when not needed to reduce data retrieval overhead.
+- **Data Integrity**: Choose the appropriate **delete behavior** to prevent orphaned records or unintended deletions.
+- **Indexing Foreign Keys**: For faster lookups, ensure foreign keys are properly indexed in the database schema.
+
+## 🏆 Conclusion
+A **One-to-One Relationship** in EF Core is useful for scenarios where **each record in table A uniquely corresponds to exactly one record in table B**. By defining references using **Fluent API** or **Data Annotations**, you can efficiently model real-world data relationships such as **user-profiles, extended product details, or specialized domain objects**. Additionally, considering **loading strategies, cascading behaviors, and key placement** ensures a well-structured and efficient database design.
+
+## 📚 References
+- [Microsoft Docs - One-to-One Relationships](https://learn.microsoft.com/en-us/ef/core/modeling/relationships/one-to-one)
+- [Entity Framework Core GitHub Repository](https://github.com/dotnet/efcore)
