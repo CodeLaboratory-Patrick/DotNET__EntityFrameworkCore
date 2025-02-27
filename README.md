@@ -6895,3 +6895,98 @@ By leveraging these methods appropriately, developers can ensure **efficient dat
 ## 📚 References
 - [Microsoft Docs - Loading Related Data](https://learn.microsoft.com/en-us/ef/core/querying/related-data)
 - [Microsoft Docs - AsSplitQuery](https://specification.ardalis.com/features/assplitquery.html)
+
+---
+# 🚀 Comprehensive Guide to Explicit Loading in EF Core
+## 📘 Introduction
+**Explicit Loading** is a data retrieval strategy in **Entity Framework Core (EF Core)** that allows developers to manually load related data **after** the main entity has been retrieved. Unlike **Eager Loading**, which loads related data automatically via `.Include()`, and **Lazy Loading**, which loads data on property access, **Explicit Loading** requires explicit method calls (`Load()`, `LoadAsync()`).
+This method provides **fine-grained control** over when and how related data is fetched, improving **performance** and preventing unnecessary database queries.
+
+## 📌 Key Characteristics
+| **Aspect**               | **Description**                                                                              |
+|--------------------------|----------------------------------------------------------------------------------------------|
+| **Manual Control**       | Data is **only** loaded when explicitly requested.                                          |
+| **Separate Queries**     | Related entities are fetched using additional queries **after** the main entity is loaded.  |
+| **No Proxy Needed**      | Unlike Lazy Loading, explicit loading does **not** require dynamic proxies.                  |
+| **Optimized Performance** | Helps avoid over-fetching related data when not immediately needed.                         |
+| **One Entity at a Time** | Requires explicit calls for each navigation property to be loaded.                          |
+
+## 🏗️ Example 1: Explicit Loading for Collections
+### ✅ Scenario: A `Customer` with multiple `Orders`
+```csharp
+using var context = new AppDbContext();
+
+// Retrieve a Customer entity only
+var customer = await context.Customers.FirstOrDefaultAsync(c => c.CustomerId == 1);
+
+if (customer != null)
+{
+    // Explicitly load related Orders
+    await context.Entry(customer)
+        .Collection(c => c.Orders)
+        .LoadAsync();
+    
+    Console.WriteLine($"Customer: {customer.Name} has {customer.Orders.Count} orders.");
+}
+```
+
+### 📊 Diagram: Explicit Loading Flow
+```mermaid
+flowchart TD
+    A[Main Entity Query]
+    B[Main Entity Loaded Without Related Data]
+    C[Explicit Call: Entry(entity).Collection().LoadAsync()]
+    D[Separate Query Executes]
+    E[Related Data Loaded and Attached]
+    
+    A --> B
+    B --> C
+    C --> D
+    D --> E
+```
+
+## 🏗️ Example 2: Explicit Loading for Single References
+### ✅ Scenario: A `Customer` with a `Profile`
+```csharp
+using var context = new AppDbContext();
+
+var customer = await context.Customers.FirstOrDefaultAsync(c => c.CustomerId == 1);
+
+// Explicitly load the related Profile
+await context.Entry(customer)
+    .Reference(c => c.Profile)
+    .LoadAsync();
+
+Console.WriteLine(customer.Profile.Bio);
+```
+
+## 🏗️ Example 3: Filtering Related Data with Explicit Loading
+### ✅ Scenario: Load only **recent** `Orders` for a `Customer`
+```csharp
+await context.Entry(customer)
+    .Collection(c => c.Orders)
+    .Query()
+    .Where(o => o.OrderDate > DateTime.UtcNow.AddDays(-30))
+    .LoadAsync();
+```
+
+**🔹 Explanation:**  
+- Uses `.Query()` before `.LoadAsync()` to filter related data.  
+- Only loads `Orders` placed in the last 30 days, avoiding unnecessary data fetch.  
+
+## 🌐 Comparison Table: Explicit vs. Eager vs. Lazy Loading
+| **Aspect**               | **Explicit Loading 🎯**             | **Eager Loading 🚀**                  | **Lazy Loading 🕰️**               |
+|--------------------------|----------------------------------|--------------------------------|--------------------------------|
+| **Data Retrieval**       | Manual `.Load()` calls required | Automatically loads with `.Include()` | Automatically loads on property access |
+| **Performance Impact**   | Controlled, avoids over-fetching | May load unnecessary data upfront | Can cause hidden `N+1` query issues |
+| **Best Use Case**        | Selective, conditional retrieval | When related data is **always needed** | When navigation properties are accessed unpredictably |
+| **Requires Proxies?**    | ❌ No                             | ❌ No                               | ✅ Yes (for lazy loading)         |
+
+## 🏁 Conclusion
+**Explicit Loading** in EF Core is a powerful tool that allows developers to **manually retrieve** related data **only when necessary**. By leveraging `context.Entry(entity).Collection(...).LoadAsync()` and `context.Entry(entity).Reference(...).LoadAsync()`, developers can improve application **performance**, prevent unnecessary data retrieval, and maintain **fine-grained control** over data access.
+- **Eager Loading (`Include()`)** – Best when related data is always required upfront.
+- **Explicit Loading (`Load()`)** – Ideal for conditional or performance-sensitive scenarios.
+- **Lazy Loading (`virtual` properties)** – Useful when data access patterns are unpredictable.
+
+## 📚 References
+- [Microsoft Docs - Explicit Loading in EF Core](https://learn.microsoft.com/en-us/ef/core/querying/related-data/explicit)
