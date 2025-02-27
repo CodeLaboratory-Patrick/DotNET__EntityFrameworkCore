@@ -6990,3 +6990,112 @@ await context.Entry(customer)
 
 ## 📚 References
 - [Microsoft Docs - Explicit Loading in EF Core](https://learn.microsoft.com/en-us/ef/core/querying/related-data/explicit)
+
+---
+# 🚀 Comprehensive Guide to Lazy Loading in EF Core
+## 📘 Introduction
+**Lazy Loading** is a technique in **Entity Framework Core (EF Core)** that defers the loading of related entities until they are accessed. Unlike **Eager Loading**, which retrieves all related entities upfront using `.Include()`, and **Explicit Loading**, which requires explicit method calls like `.Load()`, Lazy Loading dynamically fetches related data only when it is first accessed.
+This approach **reduces initial query execution time** and **lowers memory consumption** but must be used carefully to avoid performance issues like the **N+1 query problem**.
+
+## 📌 Key Characteristics
+| **Aspect**               | **Description**                                                                                |
+|--------------------------|----------------------------------------------------------------------------------------------|
+| **On-Demand Retrieval**  | Related entities are fetched only when their navigation properties are accessed.             |
+| **Automatic Query Execution** | EF Core triggers additional queries dynamically behind the scenes.                         |
+| **Requires Configuration** | Needs Lazy Loading Proxies or `ILazyLoader` dependency injection.                          |
+| **Potential for N+1 Issue** | Can result in excessive queries if related data is accessed within loops.                  |
+| **Reduced Initial Load** | Improves performance by not retrieving unnecessary related data at query time.               |
+
+## 🏗️ Enabling Lazy Loading in EF Core
+### ✅ Step 1: Install Required Package
+```bash
+dotnet add package Microsoft.EntityFrameworkCore.Proxies
+```
+### ✅ Step 2: Configure `DbContext`
+```csharp
+using Microsoft.EntityFrameworkCore;
+
+public class ApplicationDbContext : DbContext
+{
+    public DbSet<Customer> Customers { get; set; }
+    public DbSet<Order> Orders { get; set; }
+    
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        optionsBuilder
+            .UseLazyLoadingProxies()  // Enable lazy loading
+            .UseSqlServer("YourConnectionString");
+    }
+}
+```
+### ✅ Step 3: Define Entities with `virtual` Navigation Properties
+```csharp
+public class Customer
+{
+    public int CustomerId { get; set; }
+    public string Name { get; set; }
+    
+    // Virtual navigation property to enable lazy loading.
+    public virtual ICollection<Order> Orders { get; set; }
+}
+
+public class Order
+{
+    public int OrderId { get; set; }
+    public DateTime OrderDate { get; set; }
+    
+    public int CustomerId { get; set; }
+    
+    // Virtual navigation property to enable lazy loading.
+    public virtual Customer Customer { get; set; }
+}
+```
+
+## 🏗️ Example: Lazy Loading in Action
+```csharp
+using var context = new ApplicationDbContext();
+
+// Retrieve a Customer entity without explicitly including Orders.
+var customer = await context.Customers.FirstOrDefaultAsync(c => c.CustomerId == 1);
+
+// Orders are not loaded yet. Accessing Orders triggers lazy loading.
+foreach (var order in customer.Orders)
+{
+    Console.WriteLine($"Order ID: {order.OrderId}, Date: {order.OrderDate}");
+}
+```
+
+### 📊 Diagram: Lazy Loading Flow
+```mermaid
+flowchart TD
+    A[Query for Main Entity (Customer)]
+    B[Customer Entity Loaded (Orders not loaded)]
+    C[Access Navigation Property (customer.Orders)]
+    D[EF Core Intercepts Access]
+    E[Lazy Loading Proxy Issues Query for Orders]
+    F[Orders are Loaded and Attached to Customer]
+    
+    A --> B
+    B --> C
+    C --> D
+    D --> E
+    E --> F
+```
+
+## 🌐 Comparison Table: Lazy vs. Eager vs. Explicit Loading
+| **Aspect**               | **Lazy Loading 🕰️**              | **Eager Loading 🚀**                   | **Explicit Loading 🎯**          |
+|--------------------------|---------------------------------|----------------------------------|---------------------------------|
+| **When Data Loads**      | When accessed dynamically       | Immediately with `.Include()`   | Only when manually called      |
+| **Query Execution**      | Multiple queries (on demand)   | Single query upfront            | Separate queries (manual)      |
+| **Performance Impact**   | Risk of N+1 queries            | Potential over-fetching         | Most controlled, but manual    |
+| **Setup Complexity**     | Requires configuration         | Simple with `.Include()`        | Needs explicit `.Load()` calls |
+| **Best Use Case**        | When related data is rarely used | When related data is always needed | Conditional or performance-sensitive scenarios |
+
+## 🏁 Conclusion
+Lazy Loading in EF Core is a **convenient technique** that defers related data retrieval **until it is accessed**, optimizing **initial query execution time** and **reducing memory footprint**. However, it must be used **strategically** to prevent excessive database queries.
+By understanding the differences between **Lazy**, **Eager**, and **Explicit Loading**, developers can **choose the best strategy** for their application needs and **ensure optimal performance**. 🚀
+
+## 📚 References
+- [Microsoft Docs - Lazy Loading in EF Core](https://learn.microsoft.com/en-us/ef/core/querying/related-data/lazy)
+
+---
