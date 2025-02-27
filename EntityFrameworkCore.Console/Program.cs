@@ -125,7 +125,43 @@ Console.WriteLine(context.DbPath);
 //Executing Raw SQL Safely
 //ExecutingRawSql();
 
+//Mixing with LINQ
+//RawSqlWithLinq();
+
+//Executing Stored Procedures
+//OtherRawQueries();
+
 #endregion
+
+void OtherRawQueries()
+{
+    // Executing Stored Procedures
+    var leagueId = 1;
+    var league = context.Leagues
+        .FromSqlInterpolated($"EXEC dbo.StoredProcedureToGetLeagueNameHere {leagueId}");
+
+    // Non-querying statement 
+    var someName = "Random Team Name";
+    context.Database.ExecuteSqlInterpolated($"UPDATE Teams SET Name = {someName}");
+
+    int matchId = 1;
+    context.Database.ExecuteSqlInterpolated($"EXEC dbo.DeleteMatch {matchId}");
+
+}
+
+void RawSqlWithLinq()
+{
+    var teamsList = context.Teams.FromSql($"SELECT * FROM Teams")
+    .Where(q => q.Id == 1)
+    .OrderBy(q => q.Id)
+    .Include("League")
+    .ToList();
+
+    foreach (var t in teamsList)
+    {
+        Console.WriteLine(t);
+    }
+}
 
 void ExecutingRawSql()
 {
