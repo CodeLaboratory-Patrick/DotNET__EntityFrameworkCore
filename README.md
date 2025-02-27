@@ -7226,3 +7226,81 @@ By understanding and correctly applying **virtual members**, you can design appl
 - [Microsoft Docs: Virtual and Override](https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/virtual)
 - [Microsoft Docs: Inheritance and Polymorphism in C#](https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/classes-and-structs/inheritance)
 
+---
+# 🚀 Comprehensive Guide to Filtering Related Records in EF Core
+## 📘 Introduction
+Filtering on related records is a powerful feature in **Entity Framework (EF) Core** that allows developers to load only a subset of the related data for an entity. This improves **performance**, reduces **memory usage**, and ensures **query efficiency** by fetching only the necessary data.
+In **EF Core 5 and later**, you can use **filtered includes** to apply conditions on related collections within the `.Include()` method. This guide provides a detailed explanation of **how filtering on related records works**, along with **examples, diagrams, and best practices** to help optimize your database queries.
+
+## 📌 Key Characteristics
+| **Feature**             | **Description**                                                                 |
+|-------------------------|---------------------------------------------------------------------------------|
+| **Selective Loading**   | Loads only related records that match a specified condition.                    |
+| **Query Isolation**     | The filtering applies only to related entities, leaving the main query intact. |
+| **Performance Boost**   | Reduces **data transfer** and **memory consumption**.                           |
+| **EF Core 5+ Feature**  | Requires EF Core 5 or newer for **filtered `.Include()`** support.              |
+| **Flexible Conditions** | Supports various filters (e.g., `Where()`, `OrderBy()`, `Take()`).             |
+
+## 🏗️ How to Use Filtering on Related Records
+### ✅ Example: Loading Teams with Filtered Matches
+```csharp
+async Task FilteringIncludes()
+{
+    var teams = await context.Teams
+        .Include(t => t.Coach)  // Loads the related Coach entity
+        .Include(t => t.HomeMatches.Where(m => m.HomeTeamScore > 0))  // Filters HomeMatches
+        .ToListAsync();
+
+    foreach (var team in teams)
+    {
+        Console.WriteLine($"{team.Name} - {team.Coach.Name}");
+        foreach (var match in team.HomeMatches)
+        {
+            Console.WriteLine($"Score - {match.HomeTeamScore}");
+        }
+    }
+}
+```
+
+### 📊 Breakdown of the Code
+1. **`.Include(t => t.Coach)`** → Loads the **Coach** navigation property.
+2. **`.Include(t => t.HomeMatches.Where(m => m.HomeTeamScore > 0))`** → Loads only **HomeMatches** where `HomeTeamScore > 0`.
+3. **`ToListAsync()`** executes the query and returns the filtered results.
+
+### 📍 When to Use Filtering on Related Records
+✔ **Retrieving only relevant child data** (e.g., matches where a team scored).  
+✔ **Reducing database load** by eliminating unnecessary related data.  
+✔ **Avoiding extra filtering logic in application code**.
+
+## 🌐 Diagram: Filtered Include Workflow
+
+```mermaid
+flowchart TD
+    A[Query Teams from Database]
+    B[Include Related Coach Data]
+    C[Include Filtered HomeMatches]
+    D[Database Executes Query]
+    E[Return Teams with Filtered Data]
+
+    A --> B
+    A --> C
+    B --> D
+    C --> D
+    D --> E
+```
+
+- **Explanation:**
+  - **A:** The `Teams` entity is queried.
+  - **B:** The `Coach` entity is eagerly loaded.
+  - **C:** `HomeMatches` are filtered (`HomeTeamScore > 0`).
+  - **D-E:** The database returns **only the relevant data**.
+
+## 📊 Comparison: Approaches to Filtering Related Data
+| **Method**                                         | **Description**                                                   | **EF Core Version** |
+|---------------------------------------------------|-------------------------------------------------------------------|---------------------|
+| **Filtered `.Include()`**                         | Filters child records within `.Include()`                         | 5+                  |
+| **Explicit Loading (`context.Entry()`)**         | Loads related entities separately with additional queries        | 3+                  |
+| **Manual Projection to DTOs**                    | Fetches only required fields, reducing data load                 | 3+                  |
+
+## 🏁 Conclusion
+By **filtering related records** in **EF Core**, you can **optimize query performance** and **reduce unnecessary data retrieval**. This approach ensures that your application retrieves **only the required data**, avoiding excessive database calls and improving **memory efficiency**.
