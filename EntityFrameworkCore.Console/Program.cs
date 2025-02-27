@@ -142,11 +142,14 @@ void OtherRawQueries()
 
     // Non-querying statement 
     var someName = "Random Team Name";
-    context.Database.ExecuteSqlInterpolated($"UPDATE Teams SET Name = {someName}");
+    context.Database.ExecuteSqlInterpolated($"UPDATE Teams SET Name = {someName}")
 
     int matchId = 1;
     context.Database.ExecuteSqlInterpolated($"EXEC dbo.DeleteMatch {matchId}");
 
+    // Query Scalar or Non-Entity Type
+    var leagueIds = context.Database.SqlQuery<int>($"SELECT Id FROM Leagues")
+        .ToList();
 }
 
 void RawSqlWithLinq()
