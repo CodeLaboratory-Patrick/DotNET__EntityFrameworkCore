@@ -7099,3 +7099,130 @@ By understanding the differences between **Lazy**, **Eager**, and **Explicit Loa
 - [Microsoft Docs - Lazy Loading in EF Core](https://learn.microsoft.com/en-us/ef/core/querying/related-data/lazy)
 
 ---
+# 🚀 Comprehensive Guide to `public virtual` in .NET Development
+## 📘 Introduction
+In **.NET**, the **`public virtual`** keyword combination is frequently encountered in **C#** classes. Declaring a method or property as **virtual** enables **polymorphism**, allowing derived classes to override members and provide their own implementation. Additionally, in **Entity Framework Core (EF Core)**, marking navigation properties as **virtual** enables **lazy loading**.
+
+This guide clarifies what **`public virtual`** is, how it works, and why it’s important for **object-oriented programming (OOP)** and **EF Core development**.
+
+## 📌 Key Characteristics
+| **Aspect**               | **Description**                                                                               |
+|--------------------------|----------------------------------------------------------------------------------------------|
+| **Inheritance**          | Virtual members allow **derived classes** to provide their own **override**.                |
+| **Polymorphism**         | Supports **runtime polymorphism**, letting objects behave differently based on their type.  |
+| **Lazy Loading (EF Core)** | EF generates **proxy** classes that override **virtual** navigation properties to enable lazy loading. |
+| **Extensibility**        | Allows creating base classes with reusable logic that can be customized in subclasses.       |
+| **Performance**          | Virtual method calls have a small overhead, but the impact is negligible in most scenarios. |
+
+## 🏗️ How Virtual Members Work in .NET
+### ✅ Virtual Methods and Properties
+When you declare a method or property as `virtual` in a base class, you allow derived classes to **override** that member to provide a new implementation. 
+**Base Class Example:**
+```csharp
+public class Animal
+{
+    // A virtual method can be overridden.
+    public virtual void Speak()
+    {
+        Console.WriteLine("The animal makes a sound.");
+    }
+    
+    // A virtual property.
+    public virtual string Name { get; set; }
+}
+```
+
+**Derived Class Example:**
+```csharp
+public class Dog : Animal
+{
+    // Override the virtual method to provide a specific implementation.
+    public override void Speak()
+    {
+        Console.WriteLine("The dog barks.");
+    }
+    
+    // Override the virtual property.
+    public override string Name { get; set; } = "Dog";
+}
+```
+
+### 📊 Diagram: Virtual Member Override Flow
+```mermaid
+flowchart TD
+    A[Base Class: Animal]
+    B[Derived Class: Dog]
+    C[Method: Speak() in Animal (Virtual)]
+    D[Overridden Method: Speak() in Dog]
+    
+    A --> C
+    C --> B
+    B --> D
+```
+
+- **Explanation:**
+  - The base class `Animal` defines a **virtual** method `Speak()`, which can be overridden.
+  - The derived class `Dog` provides its own implementation of `Speak()`, modifying the behavior.
+
+## 🏗️ Virtual Members and Lazy Loading in EF Core
+EF Core uses **lazy loading proxies** to automatically load related data. For EF Core to generate a proxy, **navigation properties must be virtual**.
+### ✅ Example with Lazy Loading
+```csharp
+public class Customer
+{
+    public int CustomerId { get; set; }
+    public string Name { get; set; }
+    
+    // Virtual navigation property enables lazy loading.
+    public virtual ICollection<Order> Orders { get; set; }
+}
+
+public class Order
+{
+    public int OrderId { get; set; }
+    public DateTime OrderDate { get; set; }
+    
+    public int CustomerId { get; set; }
+    
+    // Virtual navigation property.
+    public virtual Customer Customer { get; set; }
+}
+```
+
+### ✅ Configuration in `DbContext`
+```csharp
+protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+{
+    optionsBuilder
+        .UseLazyLoadingProxies()  // Enables lazy loading via proxies.
+        .UseSqlServer("YourConnectionString");
+}
+```
+
+Without the **`virtual`** keyword, EF Core **cannot override** these properties to inject lazy loading behavior.
+
+### 📊 Diagram: Lazy Loading with Virtual Navigation Properties
+```mermaid
+flowchart TD
+    A[Customer Entity with Virtual Navigation Property]
+    B[Lazy Loading Proxy generated for Orders]
+    A --> B
+```
+
+## 📊 Comparison Table: Virtual vs. Non-Virtual Members
+| **Aspect**             | **Virtual Members**                                                      | **Non-Virtual Members**                                      |
+|------------------------|--------------------------------------------------------------------------|--------------------------------------------------------------|
+| **Overriding**         | Can be overridden in derived classes using `override`.                   | Cannot be overridden; they are fixed in the base class.      |
+| **Lazy Loading (EF Core)** | Required for lazy loading via proxies.                                  | Not suitable for lazy loading; EF Core cannot create proxies.|
+| **Polymorphism**       | Enables polymorphic behavior and dynamic dispatch at runtime.           | Does not support polymorphism; behavior is static.           |
+| **Extensibility**      | Offers greater flexibility for extension and customization.              | More rigid; intended for functionality that should not change. |
+
+## 🏁 Conclusion
+The **`public virtual`** keyword in .NET is fundamental for enabling **polymorphism** and **dynamic behavior** in object-oriented programming. It allows methods and properties to be overridden in **derived classes**, which is essential for creating **flexible, extensible applications**.
+In **EF Core**, marking navigation properties as **virtual** is crucial for **lazy loading**, where related data is fetched **on-demand** rather than upfront.
+By understanding and correctly applying **virtual members**, you can design applications that are **maintainable** and **efficient**, leveraging the full power of **OOP** and **EF Core’s advanced data-loading capabilities**. 🚀
+
+## 📚 References
+- [Microsoft Docs: Virtual and Override](https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/virtual)
+- [Microsoft Docs: Inheritance and Polymorphism in C#](https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/classes-and-structs/inheritance)
+
