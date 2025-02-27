@@ -6713,3 +6713,79 @@ By selecting the **right loading strategy** based on your application needs, you
 
 ## 📚 References
 - [Microsoft Docs - Loading Related Data](https://learn.microsoft.com/en-us/ef/core/querying/related-data)
+
+---
+# 🚀 Comprehensive Guide to Eager Loading in EF Core
+## 📘 Introduction
+**Eager Loading** in **Entity Framework Core (EF Core)** is a technique used to retrieve **related data** in a **single query** to improve performance and simplify data access. By using **`.Include()`** and **`.ThenInclude()`**, eager loading helps avoid the **N+1 query problem** by preloading required entities alongside the main entity.
+
+## 📌 Key Concepts
+| **Concept**               | **Description**                                                                         |
+|---------------------------|-----------------------------------------------------------------------------------------|
+| **Eager Loading** 🚀     | Loads related data **immediately** via `Include()` in the main query.                  |
+| **Explicit Loading** 🎯   | Manually loads related data using `context.Entry(entity).Collection().Load()`.        |
+| **Lazy Loading** 🕰️     | Automatically loads related data when the property is accessed (requires configuration).|
+| **Performance Impact**    | Prevents multiple database round trips, ensuring optimized query execution.             |
+
+## 🏗️ Scenario 1: Eager Loading with `.Include()`
+### ✅ Definition
+Eager loading fetches **related data** in a **single query** using the `Include()` method. This is ideal when related data is **always needed**.
+### 📌 Characteristics
+✔ **Single Query** – Retrieves both the main entity and its related entities at once.  
+✔ **Minimizes N+1 Problem** – Reduces extra database calls.  
+✔ **Potential Overhead** – Can retrieve more data than necessary.  
+### 🏗️ Example: Loading `Orders` for `Customers`
+```csharp
+using var context = new AppDbContext();
+
+var customers = await context.Customers
+    .Include(c => c.Orders) // Eagerly load Orders
+    .ToListAsync();
+```
+
+### 📊 Diagram
+```mermaid
+flowchart TD
+    A[Customer Table] --> B[Order Table]
+    A -- "Eager Loading via Include" --> C[Single SQL Query retrieving Customers + Orders]
+```
+
+## 🏗️ Scenario 2: Nested Eager Loading with `.ThenInclude()`
+### ✅ Definition
+When **multiple levels** of relationships exist (e.g., **Orders → OrderItems**), use `.ThenInclude()` to fetch **nested** related data.
+### 🏗️ Example: Loading `Orders` and their `OrderItems`
+```csharp
+using var context = new AppDbContext();
+
+var customers = await context.Customers
+    .Include(c => c.Orders)
+        .ThenInclude(o => o.OrderItems) // Fetch nested data
+    .ToListAsync();
+```
+
+### 📊 Diagram
+```mermaid
+flowchart TD
+    A[Customer Table] --> B[Order Table]
+    B --> C[OrderItems Table]
+    A -- "Include()" --> B
+    B -- "ThenInclude()" --> C
+```
+
+## 📊 Comparison Table: Loading Strategies
+| **Aspect**              | **Eager Loading 🚀**                      | **Explicit Loading 🎯**                 | **Lazy Loading 🕰️**                     |
+|-------------------------|--------------------------------|--------------------------------|---------------------------------|
+| **Query Execution**    | Single query (`Include()`)     | Multiple queries (`Load()`)    | Multiple queries (on demand)  |
+| **Control Over Loading** | Automatic                     | Manual                         | Automatic (via property access) |
+| **Performance**         | Best for predictable data access | Flexible but may cause multiple queries | Can cause N+1 query issues    |
+| **Use Case**           | When related data is always needed | When related data is optional | When flexibility is required  |
+
+## 🏁 Conclusion
+Eager Loading in EF Core is a powerful strategy for **loading related data efficiently** in **a single query**. By utilizing **`.Include()`** and **`.ThenInclude()`**, developers can **optimize database access** and **improve performance** while reducing multiple round trips. However, it is crucial to manage the volume of retrieved data to prevent unnecessary overhead.
+
+## 📚 References
+- [Microsoft Docs - Loading Related Data](https://learn.microsoft.com/en-us/ef/core/querying/related-data)
+
+---
+
+
