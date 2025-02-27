@@ -1,5 +1,6 @@
 ﻿using EntityFrameworkCore.Data;
 using EntityFrameworkCore.Domain;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using System.Globalization;
 
@@ -118,10 +119,40 @@ Console.WriteLine(context.DbPath);
 
 #region Raw SQL
 
-// Querying a Keyless Entity
+//Querying a Keyless Entity
 //await QueryingKeylessEntityOrView();
 
+//Executing Raw SQL Safely
+//ExecutingRawSql();
+
 #endregion
+
+void ExecutingRawSql()
+{
+    // FromSqlRaw()
+    Console.WriteLine("Enter Team Name: ");
+    var teamName = Console.ReadLine();
+    var teamNameParam = new SqliteParameter("teamName", teamName);
+    var teams = context.Teams.FromSqlRaw($"SELECT * FROM Teams WHERE name = @teamName", teamNameParam);
+    foreach (var t in teams)
+    {
+        Console.WriteLine(t);
+    }
+
+    // FromSql()
+    teams = context.Teams.FromSql($"SELECT * FROM Teams WHERE name = {teamName}");
+    foreach (var t in teams)
+    {
+        Console.WriteLine(t);
+    }
+
+    // FromSqlInterpolated
+    teams = context.Teams.FromSqlInterpolated($"SELECT * FROM Teams WHERE name = {teamName}");
+    foreach (var t in teams)
+    {
+        Console.WriteLine(t);
+    }
+}
 
 async Task QueryingKeylessEntityOrView()
 {
