@@ -116,6 +116,21 @@ Console.WriteLine(context.DbPath);
 
 #endregion
 
+#region Raw SQL
+
+// Querying a Keyless Entity
+//await QueryingKeylessEntityOrView();
+
+#endregion
+
+async Task QueryingKeylessEntityOrView()
+{
+    var teams = await context.TeamsAndLeaguesView.ToListAsync();
+    foreach (var team in teams)
+    {
+        Console.WriteLine($"{team.Name} - {team.LeagueName}");
+    }
+}
 
 async Task AnonymousTypesAndRelatedData()
 {
