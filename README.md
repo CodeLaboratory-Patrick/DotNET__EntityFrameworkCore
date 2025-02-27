@@ -6787,5 +6787,111 @@ Eager Loading in EF Core is a powerful strategy for **loading related data effic
 - [Microsoft Docs - Loading Related Data](https://learn.microsoft.com/en-us/ef/core/querying/related-data)
 
 ---
+# 🚀 Comprehensive Guide to AsSplitQuery(), Include(), and ThenInclude() in EF Core
+## 📘 Introduction
+**Entity Framework Core (EF Core)** provides powerful methods for **loading related data** efficiently. Three key methods used for eager loading and query optimization are:
+1. **`Include()`** – Eagerly loads related entities with a single query.
+2. **`ThenInclude()`** – Extends `Include()` to load deeper relationships.
+3. **`AsSplitQuery()`** – Splits a query with multiple includes into **separate SQL queries**, reducing the risk of performance issues like **Cartesian explosion**.
+Understanding these methods allows developers to **optimize queries, enhance performance, and manage complex relationships** effectively.
 
+## 📌 Key Concepts
+| **Concept**               | **Description**                                                                         |
+|---------------------------|-----------------------------------------------------------------------------------------|
+| **Include()** 🚀         | Loads related data **immediately** via `Include()`.                                    |
+| **ThenInclude()** 📂     | Allows **nested relationships** to be loaded within an `Include()`.                     |
+| **AsSplitQuery()** 🔀    | Splits queries into **multiple smaller queries** instead of a large joined query.      |
+| **Performance Impact**    | Proper use prevents **N+1** problems and minimizes excessive data retrieval.           |
 
+## 🏗️ Scenario 1: Using `Include()`
+### ✅ Definition
+`Include()` is used to **eagerly load related data** in a single SQL query. It is ideal for loading **directly related** entities.
+### 📌 Example: Loading `Orders` for `Customers`
+```csharp
+using var context = new AppDbContext();
+
+var customers = await context.Customers
+    .Include(c => c.Orders) // Eagerly load Orders
+    .ToListAsync();
+```
+
+### 📊 Diagram
+```mermaid
+flowchart TD
+    A[Customer Table] --> B[Order Table]
+    A -- "Include() fetches related data" --> C[Single SQL Query retrieves Customers + Orders]
+```
+
+## 🏗️ Scenario 2: Using `ThenInclude()`
+### ✅ Definition
+`ThenInclude()` is used after `Include()` to **load deeper relationships**, allowing multi-level eager loading.
+### 📌 Example: Loading `Orders` and their `OrderItems`
+```csharp
+using var context = new AppDbContext();
+
+var customers = await context.Customers
+    .Include(c => c.Orders)
+        .ThenInclude(o => o.OrderItems) // Fetch nested data
+    .ToListAsync();
+```
+
+### 📊 Diagram
+```mermaid
+flowchart TD
+    A[Customer Table] --> B[Order Table]
+    B --> C[OrderItems Table]
+    A -- "Include()" --> B
+    B -- "ThenInclude()" --> C
+```
+
+## 🏗️ Scenario 3: Using `AsSplitQuery()`
+### ✅ Definition
+By default, EF Core uses **a single large SQL query** for multiple includes, which can lead to performance issues. `AsSplitQuery()` **splits these into multiple queries** to optimize performance.
+### 📌 Example: Using `AsSplitQuery()` to Load Related Data
+```csharp
+using var context = new AppDbContext();
+
+var customerData = await context.Customers
+    .Include(c => c.Orders)
+        .ThenInclude(o => o.OrderItems)
+    .AsSplitQuery() // Executes separate SQL queries
+    .FirstOrDefaultAsync(c => c.CustomerId == 1);
+```
+
+### 📊 Diagram
+```mermaid
+flowchart TD
+    A[Customer Entity]
+    B[Order Entity]
+    C[OrderItem Entity]
+    
+    subgraph Single Query (Default)
+        A -->|Include| B
+        B -->|ThenInclude| C
+        D[One Large SQL Query]
+    end
+    
+    subgraph Split Query (Optimized)
+        A -->|Include| B
+        B -->|ThenInclude| C
+        E[Multiple SQL Queries]
+    end
+```
+
+## 📊 Comparison Table: `Include()`, `ThenInclude()`, and `AsSplitQuery()`
+| Method                | Purpose                                                         | Usage Scenario                                                 |
+|-----------------------|----------------------------------------------------------------|---------------------------------------------------------------|
+| **Include()**        | Loads related entities eagerly.                               | Single-level relationships (`Orders` with `Customers`).       |
+| **ThenInclude()**    | Loads **nested** relationships after an `Include()`.          | Multi-level relationships (`Orders → OrderItems`).            |
+| **AsSplitQuery()**   | Splits queries into **separate** queries for optimization.    | Large queries with multiple includes to reduce redundancy.    |
+
+## 🏁 Conclusion
+EF Core provides **three essential methods** to optimize **loading related data**:
+- **`Include()`**: Loads related data eagerly in a **single query**.
+- **`ThenInclude()`**: Extends `Include()` to **fetch nested relationships**.
+- **`AsSplitQuery()`**: Splits a complex query into **multiple queries**, improving performance for **large datasets**.
+By leveraging these methods appropriately, developers can ensure **efficient database queries**, **reduce performance bottlenecks**, and **enhance application scalability**.
+
+## 📚 References
+- [Microsoft Docs - Loading Related Data](https://learn.microsoft.com/en-us/ef/core/querying/related-data)
+- [Microsoft Docs - AsSplitQuery](https://specification.ardalis.com/features/assplitquery.html)
