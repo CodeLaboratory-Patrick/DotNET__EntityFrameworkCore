@@ -6344,3 +6344,372 @@ This EF Core Fluent API configuration ensures:
 4. **NoAction / ClientSetNull:** Delegate delete actions to the database or handle them on the client side.
 
 ---
+# 🚀 Comprehensive Guide to One-to-One Relationships in EF Core
+## 📘 Introduction
+One-to-one relationships in **Entity Framework Core (EF Core)** represent a unique association where one entity instance is related to **only one** instance of another entity. This type of relationship is useful for **data organization, security, performance, and normalization**. Understanding how to properly configure one-to-one relationships can lead to a more efficient database design and improved application performance.
+### ✅ What Is a One-to-One Relationship?
+- **Definition**: A single instance of one entity (the principal) is associated with **exactly one** instance of another entity (the dependent).
+- **Purpose**:
+  - **Data Organization**: Splitting data across multiple tables.
+  - **Normalization**: Reducing redundancy and improving database efficiency.
+  - **Performance**: Optimizing queries by loading only necessary data, reducing payload.
+- **Key Points**:
+  - The dependent entity usually holds the **foreign key**.
+  - Can be configured using **Fluent API** or **Data Annotations**.
+  - EF Core supports one-to-one relationships **naturally**.
+  - Cascading behaviors like `Cascade`, `Restrict`, or `SetNull` determine what happens when the principal entity is deleted.
+
+## 📌 Key Characteristics
+| **Characteristic**         | **Description**                                                                                                    |
+|----------------------------|--------------------------------------------------------------------------------------------------------------------|
+| **Uniqueness**             | Each entity on both sides of the relationship can have only one related entity.                                    |
+| **Foreign Key Location**   | The dependent entity typically contains the foreign key that points to the principal entity.                       |
+| **Navigation Properties**  | Both entities usually have navigation properties referencing each other.|
+| **Optional vs. Required**  | The relationship can be **required** (non-nullable FK) or **optional** (nullable FK).|
+| **Cascading Behavior**     | Delete behaviors (`Cascade`, `Restrict`, `SetNull`) can be configured.|
+| **Loading Strategy**       | Relationships can be loaded using **Eager**, **Lazy**, or **Explicit** loading based on application needs. |
+
+## 🏗️ Example: User & UserProfile
+### 1️⃣ Entity Classes
+```csharp
+public class User
+{
+    public int UserId { get; set; }
+    public string Username { get; set; }
+    public UserProfile Profile { get; set; }
+}
+
+public class UserProfile
+{
+    public int UserProfileId { get; set; }
+    public string Bio { get; set; }
+    public int UserId { get; set; }
+    public User User { get; set; }
+}
+```
+
+### 2️⃣ Fluent API Configuration
+```csharp
+protected override void OnModelCreating(ModelBuilder modelBuilder)
+{
+    modelBuilder.Entity<User>()
+        .HasOne(u => u.Profile)
+        .WithOne(p => p.User)
+        .HasForeignKey<UserProfile>(p => p.UserId)
+        .IsRequired();
+}
+```
+#### 📝 Explanation
+- `.HasOne(u => u.Profile).WithOne(p => p.User)`: Declares a one-to-one relationship.
+- `.HasForeignKey<UserProfile>(p => p.UserId)`: Configures `UserProfile.UserId` as the foreign key.
+- `.IsRequired()`: Ensures every `UserProfile` **must** be associated with a `User`.
+
+## 🌐 Diagram: One-to-One Association
+```mermaid
+flowchart TD
+    A[User]
+    B[UserProfile]
+    A -- "has one" --> B
+    B -- "belongs to" --> A
+```
+
+### Shared Primary Key Approach
+In some cases, `UserProfile.Id` can **share the same primary key** as `User.Id`, ensuring a strict 1:1 mapping.
+```csharp
+public class UserProfile
+{
+    [Key]
+    public int Id { get; set; }  // same as the User.Id
+    public User User { get; set; }
+}
+```
+
+#### 📝 Explanation
+- The `UserProfile` **primary key is the same** as `User.Id`.
+- EF requires additional Fluent API configuration to enforce this.
+
+## 📊 Table: One-to-One Options
+| Approach                  | Foreign Key Placement           | Additional Notes                                 |
+|---------------------------|---------------------------------|-------------------------------------------------|
+| **Separate PK**          | Dependent has its own PK + FK   | Easiest to implement (like the `UserProfile` sample).|
+| **Shared PK**            | Dependent PK = principal PK     | Requires additional Fluent API configuration.|
+| **Cascade or Restrict**  | `.OnDelete(DeleteBehavior.???)` | Controls if child is removed if parent is deleted.|
+| **Lazy vs. Eager Loading** | `Include()` or `Proxy` Loading | Determines how data is retrieved at runtime. |
+
+## 🔍 Additional Considerations
+- **Performance Optimization**: Avoid unnecessary eager loading when not needed to reduce data retrieval overhead.
+- **Data Integrity**: Choose the appropriate **delete behavior** to prevent orphaned records or unintended deletions.
+- **Indexing Foreign Keys**: For faster lookups, ensure foreign keys are properly indexed in the database schema.
+
+## 🏆 Conclusion
+A **One-to-One Relationship** in EF Core is useful for scenarios where **each record in table A uniquely corresponds to exactly one record in table B**. By defining references using **Fluent API** or **Data Annotations**, you can efficiently model real-world data relationships such as **user-profiles, extended product details, or specialized domain objects**. Additionally, considering **loading strategies, cascading behaviors, and key placement** ensures a well-structured and efficient database design.
+
+## 📚 References
+- [Microsoft Docs - One-to-One Relationships](https://learn.microsoft.com/en-us/ef/core/modeling/relationships/one-to-one)
+
+---
+# 🚀 Comprehensive Guide to Inserting Related Data in EF Core
+## 📘 Introduction
+In **Entity Framework Core (EF Core)**, inserting **related data** involves creating records in multiple tables that are linked by **foreign keys** or **navigation properties**. This is a crucial operation when working with **one-to-one, one-to-many, and many-to-many** relationships in a relational database. Understanding how to handle related data properly ensures data integrity and improves performance.
+### ✅ Why Insert Related Data?
+- **Data Integrity**: Ensures that relationships between tables are maintained.
+- **Automatic Foreign Key Assignment**: EF Core assigns foreign keys when using navigation properties.
+- **Batch Insertion**: Reduces the number of database roundtrips by inserting multiple related entities at once.
+- **Change Tracking**: EF Core manages relationships and inserts records in the correct order.
+
+## 📌 Key Concepts
+| **Concept**                 | **Description**                                                                         |
+|-----------------------------|-----------------------------------------------------------------------------------------|
+| **Foreign Keys (FKs)**      | The child table references the parent’s primary key using a foreign key column.        |
+| **Navigation Properties**   | Allow EF Core to automatically handle relationships in memory.                         |
+| **Change Tracking**         | EF monitors related entity changes and persists them together when `SaveChanges()` is called. |
+| **Cascade Operations**      | Determines whether related records are deleted when a parent record is removed.        |
+
+## 🏗️ Scenario 1: Insert Record with an Existing Foreign Key
+### Description
+When inserting a child record that references an existing parent, you can manually set the **foreign key** value.
+### Example: Adding an `Order` for an Existing `Customer`
+```csharp
+using var context = new AppDbContext();
+
+// Suppose a Customer with ID=1 already exists
+int existingCustomerId = 1;
+
+var order = new Order
+{
+    OrderDate = DateTime.UtcNow,
+    CustomerId = existingCustomerId  // Setting the FK directly
+};
+
+context.Orders.Add(order);
+await context.SaveChangesAsync();
+```
+#### 📝 Explanation
+- **Foreign Key Approach**: We set the `CustomerId` manually.
+- **Efficient for Disconnected Scenarios**: When you receive a foreign key from an API request, this method avoids extra database queries.
+
+## 🏗️ Scenario 2: Insert Parent and Child Together
+### Description
+When both **parent and child** entities are new, you can assign the child entity to the parent’s **navigation property**.
+### Example: Adding a New `Customer` with a `Profile`
+```csharp
+using var context = new AppDbContext();
+
+var customer = new Customer
+{
+    Name = "Alice",
+    Profile = new Profile { Bio = "Software Engineer" } // One-to-One Relationship
+};
+
+context.Customers.Add(customer);
+await context.SaveChangesAsync();
+```
+#### 📝 Explanation
+- **Navigation Property Approach**: `Profile` is assigned to `customer.Profile`.
+- **EF Core Automatically Handles FK Assignment**: The generated `CustomerId` is automatically set in `Profile`.
+- **EF Inserts Parent First, Then Child**: Ensures proper relational integrity.
+
+## 🏗️ Scenario 3: Insert Parent with Multiple Children (One-to-Many)
+### Description
+Inserting a **parent** entity with multiple **child** entities ensures that all records are added in a single transaction.
+### Example: Adding a `Customer` with Multiple `Orders`
+```csharp
+using var context = new AppDbContext();
+
+var customer = new Customer
+{
+    Name = "Bob",
+    Orders = new List<Order>
+    {
+        new Order { OrderDate = DateTime.UtcNow },
+        new Order { OrderDate = DateTime.UtcNow.AddDays(-1) },
+    }
+};
+
+context.Customers.Add(customer);
+await context.SaveChangesAsync();
+```
+#### 📝 Explanation
+- **Collection Navigation Property**: The `Orders` list is populated with new `Order` entities.
+- **EF Core Automatically Sets Foreign Keys**: `Order.CustomerId` is assigned after `Customer` is inserted.
+- **Single `SaveChanges()` Call**: Reduces the number of database operations.
+
+## 🌐 Diagram: Insert Flow for Parent with Children
+```mermaid
+flowchart TD
+    A[New Customer]
+    B[New Order 1]
+    C[New Order 2]
+    A --> B
+    A --> C
+```
+
+## 📊 Summary of Insertion Scenarios
+| **Scenario**                  | **Method**                                          | **Advantages**                                      |
+|--------------------------------|----------------------------------------------------|----------------------------------------------------|
+| Insert Child with FK           | Set `ForeignKeyId` manually                        | No need to load parent entity                     |
+| Insert Parent & Child          | Use navigation property (`entity.Property = value`) | Ensures relational integrity, automatic FK assignment |
+| Insert Parent with Children    | Assign collection (`entity.Children = List<T>()`)  | Inserts everything in one transaction, efficient |
+
+## ⚙️ Additional Considerations
+### 1️⃣ **Primary Key Handling**
+- EF assigns the **primary key** to the parent before inserting child records.
+- Ensure primary keys are properly configured (`[Key]` or `Fluent API`).
+### 2️⃣ **Foreign Key Constraints**
+- If using manual FK assignment, ensure the referenced record exists to avoid errors.
+- Use **navigation properties** when working within the same `DbContext` instance.
+### 3️⃣ **Cascading Deletions**
+- Define `.OnDelete(DeleteBehavior.Cascade)` in Fluent API for automatic child deletions.
+- Use `.OnDelete(DeleteBehavior.Restrict)` to prevent accidental cascading deletions.
+### 4️⃣ **Performance Optimizations**
+- **Batch Inserts**: EF Core optimizes bulk insert operations.
+- **Use `AsNoTracking()`**: If reading data without modifying it, disable change tracking to improve performance.
+
+## 🏆 Conclusion
+When **inserting related data** in EF Core, you can set **foreign keys** manually or rely on **navigation properties** for parent-child relationships. Whether you’re adding a single new `Order` referencing an existing `Customer`, creating a **parent** and **child** together, or populating a **parent** with multiple children, EF Core manages the behind-the-scenes linkages. By leveraging **change tracking and batch processing**, you can efficiently handle complex data insertions.
+
+## 📚 References
+- [Microsoft Docs - EF Core Saving Related Data](https://learn.microsoft.com/en-us/ef/core/saving/related-data)
+
+---
+# 🚀 Comprehensive Guide to Loading Related Data in EF Core
+## 📘 Introduction
+When working with **Entity Framework Core (EF Core)**, retrieving **related data** is a fundamental task. EF Core provides **three primary strategies** for loading related entities efficiently:
+1. **Eager Loading** 🚀 – Retrieves related data up front with `Include()`.
+2. **Explicit Loading** 🎯 – Loads related data manually on demand using `Load()`.
+3. **Lazy Loading** 🕰️ – Automatically loads related data when the navigation property is accessed.
+Each method has distinct advantages and trade-offs, and choosing the right approach can significantly impact application performance.
+
+## 📌 Key Concepts
+| **Concept**               | **Description**                                                                         |
+|---------------------------|-----------------------------------------------------------------------------------------|
+| **Eager Loading** 🚀     | Loads all related data **immediately** via `Include()`.                                |
+| **Explicit Loading** 🎯   | Manually loads related data using `context.Entry(entity).Collection().Load()`.        |
+| **Lazy Loading** 🕰️     | Automatically loads related data when the property is accessed (requires configuration).|
+| **Performance Impact**    | Proper choice prevents the `N+1` problem and unnecessary data retrieval.              |
+
+## 🏗️ Scenario 1: Eager Loading with `.Include()`
+### ✅ Definition
+Eager loading fetches **related data** in a **single query** using the `Include()` method. This is ideal when related data is **always needed**.
+### 📌 Characteristics
+✔ **Single Query** – Retrieves both the main entity and its related entities at once.  
+✔ **Minimizes N+1 Problem** – Reduces extra database calls.  
+✔ **Potential Overhead** – Can retrieve more data than necessary.  
+
+### 🏗️ Example: Loading `Orders` for `Customers`
+```csharp
+using var context = new AppDbContext();
+
+var customers = await context.Customers
+    .Include(c => c.Orders) // Eagerly load Orders
+    .ToListAsync();
+```
+
+### 📊 Diagram
+```mermaid
+flowchart TD
+    A[Customer Table] --> B[Order Table]
+    A -- "Eager Loading via Include" --> C[Single SQL Query retrieving Customers + Orders]
+```
+
+## 🏗️ Scenario 2: Explicit Loading
+### ✅ Definition
+Explicit loading requires you to **manually load related data** **after** querying the main entity.
+### 📌 Characteristics
+✔ **On-Demand** – Loads related data only when needed.  
+✔ **Multiple Queries** – Additional database queries may be needed.  
+✔ **More Control** – Useful when related data is conditionally required.  
+
+### 🏗️ Example: Loading `Orders` for a `Customer`
+```csharp
+using var context = new AppDbContext();
+
+var customer = await context.Customers
+    .FirstOrDefaultAsync(c => c.Id == 1);
+
+// Orders are not loaded yet
+await context.Entry(customer)
+    .Collection(c => c.Orders)
+    .LoadAsync();
+```
+
+### 📊 Diagram
+```mermaid
+flowchart TD
+    A[Customer Table]
+    B[Order Table]
+    A -- "Initial Query (No related data)" --> C[Customer]
+    C -- "Explicit Load: Collection(c => c.Orders)" --> D[Separate SQL Query for Orders]
+```
+
+## 🏗️ Scenario 3: Lazy Loading
+### ✅ Definition
+Lazy loading **defers the retrieval of related data** **until it is accessed** for the first time. EF Core supports lazy loading through **proxies** that automatically trigger a query when a navigation property is accessed.
+### 📌 Characteristics
+✔ **On-Demand** – Data loads only when needed.  
+✔ **Transparent** – Simplifies code, but can cause hidden performance issues.  
+✔ **Requires Configuration** – Must enable lazy loading proxies.  
+
+### 🏗️ Example: Enabling Lazy Loading
+Enable lazy loading in `DbContext`:
+```csharp
+protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+{
+    optionsBuilder
+        .UseLazyLoadingProxies()
+        .UseSqlServer("YourConnectionString");
+}
+```
+
+Define navigation properties as **virtual**:
+```csharp
+public class Customer
+{
+    public int CustomerId { get; set; }
+    public string Name { get; set; }
+    
+    // Virtual navigation property for lazy loading
+    public virtual ICollection<Order> Orders { get; set; }
+}
+```
+
+Accessing the property triggers **lazy loading**:
+```csharp
+var customer = await context.Customers.FirstOrDefaultAsync(c => c.CustomerId == 1);
+
+// Accessing Orders triggers a separate SQL query
+var orders = customer.Orders;
+```
+
+### 📊 Diagram
+```mermaid
+flowchart TD
+    A[Customer Table] --> B[Order Table]
+    A -- "Initial Query" --> C[Customer without Orders]
+    C -- "Access Virtual Navigation Property" --> D[Lazy Load Orders with Separate Query]
+```
+
+## 📊 Comparison Table
+| **Aspect**              | **Eager Loading 🚀**                      | **Explicit Loading 🎯**                 | **Lazy Loading 🕰️**                     |
+|-------------------------|--------------------------------|--------------------------------|---------------------------------|
+| **Query Execution**    | Single query (`Include()`)     | Multiple queries (`Load()`)    | Multiple queries (on demand)  |
+| **Control Over Loading** | Automatic                     | Manual                         | Automatic (via property access) |
+| **Performance**         | Can retrieve excess data      | Optimized but requires extra queries | Risk of `N+1` query issues    |
+| **Use Case**           | When related data is always needed | When related data is optional | When flexibility is required  |
+
+## 🏆 Best Practices
+✔ **Use Eager Loading** when related data is frequently needed.  
+✔ **Use Explicit Loading** for conditional scenarios or when avoiding unnecessary data retrieval.  
+✔ **Use Lazy Loading** cautiously, ensuring it does not introduce performance issues (e.g., `N+1` problem).  
+✔ **Profile Queries** using EF Core logging to monitor query execution.  
+✔ **Optimize Performance** by selectively combining strategies where appropriate.  
+
+## 🏁 Conclusion
+EF Core provides **three distinct methods** for loading related data: **Eager**, **Explicit**, and **Lazy Loading**. Each has its own strengths and weaknesses:
+- **Eager Loading (`Include()`)** – Best when related data is always required upfront.
+- **Explicit Loading (`Load()`)** – Provides manual control over when and how data is loaded.
+- **Lazy Loading (`virtual` properties)** – Offers convenience but requires careful use to avoid performance pitfalls.
+By selecting the **right loading strategy** based on your application needs, you can **optimize database queries**, **reduce overhead**, and **improve performance** in your EF Core applications. 🚀
+
+## 📚 References
+- [Microsoft Docs - Loading Related Data](https://learn.microsoft.com/en-us/ef/core/querying/related-data)
