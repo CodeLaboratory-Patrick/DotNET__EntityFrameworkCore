@@ -20,6 +20,11 @@ namespace EntityFrameworkCore.Data
             DbPath = Path.Combine(path, "FootballLeague_EfCore.db");
         }
 
+        public FootballLeagueDbContext(DbContextOptions options) : base(options)
+        {
+            
+        }
+
         public DbSet<Team> Teams { get; set; }
         public DbSet<Coach> Coaches { get; set; }
         public DbSet<League> Leagues { get; set; }
