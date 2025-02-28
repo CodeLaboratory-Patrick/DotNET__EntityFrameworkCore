@@ -15,7 +15,7 @@ namespace EntityFrameworkCore.Data
 {
     public class FootballLeagueDbContext : DbContext
     {
-        public FootballLeagueDbContext(DbContextOptions options) : base(options)
+        public FootballLeagueDbContext(DbContextOptions<FootballLeagueDbContext> options) : base(options)
         {
             
         }
