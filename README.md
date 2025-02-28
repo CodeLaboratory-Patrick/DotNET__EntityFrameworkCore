@@ -6713,3 +6713,594 @@ By selecting the **right loading strategy** based on your application needs, you
 
 ## 📚 References
 - [Microsoft Docs - Loading Related Data](https://learn.microsoft.com/en-us/ef/core/querying/related-data)
+
+---
+# 🚀 Comprehensive Guide to Eager Loading in EF Core
+## 📘 Introduction
+**Eager Loading** in **Entity Framework Core (EF Core)** is a technique used to retrieve **related data** in a **single query** to improve performance and simplify data access. By using **`.Include()`** and **`.ThenInclude()`**, eager loading helps avoid the **N+1 query problem** by preloading required entities alongside the main entity.
+
+## 📌 Key Concepts
+| **Concept**               | **Description**                                                                         |
+|---------------------------|-----------------------------------------------------------------------------------------|
+| **Eager Loading** 🚀     | Loads related data **immediately** via `Include()` in the main query.                  |
+| **Explicit Loading** 🎯   | Manually loads related data using `context.Entry(entity).Collection().Load()`.        |
+| **Lazy Loading** 🕰️     | Automatically loads related data when the property is accessed (requires configuration).|
+| **Performance Impact**    | Prevents multiple database round trips, ensuring optimized query execution.             |
+
+## 🏗️ Scenario 1: Eager Loading with `.Include()`
+### ✅ Definition
+Eager loading fetches **related data** in a **single query** using the `Include()` method. This is ideal when related data is **always needed**.
+### 📌 Characteristics
+✔ **Single Query** – Retrieves both the main entity and its related entities at once.  
+✔ **Minimizes N+1 Problem** – Reduces extra database calls.  
+✔ **Potential Overhead** – Can retrieve more data than necessary.  
+### 🏗️ Example: Loading `Orders` for `Customers`
+```csharp
+using var context = new AppDbContext();
+
+var customers = await context.Customers
+    .Include(c => c.Orders) // Eagerly load Orders
+    .ToListAsync();
+```
+
+### 📊 Diagram
+```mermaid
+flowchart TD
+    A[Customer Table] --> B[Order Table]
+    A -- "Eager Loading via Include" --> C[Single SQL Query retrieving Customers + Orders]
+```
+
+## 🏗️ Scenario 2: Nested Eager Loading with `.ThenInclude()`
+### ✅ Definition
+When **multiple levels** of relationships exist (e.g., **Orders → OrderItems**), use `.ThenInclude()` to fetch **nested** related data.
+### 🏗️ Example: Loading `Orders` and their `OrderItems`
+```csharp
+using var context = new AppDbContext();
+
+var customers = await context.Customers
+    .Include(c => c.Orders)
+        .ThenInclude(o => o.OrderItems) // Fetch nested data
+    .ToListAsync();
+```
+
+### 📊 Diagram
+```mermaid
+flowchart TD
+    A[Customer Table] --> B[Order Table]
+    B --> C[OrderItems Table]
+    A -- "Include()" --> B
+    B -- "ThenInclude()" --> C
+```
+
+## 📊 Comparison Table: Loading Strategies
+| **Aspect**              | **Eager Loading 🚀**                      | **Explicit Loading 🎯**                 | **Lazy Loading 🕰️**                     |
+|-------------------------|--------------------------------|--------------------------------|---------------------------------|
+| **Query Execution**    | Single query (`Include()`)     | Multiple queries (`Load()`)    | Multiple queries (on demand)  |
+| **Control Over Loading** | Automatic                     | Manual                         | Automatic (via property access) |
+| **Performance**         | Best for predictable data access | Flexible but may cause multiple queries | Can cause N+1 query issues    |
+| **Use Case**           | When related data is always needed | When related data is optional | When flexibility is required  |
+
+## 🏁 Conclusion
+Eager Loading in EF Core is a powerful strategy for **loading related data efficiently** in **a single query**. By utilizing **`.Include()`** and **`.ThenInclude()`**, developers can **optimize database access** and **improve performance** while reducing multiple round trips. However, it is crucial to manage the volume of retrieved data to prevent unnecessary overhead.
+
+## 📚 References
+- [Microsoft Docs - Loading Related Data](https://learn.microsoft.com/en-us/ef/core/querying/related-data)
+
+---
+# 🚀 Comprehensive Guide to AsSplitQuery(), Include(), and ThenInclude() in EF Core
+## 📘 Introduction
+**Entity Framework Core (EF Core)** provides powerful methods for **loading related data** efficiently. Three key methods used for eager loading and query optimization are:
+1. **`Include()`** – Eagerly loads related entities with a single query.
+2. **`ThenInclude()`** – Extends `Include()` to load deeper relationships.
+3. **`AsSplitQuery()`** – Splits a query with multiple includes into **separate SQL queries**, reducing the risk of performance issues like **Cartesian explosion**.
+Understanding these methods allows developers to **optimize queries, enhance performance, and manage complex relationships** effectively.
+
+## 📌 Key Concepts
+| **Concept**               | **Description**                                                                         |
+|---------------------------|-----------------------------------------------------------------------------------------|
+| **Include()** 🚀         | Loads related data **immediately** via `Include()`.                                    |
+| **ThenInclude()** 📂     | Allows **nested relationships** to be loaded within an `Include()`.                     |
+| **AsSplitQuery()** 🔀    | Splits queries into **multiple smaller queries** instead of a large joined query.      |
+| **Performance Impact**    | Proper use prevents **N+1** problems and minimizes excessive data retrieval.           |
+
+## 🏗️ Scenario 1: Using `Include()`
+### ✅ Definition
+`Include()` is used to **eagerly load related data** in a single SQL query. It is ideal for loading **directly related** entities.
+### 📌 Example: Loading `Orders` for `Customers`
+```csharp
+using var context = new AppDbContext();
+
+var customers = await context.Customers
+    .Include(c => c.Orders) // Eagerly load Orders
+    .ToListAsync();
+```
+
+### 📊 Diagram
+```mermaid
+flowchart TD
+    A[Customer Table] --> B[Order Table]
+    A -- "Include() fetches related data" --> C[Single SQL Query retrieves Customers + Orders]
+```
+
+## 🏗️ Scenario 2: Using `ThenInclude()`
+### ✅ Definition
+`ThenInclude()` is used after `Include()` to **load deeper relationships**, allowing multi-level eager loading.
+### 📌 Example: Loading `Orders` and their `OrderItems`
+```csharp
+using var context = new AppDbContext();
+
+var customers = await context.Customers
+    .Include(c => c.Orders)
+        .ThenInclude(o => o.OrderItems) // Fetch nested data
+    .ToListAsync();
+```
+
+### 📊 Diagram
+```mermaid
+flowchart TD
+    A[Customer Table] --> B[Order Table]
+    B --> C[OrderItems Table]
+    A -- "Include()" --> B
+    B -- "ThenInclude()" --> C
+```
+
+## 🏗️ Scenario 3: Using `AsSplitQuery()`
+### ✅ Definition
+By default, EF Core uses **a single large SQL query** for multiple includes, which can lead to performance issues. `AsSplitQuery()` **splits these into multiple queries** to optimize performance.
+### 📌 Example: Using `AsSplitQuery()` to Load Related Data
+```csharp
+using var context = new AppDbContext();
+
+var customerData = await context.Customers
+    .Include(c => c.Orders)
+        .ThenInclude(o => o.OrderItems)
+    .AsSplitQuery() // Executes separate SQL queries
+    .FirstOrDefaultAsync(c => c.CustomerId == 1);
+```
+
+### 📊 Diagram
+```mermaid
+flowchart TD
+    A[Customer Entity]
+    B[Order Entity]
+    C[OrderItem Entity]
+    
+    subgraph Single Query (Default)
+        A -->|Include| B
+        B -->|ThenInclude| C
+        D[One Large SQL Query]
+    end
+    
+    subgraph Split Query (Optimized)
+        A -->|Include| B
+        B -->|ThenInclude| C
+        E[Multiple SQL Queries]
+    end
+```
+
+## 📊 Comparison Table: `Include()`, `ThenInclude()`, and `AsSplitQuery()`
+| Method                | Purpose                                                         | Usage Scenario                                                 |
+|-----------------------|----------------------------------------------------------------|---------------------------------------------------------------|
+| **Include()**        | Loads related entities eagerly.                               | Single-level relationships (`Orders` with `Customers`).       |
+| **ThenInclude()**    | Loads **nested** relationships after an `Include()`.          | Multi-level relationships (`Orders → OrderItems`).            |
+| **AsSplitQuery()**   | Splits queries into **separate** queries for optimization.    | Large queries with multiple includes to reduce redundancy.    |
+
+## 🏁 Conclusion
+EF Core provides **three essential methods** to optimize **loading related data**:
+- **`Include()`**: Loads related data eagerly in a **single query**.
+- **`ThenInclude()`**: Extends `Include()` to **fetch nested relationships**.
+- **`AsSplitQuery()`**: Splits a complex query into **multiple queries**, improving performance for **large datasets**.
+By leveraging these methods appropriately, developers can ensure **efficient database queries**, **reduce performance bottlenecks**, and **enhance application scalability**.
+
+## 📚 References
+- [Microsoft Docs - Loading Related Data](https://learn.microsoft.com/en-us/ef/core/querying/related-data)
+- [Microsoft Docs - AsSplitQuery](https://specification.ardalis.com/features/assplitquery.html)
+
+---
+# 🚀 Comprehensive Guide to Explicit Loading in EF Core
+## 📘 Introduction
+**Explicit Loading** is a data retrieval strategy in **Entity Framework Core (EF Core)** that allows developers to manually load related data **after** the main entity has been retrieved. Unlike **Eager Loading**, which loads related data automatically via `.Include()`, and **Lazy Loading**, which loads data on property access, **Explicit Loading** requires explicit method calls (`Load()`, `LoadAsync()`).
+This method provides **fine-grained control** over when and how related data is fetched, improving **performance** and preventing unnecessary database queries.
+
+## 📌 Key Characteristics
+| **Aspect**               | **Description**                                                                              |
+|--------------------------|----------------------------------------------------------------------------------------------|
+| **Manual Control**       | Data is **only** loaded when explicitly requested.                                          |
+| **Separate Queries**     | Related entities are fetched using additional queries **after** the main entity is loaded.  |
+| **No Proxy Needed**      | Unlike Lazy Loading, explicit loading does **not** require dynamic proxies.                  |
+| **Optimized Performance** | Helps avoid over-fetching related data when not immediately needed.                         |
+| **One Entity at a Time** | Requires explicit calls for each navigation property to be loaded.                          |
+
+## 🏗️ Example 1: Explicit Loading for Collections
+### ✅ Scenario: A `Customer` with multiple `Orders`
+```csharp
+using var context = new AppDbContext();
+
+// Retrieve a Customer entity only
+var customer = await context.Customers.FirstOrDefaultAsync(c => c.CustomerId == 1);
+
+if (customer != null)
+{
+    // Explicitly load related Orders
+    await context.Entry(customer)
+        .Collection(c => c.Orders)
+        .LoadAsync();
+    
+    Console.WriteLine($"Customer: {customer.Name} has {customer.Orders.Count} orders.");
+}
+```
+
+### 📊 Diagram: Explicit Loading Flow
+```mermaid
+flowchart TD
+    A[Main Entity Query]
+    B[Main Entity Loaded Without Related Data]
+    C[Explicit Call: Entry(entity).Collection().LoadAsync()]
+    D[Separate Query Executes]
+    E[Related Data Loaded and Attached]
+    
+    A --> B
+    B --> C
+    C --> D
+    D --> E
+```
+
+## 🏗️ Example 2: Explicit Loading for Single References
+### ✅ Scenario: A `Customer` with a `Profile`
+```csharp
+using var context = new AppDbContext();
+
+var customer = await context.Customers.FirstOrDefaultAsync(c => c.CustomerId == 1);
+
+// Explicitly load the related Profile
+await context.Entry(customer)
+    .Reference(c => c.Profile)
+    .LoadAsync();
+
+Console.WriteLine(customer.Profile.Bio);
+```
+
+## 🏗️ Example 3: Filtering Related Data with Explicit Loading
+### ✅ Scenario: Load only **recent** `Orders` for a `Customer`
+```csharp
+await context.Entry(customer)
+    .Collection(c => c.Orders)
+    .Query()
+    .Where(o => o.OrderDate > DateTime.UtcNow.AddDays(-30))
+    .LoadAsync();
+```
+
+**🔹 Explanation:**  
+- Uses `.Query()` before `.LoadAsync()` to filter related data.  
+- Only loads `Orders` placed in the last 30 days, avoiding unnecessary data fetch.  
+
+## 🌐 Comparison Table: Explicit vs. Eager vs. Lazy Loading
+| **Aspect**               | **Explicit Loading 🎯**             | **Eager Loading 🚀**                  | **Lazy Loading 🕰️**               |
+|--------------------------|----------------------------------|--------------------------------|--------------------------------|
+| **Data Retrieval**       | Manual `.Load()` calls required | Automatically loads with `.Include()` | Automatically loads on property access |
+| **Performance Impact**   | Controlled, avoids over-fetching | May load unnecessary data upfront | Can cause hidden `N+1` query issues |
+| **Best Use Case**        | Selective, conditional retrieval | When related data is **always needed** | When navigation properties are accessed unpredictably |
+| **Requires Proxies?**    | ❌ No                             | ❌ No                               | ✅ Yes (for lazy loading)         |
+
+## 🏁 Conclusion
+**Explicit Loading** in EF Core is a powerful tool that allows developers to **manually retrieve** related data **only when necessary**. By leveraging `context.Entry(entity).Collection(...).LoadAsync()` and `context.Entry(entity).Reference(...).LoadAsync()`, developers can improve application **performance**, prevent unnecessary data retrieval, and maintain **fine-grained control** over data access.
+- **Eager Loading (`Include()`)** – Best when related data is always required upfront.
+- **Explicit Loading (`Load()`)** – Ideal for conditional or performance-sensitive scenarios.
+- **Lazy Loading (`virtual` properties)** – Useful when data access patterns are unpredictable.
+
+## 📚 References
+- [Microsoft Docs - Explicit Loading in EF Core](https://learn.microsoft.com/en-us/ef/core/querying/related-data/explicit)
+
+---
+# 🚀 Comprehensive Guide to Lazy Loading in EF Core
+## 📘 Introduction
+**Lazy Loading** is a technique in **Entity Framework Core (EF Core)** that defers the loading of related entities until they are accessed. Unlike **Eager Loading**, which retrieves all related entities upfront using `.Include()`, and **Explicit Loading**, which requires explicit method calls like `.Load()`, Lazy Loading dynamically fetches related data only when it is first accessed.
+This approach **reduces initial query execution time** and **lowers memory consumption** but must be used carefully to avoid performance issues like the **N+1 query problem**.
+
+## 📌 Key Characteristics
+| **Aspect**               | **Description**                                                                                |
+|--------------------------|----------------------------------------------------------------------------------------------|
+| **On-Demand Retrieval**  | Related entities are fetched only when their navigation properties are accessed.             |
+| **Automatic Query Execution** | EF Core triggers additional queries dynamically behind the scenes.                         |
+| **Requires Configuration** | Needs Lazy Loading Proxies or `ILazyLoader` dependency injection.                          |
+| **Potential for N+1 Issue** | Can result in excessive queries if related data is accessed within loops.                  |
+| **Reduced Initial Load** | Improves performance by not retrieving unnecessary related data at query time.               |
+
+## 🏗️ Enabling Lazy Loading in EF Core
+### ✅ Step 1: Install Required Package
+```bash
+dotnet add package Microsoft.EntityFrameworkCore.Proxies
+```
+### ✅ Step 2: Configure `DbContext`
+```csharp
+using Microsoft.EntityFrameworkCore;
+
+public class ApplicationDbContext : DbContext
+{
+    public DbSet<Customer> Customers { get; set; }
+    public DbSet<Order> Orders { get; set; }
+    
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        optionsBuilder
+            .UseLazyLoadingProxies()  // Enable lazy loading
+            .UseSqlServer("YourConnectionString");
+    }
+}
+```
+### ✅ Step 3: Define Entities with `virtual` Navigation Properties
+```csharp
+public class Customer
+{
+    public int CustomerId { get; set; }
+    public string Name { get; set; }
+    
+    // Virtual navigation property to enable lazy loading.
+    public virtual ICollection<Order> Orders { get; set; }
+}
+
+public class Order
+{
+    public int OrderId { get; set; }
+    public DateTime OrderDate { get; set; }
+    
+    public int CustomerId { get; set; }
+    
+    // Virtual navigation property to enable lazy loading.
+    public virtual Customer Customer { get; set; }
+}
+```
+
+## 🏗️ Example: Lazy Loading in Action
+```csharp
+using var context = new ApplicationDbContext();
+
+// Retrieve a Customer entity without explicitly including Orders.
+var customer = await context.Customers.FirstOrDefaultAsync(c => c.CustomerId == 1);
+
+// Orders are not loaded yet. Accessing Orders triggers lazy loading.
+foreach (var order in customer.Orders)
+{
+    Console.WriteLine($"Order ID: {order.OrderId}, Date: {order.OrderDate}");
+}
+```
+
+### 📊 Diagram: Lazy Loading Flow
+```mermaid
+flowchart TD
+    A[Query for Main Entity (Customer)]
+    B[Customer Entity Loaded (Orders not loaded)]
+    C[Access Navigation Property (customer.Orders)]
+    D[EF Core Intercepts Access]
+    E[Lazy Loading Proxy Issues Query for Orders]
+    F[Orders are Loaded and Attached to Customer]
+    
+    A --> B
+    B --> C
+    C --> D
+    D --> E
+    E --> F
+```
+
+## 🌐 Comparison Table: Lazy vs. Eager vs. Explicit Loading
+| **Aspect**               | **Lazy Loading 🕰️**              | **Eager Loading 🚀**                   | **Explicit Loading 🎯**          |
+|--------------------------|---------------------------------|----------------------------------|---------------------------------|
+| **When Data Loads**      | When accessed dynamically       | Immediately with `.Include()`   | Only when manually called      |
+| **Query Execution**      | Multiple queries (on demand)   | Single query upfront            | Separate queries (manual)      |
+| **Performance Impact**   | Risk of N+1 queries            | Potential over-fetching         | Most controlled, but manual    |
+| **Setup Complexity**     | Requires configuration         | Simple with `.Include()`        | Needs explicit `.Load()` calls |
+| **Best Use Case**        | When related data is rarely used | When related data is always needed | Conditional or performance-sensitive scenarios |
+
+## 🏁 Conclusion
+Lazy Loading in EF Core is a **convenient technique** that defers related data retrieval **until it is accessed**, optimizing **initial query execution time** and **reducing memory footprint**. However, it must be used **strategically** to prevent excessive database queries.
+By understanding the differences between **Lazy**, **Eager**, and **Explicit Loading**, developers can **choose the best strategy** for their application needs and **ensure optimal performance**. 🚀
+
+## 📚 References
+- [Microsoft Docs - Lazy Loading in EF Core](https://learn.microsoft.com/en-us/ef/core/querying/related-data/lazy)
+
+---
+# 🚀 Comprehensive Guide to `public virtual` in .NET Development
+## 📘 Introduction
+In **.NET**, the **`public virtual`** keyword combination is frequently encountered in **C#** classes. Declaring a method or property as **virtual** enables **polymorphism**, allowing derived classes to override members and provide their own implementation. Additionally, in **Entity Framework Core (EF Core)**, marking navigation properties as **virtual** enables **lazy loading**.
+
+This guide clarifies what **`public virtual`** is, how it works, and why it’s important for **object-oriented programming (OOP)** and **EF Core development**.
+
+## 📌 Key Characteristics
+| **Aspect**               | **Description**                                                                               |
+|--------------------------|----------------------------------------------------------------------------------------------|
+| **Inheritance**          | Virtual members allow **derived classes** to provide their own **override**.                |
+| **Polymorphism**         | Supports **runtime polymorphism**, letting objects behave differently based on their type.  |
+| **Lazy Loading (EF Core)** | EF generates **proxy** classes that override **virtual** navigation properties to enable lazy loading. |
+| **Extensibility**        | Allows creating base classes with reusable logic that can be customized in subclasses.       |
+| **Performance**          | Virtual method calls have a small overhead, but the impact is negligible in most scenarios. |
+
+## 🏗️ How Virtual Members Work in .NET
+### ✅ Virtual Methods and Properties
+When you declare a method or property as `virtual` in a base class, you allow derived classes to **override** that member to provide a new implementation. 
+**Base Class Example:**
+```csharp
+public class Animal
+{
+    // A virtual method can be overridden.
+    public virtual void Speak()
+    {
+        Console.WriteLine("The animal makes a sound.");
+    }
+    
+    // A virtual property.
+    public virtual string Name { get; set; }
+}
+```
+
+**Derived Class Example:**
+```csharp
+public class Dog : Animal
+{
+    // Override the virtual method to provide a specific implementation.
+    public override void Speak()
+    {
+        Console.WriteLine("The dog barks.");
+    }
+    
+    // Override the virtual property.
+    public override string Name { get; set; } = "Dog";
+}
+```
+
+### 📊 Diagram: Virtual Member Override Flow
+```mermaid
+flowchart TD
+    A[Base Class: Animal]
+    B[Derived Class: Dog]
+    C[Method: Speak() in Animal (Virtual)]
+    D[Overridden Method: Speak() in Dog]
+    
+    A --> C
+    C --> B
+    B --> D
+```
+
+- **Explanation:**
+  - The base class `Animal` defines a **virtual** method `Speak()`, which can be overridden.
+  - The derived class `Dog` provides its own implementation of `Speak()`, modifying the behavior.
+
+## 🏗️ Virtual Members and Lazy Loading in EF Core
+EF Core uses **lazy loading proxies** to automatically load related data. For EF Core to generate a proxy, **navigation properties must be virtual**.
+### ✅ Example with Lazy Loading
+```csharp
+public class Customer
+{
+    public int CustomerId { get; set; }
+    public string Name { get; set; }
+    
+    // Virtual navigation property enables lazy loading.
+    public virtual ICollection<Order> Orders { get; set; }
+}
+
+public class Order
+{
+    public int OrderId { get; set; }
+    public DateTime OrderDate { get; set; }
+    
+    public int CustomerId { get; set; }
+    
+    // Virtual navigation property.
+    public virtual Customer Customer { get; set; }
+}
+```
+
+### ✅ Configuration in `DbContext`
+```csharp
+protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+{
+    optionsBuilder
+        .UseLazyLoadingProxies()  // Enables lazy loading via proxies.
+        .UseSqlServer("YourConnectionString");
+}
+```
+
+Without the **`virtual`** keyword, EF Core **cannot override** these properties to inject lazy loading behavior.
+
+### 📊 Diagram: Lazy Loading with Virtual Navigation Properties
+```mermaid
+flowchart TD
+    A[Customer Entity with Virtual Navigation Property]
+    B[Lazy Loading Proxy generated for Orders]
+    A --> B
+```
+
+## 📊 Comparison Table: Virtual vs. Non-Virtual Members
+| **Aspect**             | **Virtual Members**                                                      | **Non-Virtual Members**                                      |
+|------------------------|--------------------------------------------------------------------------|--------------------------------------------------------------|
+| **Overriding**         | Can be overridden in derived classes using `override`.                   | Cannot be overridden; they are fixed in the base class.      |
+| **Lazy Loading (EF Core)** | Required for lazy loading via proxies.                                  | Not suitable for lazy loading; EF Core cannot create proxies.|
+| **Polymorphism**       | Enables polymorphic behavior and dynamic dispatch at runtime.           | Does not support polymorphism; behavior is static.           |
+| **Extensibility**      | Offers greater flexibility for extension and customization.              | More rigid; intended for functionality that should not change. |
+
+## 🏁 Conclusion
+The **`public virtual`** keyword in .NET is fundamental for enabling **polymorphism** and **dynamic behavior** in object-oriented programming. It allows methods and properties to be overridden in **derived classes**, which is essential for creating **flexible, extensible applications**.
+In **EF Core**, marking navigation properties as **virtual** is crucial for **lazy loading**, where related data is fetched **on-demand** rather than upfront.
+By understanding and correctly applying **virtual members**, you can design applications that are **maintainable** and **efficient**, leveraging the full power of **OOP** and **EF Core’s advanced data-loading capabilities**. 🚀
+
+## 📚 References
+- [Microsoft Docs: Virtual and Override](https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/virtual)
+- [Microsoft Docs: Inheritance and Polymorphism in C#](https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/classes-and-structs/inheritance)
+
+---
+# 🚀 Comprehensive Guide to Filtering Related Records in EF Core
+## 📘 Introduction
+Filtering on related records is a powerful feature in **Entity Framework (EF) Core** that allows developers to load only a subset of the related data for an entity. This improves **performance**, reduces **memory usage**, and ensures **query efficiency** by fetching only the necessary data.
+In **EF Core 5 and later**, you can use **filtered includes** to apply conditions on related collections within the `.Include()` method. This guide provides a detailed explanation of **how filtering on related records works**, along with **examples, diagrams, and best practices** to help optimize your database queries.
+
+## 📌 Key Characteristics
+| **Feature**             | **Description**                                                                 |
+|-------------------------|---------------------------------------------------------------------------------|
+| **Selective Loading**   | Loads only related records that match a specified condition.                    |
+| **Query Isolation**     | The filtering applies only to related entities, leaving the main query intact. |
+| **Performance Boost**   | Reduces **data transfer** and **memory consumption**.                           |
+| **EF Core 5+ Feature**  | Requires EF Core 5 or newer for **filtered `.Include()`** support.              |
+| **Flexible Conditions** | Supports various filters (e.g., `Where()`, `OrderBy()`, `Take()`).             |
+
+## 🏗️ How to Use Filtering on Related Records
+### ✅ Example: Loading Teams with Filtered Matches
+```csharp
+async Task FilteringIncludes()
+{
+    var teams = await context.Teams
+        .Include(t => t.Coach)  // Loads the related Coach entity
+        .Include(t => t.HomeMatches.Where(m => m.HomeTeamScore > 0))  // Filters HomeMatches
+        .ToListAsync();
+
+    foreach (var team in teams)
+    {
+        Console.WriteLine($"{team.Name} - {team.Coach.Name}");
+        foreach (var match in team.HomeMatches)
+        {
+            Console.WriteLine($"Score - {match.HomeTeamScore}");
+        }
+    }
+}
+```
+
+### 📊 Breakdown of the Code
+1. **`.Include(t => t.Coach)`** → Loads the **Coach** navigation property.
+2. **`.Include(t => t.HomeMatches.Where(m => m.HomeTeamScore > 0))`** → Loads only **HomeMatches** where `HomeTeamScore > 0`.
+3. **`ToListAsync()`** executes the query and returns the filtered results.
+
+### 📍 When to Use Filtering on Related Records
+✔ **Retrieving only relevant child data** (e.g., matches where a team scored).  
+✔ **Reducing database load** by eliminating unnecessary related data.  
+✔ **Avoiding extra filtering logic in application code**.
+
+## 🌐 Diagram: Filtered Include Workflow
+
+```mermaid
+flowchart TD
+    A[Query Teams from Database]
+    B[Include Related Coach Data]
+    C[Include Filtered HomeMatches]
+    D[Database Executes Query]
+    E[Return Teams with Filtered Data]
+
+    A --> B
+    A --> C
+    B --> D
+    C --> D
+    D --> E
+```
+
+- **Explanation:**
+  - **A:** The `Teams` entity is queried.
+  - **B:** The `Coach` entity is eagerly loaded.
+  - **C:** `HomeMatches` are filtered (`HomeTeamScore > 0`).
+  - **D-E:** The database returns **only the relevant data**.
+
+## 📊 Comparison: Approaches to Filtering Related Data
+| **Method**                                         | **Description**                                                   | **EF Core Version** |
+|---------------------------------------------------|-------------------------------------------------------------------|---------------------|
+| **Filtered `.Include()`**                         | Filters child records within `.Include()`                         | 5+                  |
+| **Explicit Loading (`context.Entry()`)**         | Loads related entities separately with additional queries        | 3+                  |
+| **Manual Projection to DTOs**                    | Fetches only required fields, reducing data load                 | 3+                  |
+
+## 🏁 Conclusion
+By **filtering related records** in **EF Core**, you can **optimize query performance** and **reduce unnecessary data retrieval**. This approach ensures that your application retrieves **only the required data**, avoiding excessive database calls and improving **memory efficiency**.
