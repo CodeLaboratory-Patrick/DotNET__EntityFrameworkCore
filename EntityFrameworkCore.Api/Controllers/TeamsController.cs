@@ -88,21 +88,17 @@ namespace EntityFrameworkCore.Api.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteTeam(int id)
         {
-            var team = await _context.Teams.FindAsync(id);
-            if (team == null)
+           if(_context.Teams == null)
             {
                 return NotFound();
             }
-
-            _context.Teams.Remove(team);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
+           await _context.Teams.Where(q => q.Id == id).ExecuteDeleteAsync();
+           return NoContent();
         }
 
         private bool TeamExists(int id)
         {
-            return _context.Teams.Any(e => e.Id == id);
+            return (_context.Teams?.Any(e => e.Id == id)).GetValueOrDefault();
         }
     }
 }
