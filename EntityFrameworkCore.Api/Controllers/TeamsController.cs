@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using EntityFrameworkCore.Data;
 using EntityFrameworkCore.Domain;
+using EntityFrameworkCore.Api.Models;
 
 namespace EntityFrameworkCore.Api.Controllers
 {
@@ -23,16 +24,36 @@ namespace EntityFrameworkCore.Api.Controllers
 
         // GET: api/Teams
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Team>>> GetTeams()
+        public async Task<ActionResult<IEnumerable<TeamDto>>> GetTeams()
         {
-            return await _context.Teams.ToListAsync();
+            if (_context.Teams == null)
+            {
+                return NotFound();
+            }
+            //return await _context.Teams.ToListAsync();
+            var teams = await _context.Teams
+                .Select(q => new TeamDto
+                {
+                    Name = q.Name,
+                    Id = q.Id,
+                    CoachName = q.Coach.Name
+                })
+                .ToListAsync();
+            return teams;
         }
 
         // GET: api/Teams/5
         [HttpGet("{id}")]
         public async Task<ActionResult<Team>> GetTeam(int id)
         {
-            var team = await _context.Teams.FindAsync(id);
+            if (_context.Teams == null)
+            {
+                return NotFound();
+            }
+            var team = await _context.Teams
+                .Include(q => q.Coach)
+                .Include(q => q.League)
+                .FirstOrDefaultAsync(q => q.Id == id);
 
             if (team == null)
             {
@@ -78,6 +99,10 @@ namespace EntityFrameworkCore.Api.Controllers
         [HttpPost]
         public async Task<ActionResult<Team>> PostTeam(Team team)
         {
+            if (_context.Teams == null)
+            {
+                return Problem("Entity set 'FootballLeagueDbContext.Teams'  is null.");
+            }
             _context.Teams.Add(team);
             await _context.SaveChangesAsync();
 
@@ -88,12 +113,12 @@ namespace EntityFrameworkCore.Api.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteTeam(int id)
         {
-           if(_context.Teams == null)
+            if (_context.Teams == null)
             {
                 return NotFound();
             }
-           await _context.Teams.Where(q => q.Id == id).ExecuteDeleteAsync();
-           return NoContent();
+            await _context.Teams.Where(q => q.Id == id).ExecuteDeleteAsync();
+            return NoContent();
         }
 
         private bool TeamExists(int id)
