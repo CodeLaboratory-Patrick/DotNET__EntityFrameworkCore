@@ -7471,3 +7471,160 @@ Both **INNER JOIN** and **LEFT JOIN** are essential tools in .NET development fo
 - [Entity Framework Core Documentation](https://docs.microsoft.com/en-us/ef/core/)
 
 ---
+# Comprehensive Guide to SELECT COALESCE in .NET Development
+In .NET development, handling `NULL` values gracefully is essential when working with relational databases. The SQL function **COALESCE** is a powerful tool for this purpose. It returns the first non-null value from a list of expressions, helping developers provide default values and simplify conditional logic in queries. This guide explains what `SELECT COALESCE` is, its key characteristics, and demonstrates its usage with detailed code examples, diagrams, and tables.
+## 1. Overview
+### What is COALESCE?
+- **Definition:**  
+  The SQL function `COALESCE(expression1, expression2, ..., expressionN)` evaluates its arguments in order and returns the first non-null value. If all provided expressions are `NULL`, the result is `NULL`.
+- **Usage in SELECT Statements:**  
+  In a `SELECT` statement, `COALESCE` is used to substitute default values for `NULL` columns. This ensures that applications handle missing or optional data without errors or unexpected behavior.
+- **Syntax Example:**
+  ```sql
+  COALESCE(expression1, expression2, ..., expressionN)
+  ```
+
+- **Simple SQL Example:**
+  ```sql
+  SELECT COALESCE(FirstName, 'N/A') AS DisplayName
+  FROM Employees;
+  ```
+  
+  This query returns the value of `FirstName` if it is not `NULL`; otherwise, it returns `'N/A'`.
+
+## 2. Key Characteristics
+The following table summarizes the key characteristics of the `COALESCE` function:
+| **Characteristic**         | **Description**                                                                                              |
+|----------------------------|--------------------------------------------------------------------------------------------------------------|
+| **Null Handling**          | Returns the first non-null value from a list of expressions, effectively managing `NULL` values.              |
+| **Versatility**            | Can be used in SELECT clauses, WHERE conditions, and JOIN conditions to substitute default values.           |
+| **Standard SQL Function**  | Part of the ANSI SQL standard and supported by most relational database systems.                             |
+| **Simplifies Logic**       | Reduces the need for complex `CASE` statements when handling `NULL` values in queries.                         |
+| **Multiple Expressions**   | Accepts two or more expressions, returning the first that is not `NULL`.                                     |
+Additionally, it is important to note that **COALESCE** is analogous to C#’s null-coalescing operator (`??`), which serves a similar purpose at the application level.
+
+## 3. Practical Usage in .NET Development
+### 3.1. Using COALESCE in Raw SQL Queries
+When using ADO.NET or executing raw SQL commands, incorporating `COALESCE` in your query can ensure that a default value is returned if a column contains `NULL`. Below is an example using ADO.NET:
+```csharp
+using System;
+using System.Data.SqlClient;
+
+string connectionString = "YourConnectionStringHere";
+string sqlQuery = @"
+    SELECT 
+        EmployeeId, 
+        COALESCE(FirstName, 'Unknown') AS FirstName,
+        COALESCE(LastName, 'Unknown') AS LastName
+    FROM Employees;";
+
+using (SqlConnection connection = new SqlConnection(connectionString))
+{
+    SqlCommand command = new SqlCommand(sqlQuery, connection);
+    connection.Open();
+    
+    using (SqlDataReader reader = command.ExecuteReader())
+    {
+        while (reader.Read())
+        {
+            Console.WriteLine($"{reader["EmployeeId"]}: {reader["FirstName"]} {reader["LastName"]}");
+        }
+    }
+}
+```
+
+**Explanation:**  
+- The query uses `COALESCE` to return `'Unknown'` when either the `FirstName` or `LastName` column is `NULL`.
+- This ensures that the output always has a valid string even when data is missing.
+
+### 3.2. Using COALESCE with Entity Framework Core
+EF Core allows the execution of raw SQL queries, and you can incorporate `COALESCE` directly into these queries. The following example demonstrates how to use it with EF Core:
+```csharp
+using Microsoft.EntityFrameworkCore;
+
+var employees = await context.Employees
+    .FromSqlInterpolated($@"
+        SELECT 
+            EmployeeId, 
+            COALESCE(FirstName, 'Unknown') AS FirstName,
+            COALESCE(LastName, 'Unknown') AS LastName
+        FROM Employees")
+    .ToListAsync();
+
+foreach (var emp in employees)
+{
+    Console.WriteLine($"{emp.EmployeeId}: {emp.FirstName} {emp.LastName}");
+}
+```
+
+**Explanation:**  
+- The `FromSqlInterpolated` method executes a raw SQL query that uses `COALESCE` to provide default values.
+- Make sure your entity model maps correctly to the result columns.
+
+### 3.3. Simulating COALESCE in LINQ Queries
+In LINQ, you can mimic the behavior of `COALESCE` using the C# null-coalescing operator (`??`). Below is an example:
+```csharp
+var employeeSummaries = await context.Employees
+    .Select(e => new 
+    {
+        e.EmployeeId,
+        DisplayName = (e.FirstName ?? "Unknown") + " " + (e.LastName ?? "Unknown")
+    })
+    .ToListAsync();
+
+foreach (var emp in employeeSummaries)
+{
+    Console.WriteLine($"{emp.EmployeeId}: {emp.DisplayName}");
+}
+```
+
+**Explanation:**  
+- The null-coalescing operator `??` checks if `FirstName` or `LastName` is `NULL` and replaces it with `"Unknown"` if necessary.
+- This provides similar functionality to `COALESCE` but is executed on the client side after the data has been retrieved.
+
+## 4. Diagram: COALESCE Logic
+The following diagram explains the logical flow of the `COALESCE` function:
+
+```mermaid
+flowchart TD
+    A[Expression 1]
+    B[Expression 2]
+    C[Expression 3]
+    D[COALESCE(Expression1, Expression2, Expression3)]
+    
+    A -- If not NULL --> D
+    A -- If NULL --> B
+    B -- If not NULL --> D
+    B -- If NULL --> C
+    C -- If not NULL --> D
+    C -- If NULL --> E[Result is NULL]
+```
+
+**Explanation:**  
+- **Step 1:** The function checks `Expression1`.  
+- **Step 2:** If `Expression1` is `NULL`, it moves to `Expression2`.  
+- **Step 3:** If `Expression2` is also `NULL`, it checks `Expression3`.  
+- **Step 4:** The first non-null value encountered is returned; if all expressions are `NULL`, the final result is `NULL`.
+
+## 5. Additional Comparison: COALESCE vs. ISNULL in T-SQL
+SQL Server also provides the `ISNULL` function, which is similar but has some differences. The table below compares the two:
+| **Aspect**            | **COALESCE(expression1, expression2, ...)**         | **ISNULL(check, replacement)**               |
+|-----------------------|-------------------------------------------------------|----------------------------------------------|
+| **Number of Arguments** | Accepts two or more expressions                     | Accepts exactly two arguments                |
+| **SQL Standard**      | ANSI SQL standard, widely supported                  | Specific to T-SQL (SQL Server)               |
+| **Type Handling**     | Follows type precedence among provided expressions   | Inherits the type from the first argument     |
+| **Versatility**       | Can be used in more complex expressions                | Simpler, but less flexible in handling multiple columns |
+
+## 6. Summary and Conclusion
+The **COALESCE** function is an essential part of SQL used in .NET development for handling `NULL` values. By returning the first non-null value from a list of expressions, it allows developers to:
+- Provide default values directly within SQL queries.
+- Simplify query logic by replacing lengthy `CASE` statements.
+- Enhance data presentation by ensuring that columns display a valid value even when data is missing.
+
+## 7. References
+- [Microsoft Docs - COALESCE (Transact-SQL)](https://learn.microsoft.com/en-us/sql/t-sql/language-elements/coalesce-transact-sql)
+- [Microsoft Docs - LINQ Null-Coalescing Operator](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/operators/null-coalescing-operator)
+- [Entity Framework Core Documentation](https://learn.microsoft.com/en-us/ef/core/)
+- [SQL Standard & Type Precedence for COALESCE](https://en.wikipedia.org/wiki/Null_(SQL)#COALESCE)
+
+---
