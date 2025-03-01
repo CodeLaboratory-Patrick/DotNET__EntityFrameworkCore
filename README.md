@@ -7746,3 +7746,166 @@ The table below provides a side-by-side comparison of the delete behaviors:
 - [Microsoft Docs - Delete Behavior](https://learn.microsoft.com/en-us/ef/core/modeling/relationships/delete-behavior)
 - [Microsoft Docs - Fluent API - Relationships](https://learn.microsoft.com/en-us/ef/core/modeling/relationships)
 - [Entity Framework Core Documentation](https://learn.microsoft.com/en-us/ef/core/)
+
+---
+# Entity Navigation Properties: Explicit vs. Shadow Properties in EF Core
+In Entity Framework Core (EF Core), navigation properties are critical for modeling relationships between entities. They allow you to traverse related data without writing raw SQL. There are two primary ways to represent these relationships:
+- **Explicit Navigation Properties:** These are defined directly in your entity classes. They appear as public properties in your domain model and provide type-safe, compile-time access to related entities.
+- **Shadow Properties:** These do not exist in your CLR classes but are maintained by EF Core in the change tracker. They are useful for storing foreign keys or other metadata without cluttering your domain model.
+
+## 1. Overview
+### Explicit Navigation Properties
+**Definition:**  
+Explicit navigation properties are properties that you define directly in your entity classes. They are part of your C# model and allow you to access related data in a straightforward, type-safe manner.
+**Example:**  
+For a relationship between a `Customer` and an `Order`, you might define a navigation property in the `Order` class as follows:
+```csharp
+public class Order
+{
+    public int OrderId { get; set; }
+    public DateTime OrderDate { get; set; }
+    
+    // Foreign key property (can also be explicit)
+    public int CustomerId { get; set; }
+    
+    // Explicit navigation property for the related Customer.
+    public Customer Customer { get; set; }
+}
+```
+
+### Shadow Properties
+**Definition:**  
+Shadow properties are properties that exist in the EF Core model but are not defined in the entity class. They are stored in the EF Core change tracker and are particularly useful when you want to avoid adding extra properties to your domain model.
+**Example:**  
+If you omit the `CustomerId` property from the `Order` class, EF Core can create it as a shadow property based on relationship configuration.
+**Accessing Shadow Properties:**
+```csharp
+var order = await context.Orders.FirstAsync();
+// Retrieve the shadow property value for "CustomerId"
+var customerId = context.Entry(order).Property("CustomerId").CurrentValue;
+Console.WriteLine($"The shadow CustomerId is: {customerId}");
+```
+
+## 2. Key Characteristics Comparison
+The table below compares the main aspects of explicit navigation properties and shadow properties:
+| **Aspect**                | **Explicit Navigation Properties**                                          | **Shadow Properties**                                                    |
+|---------------------------|-----------------------------------------------------------------------------|--------------------------------------------------------------------------|
+| **Definition Location**   | Defined as part of the entity's C# class.                                   | Not defined in the entity class; maintained in the EF Core model.        |
+| **Accessibility**         | Accessed directly via the class (e.g., `order.Customer`).                   | Accessed via the EF Core API (e.g., `Entry(order).Property("CustomerId")`).|
+| **Compile-Time Safety**   | Strongly typed and supported by IntelliSense.                             | Must be accessed using string names, which may introduce typos.          |
+| **Use Cases**             | Ideal when you need direct, type-safe access to related data.               | Useful for keeping the domain model clean or when the property is used only for internal bookkeeping. |
+| **Configuration Method**  | Configured via data annotations or Fluent API in the class definition.      | Configured exclusively via the Fluent API; created automatically by EF Core. |
+| **Impact on Domain Model**| Increases the number of properties in the domain model.                     | Keeps the domain model slim by hiding nonessential properties.          |
+
+## 3. How to Use Navigation Properties
+### 3.1. Using Explicit Navigation Properties
+When you want a clear, maintainable model where related data is directly visible in your code, explicit navigation properties are the best choice. They are defined as public properties in your entity classes.
+**Example:**
+```csharp
+public class Customer
+{
+    public int CustomerId { get; set; }
+    public string Name { get; set; }
+    
+    // Explicit navigation property: Customer has many Orders.
+    public ICollection<Order> Orders { get; set; } = new List<Order>();
+}
+
+public class Order
+{
+    public int OrderId { get; set; }
+    public DateTime OrderDate { get; set; }
+    
+    // Foreign key property explicitly declared.
+    public int CustomerId { get; set; }
+    
+    // Explicit navigation property: Order belongs to one Customer.
+    public Customer Customer { get; set; }
+}
+```
+
+**Usage in a Query:**
+```csharp
+var orders = await context.Orders
+    .Include(o => o.Customer)  // Eagerly loads the related Customer for each Order.
+    .ToListAsync();
+```
+
+### 3.2. Using Shadow Properties
+Shadow properties are configured using the Fluent API. They are not visible in the C# class but are still mapped to the database, allowing you to keep your domain model free of extra foreign key properties.
+**Configuring a Shadow Property via Fluent API:**
+```csharp
+protected override void OnModelCreating(ModelBuilder modelBuilder)
+{
+    // Define "CustomerId" as a shadow property for the Order entity.
+    modelBuilder.Entity<Order>()
+        .Property<int>("CustomerId")
+        .IsRequired();
+
+    // Configure the relationship using the shadow property.
+    modelBuilder.Entity<Order>()
+        .HasOne(o => o.Customer)
+        .WithMany(c => c.Orders)
+        .HasForeignKey("CustomerId");
+
+    base.OnModelCreating(modelBuilder);
+}
+```
+
+**Accessing a Shadow Property:**
+```csharp
+var order = await context.Orders.FirstAsync();
+var customerId = context.Entry(order).Property("CustomerId").CurrentValue;
+Console.WriteLine($"The shadow CustomerId is: {customerId}");
+```
+
+## 4. Diagram: Explicit vs. Shadow Properties
+The following diagram illustrates the difference between explicit navigation properties and shadow properties:
+
+```mermaid
+flowchart TD
+    A[Order Entity]
+    B[Explicit Navigation Property]
+    C[Shadow Property]
+    
+    A -->|Contains| B[CustomerId (explicitly defined in code)]
+    A -->|May contain| C[CustomerId (exists only in EF Core model)]
+```
+
+**Explanation:**
+- **Explicit Navigation Property:**  
+  The property is defined in the entity class (e.g., `Order.Customer` and `Order.CustomerId`), making it visible and directly accessible in your code.
+- **Shadow Property:**  
+  The property is not defined in the entity class but is created and maintained by EF Core. It must be accessed via the change tracker or Fluent API configuration.
+
+A text-based diagram for clarity:
+
+```
+[Explicit Navigation Properties]
+   Order.cs contains:
+       public int CustomerId { get; set; }
+       public Customer Customer { get; set; }
+   -> Directly accessible and strongly typed.
+
+[Shadow Properties]
+   Order.cs does NOT contain CustomerId.
+   EF Core creates a shadow property "CustomerId" based on Fluent API.
+   -> Accessed via context.Entry(order).Property("CustomerId")
+```
+
+## 5. Comparative Table: Explicit vs. Shadow Properties
+| Aspect                      | Explicit Navigation / FK         | Shadow Property                          |
+|-----------------------------|----------------------------------|------------------------------------------|
+| **Visibility**              | Defined as public properties in the entity class. | Hidden; exists only in the EF Core model. |
+| **Compile-Time Safety**     | Strongly typed; supported by IntelliSense. | Accessed via string names; risk of typos.  |
+| **Configuration**           | Can be configured via data annotations or Fluent API. | Configured exclusively via Fluent API.  |
+| **Ease of Use in Queries**  | Directly accessible in LINQ queries (e.g., `order.Customer`). | Must be accessed with `Entry(entity).Property("ShadowProperty")`. |
+| **Impact on Domain Model**  | Increases the number of properties in the class. | Keeps the class lean by not exposing extra properties. |
+| **Common Use Case**         | Normal domain relationships where clarity is essential. | Situations where you want to hide database details or add properties without modifying the model. |
+
+## 6. Resources and References
+- [Microsoft Docs - Relationship navigations in EF Core](https://learn.microsoft.com/en-us/ef/core/modeling/relationships/navigations)
+- [Microsoft Docs - Shadow Properties in EF Core](https://learn.microsoft.com/en-us/ef/core/modeling/shadow-properties)
+- [Entity Framework Core Documentation](https://learn.microsoft.com/en-us/ef/core/)
+
+---
