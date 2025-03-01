@@ -7909,3 +7909,112 @@ A text-based diagram for clarity:
 - [Entity Framework Core Documentation](https://learn.microsoft.com/en-us/ef/core/)
 
 ---
+# Executing Raw SQL Statements in EF Core: A Comprehensive Guide
+## 1. Overview
+### What Are Raw SQL Statements in EF Core?
+Raw SQL statements are SQL commands written manually by the developer and executed directly against the database. In EF Core, you may choose to use raw SQL when:
+- You need to execute queries that are too complex or not efficiently expressed using LINQ.
+- You want to take advantage of database-specific features.
+- You need to perform bulk operations (such as updates or deletes) efficiently.
+- You are integrating legacy SQL code into an EF Core application.
+
+### Key Methods for Executing Raw SQL
+EF Core provides specific methods to execute raw SQL commands:
+- **Querying Data:**
+  - **`FromSqlRaw()`** and **`FromSqlInterpolated()`**:  
+    These methods execute raw SQL queries that return entities. They are used on a `DbSet<T>` to map the returned rows to entity instances.
+- **Executing Non-Query Commands:**
+  - **`ExecuteSqlRaw()`** and **`ExecuteSqlInterpolated()`**:  
+    These methods execute SQL commands that do not return result sets (e.g., INSERT, UPDATE, DELETE). They return the number of rows affected.
+
+## 2. Characteristics of Executing Raw SQL
+The table below outlines the main characteristics and considerations when using raw SQL in EF Core:
+| **Characteristic**           | **Description**                                                                                                                                                      |
+|------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Flexibility**              | Allows execution of any SQL command, including complex queries that may not be easily expressed in LINQ.                                                              |
+| **Performance Control**      | Provides an opportunity to use database-specific optimizations for performance-critical queries.                                                                     |
+| **Security Considerations**  | Requires careful handling to prevent SQL injection. Parameterized queries or interpolated strings are recommended to mitigate these risks.                             |
+| **Integration with EF Core** | Results can be mapped directly to entity types, and non-query commands integrate with EF Core’s transaction management and change tracking.                         |
+| **Use Cases**                | Ideal for complex queries, bulk operations, or when migrating legacy SQL code into an EF Core project.                                                                 |
+
+## 3. Using Raw SQL Statements in EF Core
+### 3.1. Executing Queries That Return Entities
+#### Using `FromSqlRaw()`
+`FromSqlRaw()` executes a raw SQL query and maps the results to an entity type defined in your `DbSet<T>`. Use this method when you have a full SQL command with parameter placeholders.
+**Example:**
+
+```csharp
+var products = await context.Products
+    .FromSqlRaw("SELECT * FROM Products WHERE Price > {0}", 100)
+    .ToListAsync();
+```
+
+**Explanation:**  
+This query retrieves all products with a price greater than 100. The parameter `{0}` is replaced with the value `100`, which helps protect against SQL injection.
+#### Using `FromSqlInterpolated()`
+`FromSqlInterpolated()` allows you to write SQL queries using C# string interpolation. It automatically handles parameterization, making your code more concise and safe.
+**Example:**
+```csharp
+decimal minPrice = 100;
+var products = await context.Products
+    .FromSqlInterpolated($"SELECT * FROM Products WHERE Price > {minPrice}")
+    .ToListAsync();
+```
+
+**Explanation:**  
+Here, the interpolated query automatically binds the `minPrice` parameter, reducing the risk of SQL injection while keeping the code readable.
+### 3.2. Executing Non-Query SQL Commands
+#### Using `ExecuteSqlRaw()`
+`ExecuteSqlRaw()` is used for executing SQL commands that do not return entities, such as bulk updates or deletes. It returns the number of rows affected.
+**Example:**
+```csharp
+int rowsAffected = await context.Database.ExecuteSqlRawAsync(
+    "UPDATE Products SET Price = Price * 1.1 WHERE Price < {0}", 100);
+Console.WriteLine($"Rows updated: {rowsAffected}");
+```
+
+**Explanation:**  
+This command increases the price of all products priced under 100 by 10%. The parameter binding ensures that the value is safely inserted into the query.
+#### Using `ExecuteSqlInterpolated()`
+`ExecuteSqlInterpolated()` functions similarly to `ExecuteSqlRaw()`, but it allows for safe string interpolation.
+**Example:**
+```csharp
+decimal factor = 1.1m;
+int rowsAffected = await context.Database.ExecuteSqlInterpolatedAsync(
+    $"UPDATE Products SET Price = Price * {factor} WHERE Price < {100}");
+Console.WriteLine($"Rows updated: {rowsAffected}");
+```
+**Explanation:**  
+This command uses an interpolated string to update the product prices. The use of interpolation automatically parameterizes the query, ensuring security.
+
+## 4. Diagram: Raw SQL Execution Workflow in EF Core
+Below is a diagram that outlines the workflow when executing raw SQL in EF Core:
+
+```mermaid
+flowchart TD
+    A[Write Raw SQL Statement]
+    B[Choose Appropriate EF Core Method]
+    C{Query or Non-Query?}
+    D[For Query: Use FromSqlRaw/FromSqlInterpolated()]
+    E[For Non-Query: Use ExecuteSqlRaw/ExecuteSqlInterpolated()]
+    F[EF Core Executes SQL Command]
+    G[Results Mapped to Entities (if query)]
+    H[Rows Affected Returned (if non-query)]
+
+    A --> B
+    B --> C
+    C -- Query --> D
+    C -- Non-Query --> E
+    D --> F
+    E --> F
+    F --> G
+    F --> H
+```
+
+**Explanation:**  
+- Start by writing your SQL statement and choosing the appropriate method.
+- Decide if the command is a query (returning data) or a non-query.
+- Use `FromSqlRaw` or `FromSqlInterpolated` for queries, and `ExecuteSqlRaw` or `ExecuteSqlInterpolated` for non-query commands.
+- EF Core then executes the command and either maps the results to entities or returns the number of rows affected.
+
+---
