@@ -8629,3 +8629,191 @@ In ASP.NET Core, the built-in IoC container manages services like EF Core’s Db
 - [Microsoft Docs - Dependency Injection in ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/dependency-injection)
 - [Microsoft Docs - EF Core DbContext Lifetime](https://learn.microsoft.com/en-us/ef/core/dbcontext-configuration/)
 - [Stackoverflow - What is Inversion of Control?](https://stackoverflow.com/questions/3058/what-is-inversion-of-control)
+
+---
+# ASP.NET Core Web API vs. ASP.NET Core Web App (MVC)
+Modern .NET development leverages ASP.NET Core to build robust and scalable applications. Two common approaches are:
+- **ASP.NET Core Web API:** Focused on exposing data via HTTP endpoints.
+- **ASP.NET Core Web App (MVC):** Focused on rendering dynamic HTML views using the Model-View-Controller pattern.
+Both application types are built on ASP.NET Core, sharing the same underlying framework and dependency injection mechanisms, but they differ in their primary output and usage scenarios.
+
+## 1. ASP.NET Core Web API
+### Definition
+ASP.NET Core Web API is designed for building RESTful services that expose data (usually in JSON or XML format) over HTTP. It is ideal for scenarios where your application serves data to a variety of clients such as mobile apps, single-page applications (SPAs), or other microservices.
+### Key Characteristics
+- **Data-Centric:** Primarily returns data rather than HTML.
+- **Stateless:** Typically designed as stateless services.
+- **Lightweight:** Minimal overhead; optimized for handling HTTP requests and responses quickly.
+- **Interoperability:** Can be consumed by various client applications.
+- **Attribute-Based Routing:** Uses attributes like `[ApiController]`, `[HttpGet]`, `[HttpPost]`, etc., for routing and request handling.
+- **Security & Versioning:** Often includes token-based authentication and API versioning mechanisms.
+### Usage Scenario
+- Building RESTful endpoints that deliver JSON data.
+- Supporting microservices or headless backends.
+### Example Code
+```csharp
+[ApiController]
+[Route("api/[controller]")]
+public class ProductsController : ControllerBase
+{
+    private readonly ApplicationDbContext _context;
+    
+    public ProductsController(ApplicationDbContext context)
+    {
+        _context = context;
+    }
+    
+    // GET: api/Products
+    [HttpGet]
+    public async Task<ActionResult<IEnumerable<Product>>> GetProducts()
+    {
+        return await _context.Products.ToListAsync();
+    }
+}
+```
+
+**Explanation:**  
+This controller uses the `[ApiController]` attribute to enforce best practices like model validation. The `GetProducts` method retrieves product data from the EF Core `DbContext` and returns it as JSON.
+
+## 2. ASP.NET Core Web App (MVC)
+### Definition
+ASP.NET Core Web App (MVC) uses the Model-View-Controller pattern to build web applications that render dynamic HTML pages. It separates concerns into three parts:
+- **Model:** Represents the data and business logic.
+- **View:** Handles the user interface.
+- **Controller:** Manages user input and interactions, and selects the view to render.
+### Key Characteristics
+- **Presentation-Focused:** Returns server-rendered HTML views.
+- **Separation of Concerns:** Clearly divides responsibilities among models, views, and controllers.
+- **Full-Featured:** Supports model binding, validation, and view templating with Razor.
+- **State Management:** Can manage user sessions and cookies, enhancing the user experience.
+- **Routing:** Uses a conventional routing scheme (e.g., `{controller=Home}/{action=Index}/{id?}`) for mapping URLs to actions.
+### Usage Scenario
+- Building traditional web applications where the server renders the complete UI.
+- Applications where SEO and server-rendered content are important.
+### Example Code
+**Controller Example:**
+```csharp
+public class HomeController : Controller
+{
+    private readonly ApplicationDbContext _context;
+
+    public HomeController(ApplicationDbContext context)
+    {
+        _context = context;
+    }
+
+    // GET: /Home/Index
+    public async Task<IActionResult> Index()
+    {
+        var products = await _context.Products.ToListAsync();
+        return View(products);
+    }
+}
+```
+
+**Razor View Example (Index.cshtml):**
+
+```html
+@model IEnumerable<Product>
+
+<h1>Products</h1>
+<ul>
+@foreach (var product in Model)
+{
+    <li>@product.Name - @product.Price:C</li>
+}
+</ul>
+```
+
+**Explanation:**  
+The `HomeController` retrieves product data and passes it to a Razor view that renders an HTML list. This approach is ideal for server-rendered websites.
+
+## 3. Key Differences Between Web API and MVC
+| **Aspect**             | **ASP.NET Core Web API**                                       | **ASP.NET Core Web App (MVC)**                              |
+|------------------------|----------------------------------------------------------------|-------------------------------------------------------------|
+| **Primary Purpose**    | Exposing data via HTTP endpoints (JSON/XML responses).         | Rendering dynamic HTML views for end users.               |
+| **Response Type**      | Data-centric responses (typically JSON).                       | View-centric responses (HTML generated via Razor).        |
+| **Controller Base**    | Inherits from `ControllerBase` with `[ApiController]`.         | Inherits from `Controller` and uses view rendering methods. |
+| **State Management**   | Typically stateless; ideal for microservices.                  | Can manage user sessions, cookies, and stateful interactions.|
+| **Routing**            | Attribute-based routing tailored for APIs.                     | Conventional routing with controllers, actions, and views. |
+
+## 4. Integration with EF Core
+Both ASP.NET Core Web API and MVC applications commonly use EF Core for data access. The integration involves:
+- **Dependency Injection:**  
+  The EF Core `DbContext` is registered in the DI container and injected into controllers or services.
+
+- **Data Operations:**  
+  EF Core is used to query, update, and persist data. LINQ queries are translated into SQL and executed against the database.
+
+### Example: Injecting DbContext in a Controller (Applicable to Both)
+```csharp
+public class CustomersController : ControllerBase // For Web API use ControllerBase; for MVC use Controller
+{
+    private readonly ApplicationDbContext _dbContext;
+
+    public CustomersController(ApplicationDbContext dbContext)
+    {
+        _dbContext = dbContext;
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetCustomers()
+    {
+        var customers = await _dbContext.Customers.ToListAsync();
+        return Ok(customers); // For Web API, returns JSON; for MVC, you might return a view instead.
+    }
+}
+```
+
+**Explanation:**  
+This sample demonstrates how the `ApplicationDbContext` is injected into a controller via constructor injection, enabling the controller to perform database operations using EF Core.
+
+## 5. Diagram: ASP.NET Core Web API vs. MVC Architecture
+
+```mermaid
+flowchart TD
+    subgraph Web API
+        A1[HTTP Request]
+        A2[API Controller (ControllerBase)]
+        A3[Service/Business Logic]
+        A4[EF Core DbContext]
+        A5[Database Query]
+        A6[JSON Response]
+        A1 --> A2
+        A2 --> A3
+        A3 --> A4
+        A4 --> A5
+        A5 --> A6
+    end
+
+    subgraph MVC Web App
+        B1[HTTP Request]
+        B2[MVC Controller (Controller)]
+        B3[Service/Business Logic]
+        B4[EF Core DbContext]
+        B5[Database Query]
+        B6[Razor View Rendering]
+        B7[HTML Response]
+        B1 --> B2
+        B2 --> B3
+        B3 --> B4
+        B4 --> B5
+        B5 --> B6
+        B6 --> B7
+    end
+```
+
+**Explanation:**  
+- In the **Web API** architecture, an HTTP request is processed by an API controller, which uses EF Core to retrieve data and returns it as JSON.
+- In the **MVC** architecture, an HTTP request is processed by an MVC controller, data is retrieved using EF Core, and a Razor view renders the HTML output.
+
+## 6. Conclusion
+Both **ASP.NET Core Web API** and **ASP.NET Core MVC (Web App)** are built on the ASP.NET Core platform, sharing common features such as dependency injection and middleware. However, they serve different purposes:
+- **Web API** is optimized for exposing data through RESTful endpoints (ideal for mobile apps, SPAs, and microservices).
+- **MVC Web App** is designed for building server-rendered web applications with rich user interfaces.
+
+## 7. Resources and References
+- [Microsoft Docs - ASP.NET Core Web API](https://learn.microsoft.com/en-us/aspnet/core/web-api)
+- [Microsoft Docs - ASP.NET Core MVC](https://learn.microsoft.com/en-us/aspnet/core/mvc)
+
+---
