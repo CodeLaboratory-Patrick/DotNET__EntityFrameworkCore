@@ -34,6 +34,24 @@ namespace EntityFrameworkCore.Data
             modelBuilder.HasDbFunction(typeof(FootballLeagueDbContext).GetMethod(nameof(GetEarliestTeamMatch), new[] { typeof(int) })).HasName("fn_GetEarliestMatch");
         }
 
+        public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            var entries = ChangeTracker.Entries<BaseDomainModel>().Where(q => q.State == EntityState.Modified || 
+            q.State == EntityState.Added);
+            foreach (var entry in entries)
+            {
+                entry.Entity.ModifiedDate = DateTime.Now;
+                entry.Entity.ModifiedBy = "Simple User 1";
+
+                if (entry.State == EntityState.Added)
+                {
+                    entry.Entity.CreatedDate = DateTime.Now;
+                    entry.Entity.CreatedBy = "Simple User 1";
+                }
+            }
+            return base.SaveChangesAsync(cancellationToken);
+        }
+
         public DateTime GetEarliestTeamMatch(int teamId) => throw new NotImplementedException();
     }
 
