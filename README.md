@@ -8018,3 +8018,239 @@ flowchart TD
 - EF Core then executes the command and either maps the results to entities or returns the number of rows affected.
 
 ---
+# Interacting with Stored Procedures, Views, and User-Defined Functions in EF Core
+Entity Framework Core (EF Core) offers advanced functionality beyond simple table mappings. In addition to LINQ-based queries, EF Core supports executing raw SQL commands that interact with database objects such as stored procedures, views, and user-defined functions. Leveraging these features allows you to integrate legacy SQL code, encapsulate complex logic in the database, and create read-only or computed data representations while still benefiting from EF Core’s type safety and change tracking.
+In this guide, we cover:
+1. Stored Procedures – Executing precompiled SQL routines.
+2. Views (Keyless Entities) – Mapping read-only database views to keyless entities.
+3. User-Defined Functions (UDFs) – Integrating custom database functions into LINQ queries.
+
+## 1. Stored Procedures
+### 1.1. Overview
+A stored procedure is a precompiled set of SQL statements stored in the database. They are used to encapsulate complex logic, enhance performance, and provide an additional layer of security by abstracting direct table access.
+#### Key Points
+- **Precompiled and Optimized:** Stored procedures are compiled once and can be reused, often resulting in faster execution.
+- **Encapsulation:** They centralize business logic on the database side.
+- **Security:** They restrict direct table access by exposing only the procedures.
+- **Reusability:** The same stored procedure can be called from multiple parts of an application or by different applications.
+
+### 1.2. Characteristics Table
+| Characteristic       | Description                                                                                         |
+|----------------------|-----------------------------------------------------------------------------------------------------|
+| Precompiled          | Stored procedures are compiled in advance, reducing runtime overhead.                               |
+| Encapsulation        | Business logic is maintained on the database side, isolating complex operations from application code. |
+| Security             | Direct table access is restricted; only the stored procedures are exposed.                         |
+| Reusability          | Can be invoked from various parts of the application.                                             |
+| EF Core Integration  | Executed using methods such as `FromSqlRaw()` or `ExecuteSqlRaw()`.                                  |
+
+### 1.3. Using Stored Procedures in EF Core
+#### Executing a Stored Procedure That Returns Entities
+Use `FromSqlRaw()` or `FromSqlInterpolated()` on a `DbSet<T>` when the stored procedure returns a result set that matches your entity.
+**Example:**
+Assume a stored procedure `GetActiveCustomers` exists in the database:
+```csharp
+var activeCustomers = await context.Customers
+    .FromSqlRaw("EXEC GetActiveCustomers")
+    .ToListAsync();
+```
+
+#### Executing a Non-Query Stored Procedure
+For stored procedures that perform actions (INSERT, UPDATE, DELETE) without returning entities, use `ExecuteSqlRaw()`.
+**Example:**
+```csharp
+int rowsAffected = await context.Database.ExecuteSqlRawAsync(
+    "EXEC UpdateCustomerStatus @p0, @p1", status, customerId);
+Console.WriteLine($"Rows affected: {rowsAffected}");
+```
+
+### 1.4. Diagram: Stored Procedures Workflow
+
+```mermaid
+flowchart TD
+    A[Stored Procedure in Database]
+    B[EF Core: FromSqlRaw / ExecuteSqlRaw]
+    C[SQL Execution]
+    D[Results Returned (Entities or Rows Affected)]
+    
+    A --> B
+    B --> C
+    C --> D
+```
+
+**Explanation:**  
+- The stored procedure is executed via EF Core methods.
+- The SQL command is sent to the database.
+- Depending on the command, either a result set is mapped to entities or the number of affected rows is returned.
+
+## 2. Views (Keyless Entities)
+### 2.1. Overview
+A database view is a virtual table defined by a query. In EF Core, keyless entities are used to map views (or tables without primary keys) to the object model. These entities are typically read-only and are used to encapsulate complex queries or aggregations.
+#### Key Points
+- **Read-Only:** Views are generally used only for data retrieval.
+- **No Primary Key:** Since views may not have a primary key, keyless entities are configured accordingly.
+- **Simplified Data Access:** Views can present complex data in a simplified form, reducing the need for elaborate query logic in the application.
+
+### 2.2. Characteristics Table
+| Characteristic         | Description                                                                                      |
+|------------------------|--------------------------------------------------------------------------------------------------|
+| Read-Only              | Keyless entities do not support insert, update, or delete operations.                             |
+| No Primary Key         | EF Core treats these entities without primary keys by using `HasNoKey()` configuration.           |
+| Simplified Queries     | Views encapsulate complex queries, providing a simplified data representation to the application.|
+| Mapping                | Mapped to a SQL view using the `.ToView("ViewName")` method in the model configuration.           |
+
+### 2.3. Using Views in EF Core
+#### Defining a Keyless Entity
+For example, assume you have a SQL view named `CustomerSummaryView` that aggregates customer data:
+```csharp
+public class CustomerSummary
+{
+    public int CustomerId { get; set; }
+    public string Name { get; set; }
+    public int OrderCount { get; set; }
+}
+
+public class ApplicationDbContext : DbContext
+{
+    public DbSet<CustomerSummary> CustomerSummaries { get; set; }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<CustomerSummary>()
+            .HasNoKey()                   // Configure as a keyless entity
+            .ToView("CustomerSummaryView"); // Map to the SQL view
+
+        base.OnModelCreating(modelBuilder);
+    }
+}
+```
+
+#### Querying a View
+```csharp
+var summaries = await context.CustomerSummaries.ToListAsync();
+foreach (var summary in summaries)
+{
+    Console.WriteLine($"{summary.CustomerId} - {summary.Name}: {summary.OrderCount} orders");
+}
+```
+
+### 2.4. Diagram: Views (Keyless Entities) Workflow
+
+```mermaid
+flowchart TD
+    A[Database View: CustomerSummaryView]
+    B[Model Configuration: HasNoKey(), ToView("CustomerSummaryView")]
+    C[Keyless Entity: CustomerSummary]
+    D[Query Returns Aggregated Data]
+    
+    A --> B
+    B --> C
+    C --> D
+```
+
+**Explanation:**  
+- The view is mapped to a keyless entity.
+- The entity is configured in the model using `HasNoKey()` and `.ToView()`.
+- Queries against this entity return read-only aggregated data.
+
+## 3. User-Defined Functions (UDFs)
+### 3.1. Overview
+User-defined functions (UDFs) are custom functions defined in the database. They can perform calculations or data transformations that you want to reuse across multiple queries. EF Core allows you to map these functions to C# static methods, enabling you to incorporate them into your LINQ queries.
+#### Key Points
+- **Encapsulation of Logic:** UDFs encapsulate complex calculations or business logic on the database side.
+- **Reusability:** Once defined, a UDF can be used across various queries.
+- **Performance:** Offloads computation to the database, which can be optimized for such tasks.
+- **EF Core Integration:** UDFs can be mapped using the Fluent API or the `DbFunction` attribute.
+
+### 3.2. Characteristics Table
+| Characteristic              | Description                                                                                   |
+|-----------------------------|-----------------------------------------------------------------------------------------------|
+| Encapsulation of Logic      | Encapsulates complex calculations that can be reused.                                       |
+| Reusable                    | Defined once in the database and used across multiple queries.                                |
+| Integrated with LINQ        | Can be mapped to C# methods and used directly within LINQ queries.                            |
+| Performance                 | Can improve performance by delegating computation to the database engine.                     |
+
+### 3.3. Using User-Defined Functions in EF Core
+#### Mapping a UDF
+Assume a UDF named `dbo.CalculateDiscount` exists in the database. Map it to a static C# method as follows:
+```csharp
+public static class DbFunctionsExtensions
+{
+    [DbFunction("CalculateDiscount", "dbo")]
+    public static decimal CalculateDiscount(this DbFunctions _, decimal price)
+    {
+        // This method has no implementation.
+        // EF Core will translate the method call to the corresponding database function.
+        throw new NotSupportedException();
+    }
+}
+
+public class ApplicationDbContext : DbContext
+{
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.HasDbFunction(() => DbFunctionsExtensions.CalculateDiscount(default, default))
+            .HasName("CalculateDiscount")
+            .HasSchema("dbo");
+
+        base.OnModelCreating(modelBuilder);
+    }
+}
+```
+
+#### Using the Mapped UDF in a LINQ Query
+```csharp
+var productsWithDiscount = await context.Products
+    .Select(p => new 
+    {
+        p.ProductId,
+        p.Name,
+        DiscountedPrice = EF.Functions.CalculateDiscount(p.Price)
+    })
+    .ToListAsync();
+
+foreach (var product in productsWithDiscount)
+{
+    Console.WriteLine($"{product.Name} - Discounted Price: {product.DiscountedPrice}");
+}
+```
+
+### 3.4. Diagram: UDF Mapping and Execution
+
+```mermaid
+flowchart TD
+    A[Database UDF: dbo.CalculateDiscount]
+    B[EF Core DbFunction Mapping]
+    C[LINQ Query Calls EF.Functions.CalculateDiscount]
+    D[SQL Query Invokes UDF]
+    E[Results Returned with Discounted Prices]
+    
+    A --> B
+    B --> C
+    C --> D
+    D --> E
+```
+
+**Explanation:**  
+- The UDF is defined in the database.
+- EF Core maps the UDF to a static method using `DbFunction` and Fluent API configuration.
+- When used in a LINQ query, EF Core translates the method call into a SQL function call, returning computed results.
+
+## 4. Summary
+EF Core provides advanced mechanisms to interact with various database objects beyond simple table mappings. You can:
+- **Execute Stored Procedures:** Run precompiled SQL routines for data retrieval or non-query operations.
+- **Map Views as Keyless Entities:** Represent read-only virtual tables (or complex queries) in your object model.
+- **Integrate User-Defined Functions:** Map database functions to C# methods, allowing custom computations within LINQ queries.
+
+## 5. Feature Comparison Table
+| Feature                     | Purpose                                        | EF Core Approach                                         |
+|-----------------------------|------------------------------------------------|----------------------------------------------------------|
+| **Stored Procedures**       | Execute precompiled SQL routines               | `FromSqlRaw()`, `FromSqlInterpolated()`, `ExecuteSqlRaw()`|
+| **Views (Keyless Entities)**| Map read-only or aggregated data              | `HasNoKey()`, `.ToView("ViewName")`                       |
+| **User-Defined Functions**  | Integrate custom database computations         | `[DbFunction]` attribute and Fluent API mapping          |
+
+## 6. References
+- [Microsoft Docs - Stored Procedures in EF Core](https://learn.microsoft.com/en-us/ef/core/querying/raw-sql)
+- [Microsoft Docs - Keyless Entity Types](https://learn.microsoft.com/en-us/ef/core/modeling/keyless-entity-types)
+- [Microsoft Docs - User-Defined Functions in EF Core](https://learn.microsoft.com/en-us/ef/core/querying/user-defined-function-mapping)
+
+---
