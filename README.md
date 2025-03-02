@@ -3631,7 +3631,7 @@ flowchart TD
 Understanding **Entity States** in EF Core is pivotal for building **predictable**, **maintainable** data layers. By recognizing how states progress—from **Detached** to **Added**, **Unchanged**, **Modified**, or **Deleted**—you can orchestrate **inserts**, **updates**, and **deletes** with greater control. Properly managing states also helps avert unintended database operations, optimizing performance in **enterprise-grade** .NET applications.
 
 ---
-# 🚀 SaveChanges() and DetectChanges() in .NET Development: A Comprehensive Guide
+# 🚀 SaveChanges() and DetectChanges() in .NET Development
 ## 📘 Introduction
 In **Entity Framework Core (EF Core)**, managing the state of entities and persisting changes to the database are fundamental operations. Two key methods that facilitate this process are **SaveChanges()** and **DetectChanges()**. This guide explains in detail what each method does, their characteristics, and how to use them effectively in your application.
 
@@ -3767,8 +3767,7 @@ flowchart TD
 - [Entity Framework Core Documentation](https://docs.microsoft.com/en-us/ef/core/)
 
 ---
-# 🚀 Add() vs. AddAsync() in .NET Development: A Comprehensive Guide
-
+# 🚀 Add() vs. AddAsync() in .NET Development
 ## 📌 Introduction
 In **Entity Framework Core (EF Core)**, adding new entities to the `DbContext` is a fundamental operation when inserting data into a database. EF Core provides two primary methods for this: **Add()** and **AddAsync()**. Understanding the difference between these methods is crucial for optimizing performance and ensuring efficient data processing.
 This guide explores their **definitions**, **key characteristics**, **use cases**, and **best practices**, supplemented with examples, diagrams, and comparisons.
@@ -4118,7 +4117,7 @@ Understanding the differences between tracking and no-tracking update operations
 - [EF Core Performance Considerations](https://docs.microsoft.com/en-us/ef/core/performance/)
 
 ---
-# 🚀 Delete Operations in .NET Development: A Comprehensive Guide
+# 🚀 Delete Operations in .NET Development
 In .NET development, deleting data from a database is as important as creating and updating data. Efficient and effective delete operations ensure data integrity and support application requirements such as data cleanup, record removal, or soft deletion. This guide thoroughly explains delete operations, their characteristics, and how to implement them in .NET—particularly using Entity Framework Core (EF Core). We'll cover basic deletion, bulk deletion, and best practices, along with examples, diagrams, and tables for clarity.
 
 ## 1. What Are Delete Operations?
@@ -4264,7 +4263,7 @@ flowchart TD
 - **Soft Delete:** Implement soft deletion by marking records as deleted (e.g., using an `IsDeleted` flag) and filtering them out via global query filters.
 
 ---
-# 🚀 ExecuteUpdate and ExecuteDelete in .NET Development: A Comprehensive Guide
+# 🚀 ExecuteUpdate and ExecuteDelete in .NET Development
 ## 📌 Introduction
 In **Entity Framework Core (EF Core) 7** and later, two powerful methods—**`ExecuteUpdate`** and **`ExecuteDelete`**—enable high-performance, set-based update and delete operations directly in the database. These methods allow modifying or removing multiple records in a **single** database round trip, reducing memory overhead and significantly improving efficiency. This guide explores their characteristics, use cases, and implementation with examples, tables, and diagrams.
 
@@ -4383,7 +4382,7 @@ flowchart TD
 **ExecuteUpdate** and **ExecuteDelete** are powerful **bulk processing methods** introduced in **EF Core 7**, offering **high-performance updates and deletions** at the database level. By avoiding unnecessary entity tracking, these methods significantly reduce **memory usage** and **database round trips**, making them ideal for **large-scale** data modifications. Use them wisely to **improve efficiency** while ensuring **data integrity** in your .NET applications. 🚀
 
 ---
-# 🚀 Delete Operation vs. ExecuteDelete Operation in .NET Development: A Comprehensive Guide
+# 🚀 Delete Operation vs. ExecuteDelete Operation in .NET Development
 ## 📌 Introduction
 In .NET development, particularly when using **Entity Framework Core (EF Core)**, deleting records efficiently is crucial for maintaining application performance and data integrity. With EF Core 7, a new method called **`ExecuteDelete()`** was introduced, allowing bulk deletion without loading entities into memory. This document provides an in-depth comparison between traditional delete operations (`Remove()` / `RemoveRange()`) and `ExecuteDelete()`, covering their characteristics, use cases, and best practices.
 ## 1. Overview
@@ -4503,7 +4502,7 @@ flowchart TD
 - [EF Core Bulk Operations](https://docs.microsoft.com/en-us/ef/core/performance/)
 
 ---
-# 🚀 Database Migrations in .NET Development: A Comprehensive Guide
+# 🚀 Database Migrations in .NET Development
 ## 📌 Introduction
 **Database migrations** are an essential aspect of modern .NET development, especially when using **Entity Framework Core (EF Core)**. Migrations provide a structured approach to managing and applying schema changes as your application evolves. They allow developers to:
 - **Version-control** database changes alongside code.
@@ -4948,7 +4947,7 @@ Database migrations in EF Core provide a powerful framework for evolving your da
 - [EF Core GitHub Repository](https://github.com/dotnet/efcore)
 
 ---
-# 🚀 EF Bundles in .NET Development: A Comprehensive Guide
+# 🚀 EF Bundles in .NET Development
 Entity Framework (EF) Bundles are a powerful feature in modern .NET development that optimize database interactions by grouping multiple queries into a single round trip. Introduced in EF Core 7, this feature significantly reduces database latency and enhances performance, particularly for read-heavy applications.
 
 ## 1️⃣ Overview
@@ -5041,7 +5040,7 @@ EF Bundles offer a streamlined way to optimize database interactions in EF Core 
 - Improve **code maintainability** by reducing redundancy.
 
 ---
-# 🚀 EF Bundles in .NET Development: A Comprehensive Guide
+# 🚀 EF Bundles in .NET Development
 Entity Framework (EF) Bundles are a powerful feature in modern .NET development that optimize database interactions by grouping multiple queries into a single round trip. Introduced in EF Core 7, this feature significantly reduces database latency and enhances performance, particularly for read-heavy applications.
 
 ## 1️⃣ Overview
@@ -5135,7 +5134,7 @@ EF Bundles offer a streamlined way to optimize database interactions in EF Core 
 5. **Reduces Network Overhead**: Improves query efficiency by consolidating requests.
 
 ---
-# 🚀 Applying Migrations at Runtime in .NET Development: A Comprehensive Guide
+# 🚀 Applying Migrations at Runtime in .NET Development
 Entity Framework Core (EF Core) allows for **runtime database migrations**, enabling applications to automatically apply pending schema updates during execution. This feature enhances deployment automation, ensures consistency, and simplifies database maintenance, making it particularly useful for CI/CD pipelines and cloud-native applications.
 ## 1️⃣ Overview
 ### 🔍 What Are Runtime Migrations?
@@ -5241,7 +5240,7 @@ flowchart TD
 - [Migration guide: SQL Server to Azure SQL Database](https://learn.microsoft.com/en-us/data-migration/sql-server/database/guide)
 
 ---
-# 🚀 EnsureCreated() vs MigrateAsync() in .NET Development: A Comprehensive Guide
+# 🚀 EnsureCreated() vs MigrateAsync() in .NET Development
 Entity Framework Core (EF Core) offers multiple methods to initialize and update database schemas. Two commonly used approaches are `EnsureCreated()` and `MigrateAsync()`, each serving distinct purposes. Understanding their differences is crucial for choosing the right approach for your application.
 
 ## 1️⃣ Overview
@@ -5379,7 +5378,7 @@ flowchart TD
 - [Entity Framework Core Migrations](https://docs.microsoft.com/en-us/ef/core/managing-schemas/migrations/)
 
 ---
-# 🚀 Defining Relationships in .NET Development: A Comprehensive Guide
+# 🚀 Defining Relationships in .NET Development
 Entity relationships play a crucial role in .NET development, especially when using **Entity Framework Core (EF Core)** as an Object-Relational Mapping (ORM) framework. Understanding and correctly defining **one-to-one (1:1), one-to-many (1:N), and many-to-many (M:N)** relationships ensures **data integrity**, **efficient querying**, and **scalable application design**.
 
 ## 1️⃣ Overview
@@ -5546,7 +5545,7 @@ Entity relationships in EF Core define how **tables** connect in a **database sc
 - [Microsoft Docs: Entity Framework Core Fluent API](https://docs.microsoft.com/en-us/ef/core/modeling/)
 
 ---
-# 🚀 Navigation Properties in .NET Development: A Comprehensive Guide
+# 🚀 Navigation Properties in .NET Development
 ## 📖 Introduction
 **Navigation properties** are a key concept in **Entity Framework (EF) Core** that allow developers to define relationships between entities in a database model. They provide a way to traverse and query related entities, making it easier to manage complex data structures while maintaining referential integrity.
 In this guide, we will explore:
@@ -5719,7 +5718,7 @@ flowchart TD
 Navigation properties in EF Core allow for **seamless entity relationships** while ensuring **data integrity**. Understanding how to define and load relationships correctly is crucial for **efficient database operations** in .NET applications. With proper configuration and usage, developers can create **scalable and maintainable** applications.
 
 ---
-# 🚀 One-to-Many Relationship in .NET Development: A Comprehensive Guide
+# 🚀 One-to-Many Relationship in .NET Development
 A **one-to-many relationship** is a fundamental concept in relational database design and is widely used in .NET development with **Entity Framework (EF) Core**. This relationship models scenarios where **one record** in a primary (or "parent") entity is associated with **multiple records** in a related (or "child") entity. Understanding and properly configuring one-to-many relationships is critical for ensuring **data integrity, enforcing referential constraints, and enabling efficient querying.**
 
 ## 1️⃣ Overview
@@ -5850,7 +5849,7 @@ foreach (var order in customerWithOrders.Orders)
 By applying best practices, using efficient querying strategies, and leveraging EF Core’s powerful relationship mapping features, you can design **scalable, high-performance** applications with well-structured data models. 🚀
 
 ---
-# 🚀 ReferentialAction in .NET Development: A Comprehensive Guide
+# 🚀 ReferentialAction in .NET Development
 ## 📌 Introduction
 In **.NET Development**, particularly with **Entity Framework Core (EF Core)**, managing relationships between database entities is crucial for maintaining **referential integrity**. One key aspect of this is configuring **Referential Actions**, which determine what happens to **dependent entities** when a **principal entity** is deleted.
 The behavior of **referential actions** is specified using **`onDelete: ReferentialAction`**, which is mapped to the `DeleteBehavior` enumeration in EF Core. Understanding and properly configuring this setting is critical for data consistency, performance, and ensuring that database relationships function as expected.
@@ -5971,7 +5970,7 @@ In **Entity Framework Core**, `onDelete: ReferentialAction` allows developers to
 By carefully choosing and configuring `ReferentialAction`, you can enforce **data integrity**, optimize **database performance**, and align **business rules** with your entity relationships in EF Core.
 
 ---
-# 🚀 Many-to-Many Relationships in .NET Development: A Comprehensive Guide
+# 🚀 Many-to-Many Relationships in .NET Development
 Many-to-many relationships are a core concept in relational database design and play a crucial role in modeling complex data associations in .NET applications, especially when using Entity Framework (EF) Core. This guide explains what many-to-many relationships are, outlines their key characteristics, and demonstrates how to implement and use them effectively with additional details and extended examples.
 
 ## 1. What Are Many-to-Many Relationships?
@@ -7909,7 +7908,7 @@ A text-based diagram for clarity:
 - [Entity Framework Core Documentation](https://learn.microsoft.com/en-us/ef/core/)
 
 ---
-# Executing Raw SQL Statements in EF Core: A Comprehensive Guide
+# Executing Raw SQL Statements in EF Core
 ## 1. Overview
 ### What Are Raw SQL Statements in EF Core?
 Raw SQL statements are SQL commands written manually by the developer and executed directly against the database. In EF Core, you may choose to use raw SQL when:
@@ -8451,3 +8450,182 @@ flowchart TD
 
 ## 5. Resources and References
 - [Microsoft Docs - Dependency Injection in ASP.NET Core](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/dependency-injection)
+
+---
+# IoC Container and Dependency Injection in EF Core .NET Development
+## 1. Introduction
+In modern .NET development—especially when using ASP.NET Core and EF Core—inversion of control (IoC) and dependency injection (DI) are foundational design patterns. They help build modular applications by managing the creation and lifetime of dependencies externally rather than hard-coding them within classes. This approach promotes loose coupling, easier testing, and greater maintainability.
+This chapter explains:
+- **Inversion of Control (IoC):** The principle that transfers the control of dependency management from the application code to an external container.
+- **Dependency Injection (DI):** A technique for implementing IoC where dependencies are provided (injected) to classes rather than being created by them.
+- **IoC Containers in .NET:** How ASP.NET Core’s built-in IoC container is used to register and resolve services like EF Core’s DbContext.
+- **Best Practices and Examples:** Detailed code examples, diagrams, and tables that illustrate how to configure and use these patterns in real applications.
+
+## 2. Understanding Inversion of Control (IoC) and Dependency Injection (DI)
+### 2.1. Inversion of Control (IoC)
+**Definition:**  
+Inversion of Control is a design principle where the control flow of a program is inverted compared to traditional procedural programming. Instead of classes creating their own dependencies, an external component (the IoC container) is responsible for constructing and providing them.
+**Purpose:**
+- **Reduce Coupling:** Classes depend on abstractions rather than concrete implementations.
+- **Enhance Reusability:** Dependencies can be swapped out without modifying dependent classes.
+- **Improve Testability:** It becomes easier to substitute real dependencies with mocks or stubs in unit tests.
+
+### 2.2. Dependency Injection (DI)
+**Definition:**  
+Dependency Injection is a pattern that implements IoC by "injecting" dependencies into a class, usually through its constructor, properties, or methods, rather than having the class instantiate its own dependencies.
+**Common Forms of DI:**
+- **Constructor Injection:** Dependencies are provided as parameters to the class constructor.
+- **Property Injection:** Dependencies are assigned through public properties.
+- **Method Injection:** Dependencies are passed as parameters to a method when needed.
+
+**Benefits:**
+- **Loose Coupling:** Classes interact with interfaces or abstract classes instead of concrete types.
+- **Testability:** Easier to substitute dependencies during unit testing.
+- **Maintainability:** Centralized configuration in the IoC container simplifies changes to dependency management.
+
+## 3. IoC Containers in .NET
+### 3.1. What is an IoC Container?
+An IoC container is a framework that manages the creation, lifetime, and resolution of class dependencies. In ASP.NET Core, the built-in container is part of the framework and is used to register services such as EF Core’s DbContext, application services, logging, and more.
+**Key Characteristics:**
+- **Registration:**  
+  Services are registered with specific lifetimes (Transient, Scoped, Singleton).
+- **Resolution:**  
+  The container automatically creates and injects service instances into classes that depend on them.
+- **Lifetime Management:**  
+  It controls the scope and lifetime of service instances, which is crucial for resources like database connections.
+
+### 3.2. Example: Service Registration in ASP.NET Core
+```csharp
+public void ConfigureServices(IServiceCollection services)
+{
+    // Register the EF Core DbContext with a scoped lifetime (one per HTTP request)
+    services.AddDbContext<ApplicationDbContext>(options =>
+        options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
+
+    // Register application-specific services
+    services.AddScoped<ICustomerService, CustomerService>();
+
+    // Register controllers and views
+    services.AddControllersWithViews();
+}
+```
+
+**Explanation:**
+- The `AddDbContext<T>()` method registers the `ApplicationDbContext` with a scoped lifetime.
+- `AddScoped<TService, TImplementation>()` is used to register other services so that a new instance is created per HTTP request.
+
+## 4. Dependency Injection in Action
+### 4.1. Constructor Injection Example in an ASP.NET Core Controller
+Constructor injection is the most common method of DI, ensuring that a class’s dependencies are provided when the class is created.
+```csharp
+[ApiController]
+[Route("api/[controller]")]
+public class CustomersController : ControllerBase
+{
+    private readonly ICustomerService _customerService;
+
+    // The IoC container injects the ICustomerService instance via the constructor.
+    public CustomersController(ICustomerService customerService)
+    {
+        _customerService = customerService;
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> Index()
+    {
+        var customers = await _customerService.GetAllCustomersAsync();
+        return Ok(customers);
+    }
+}
+```
+
+**Explanation:**
+- `CustomersController` does not create an instance of `ICustomerService` itself. Instead, it relies on the IoC container to inject the proper implementation.
+- This promotes loose coupling and makes the controller easier to test.
+
+### 4.2. Injecting EF Core DbContext via DI
+```csharp
+public class CustomerService : ICustomerService
+{
+    private readonly ApplicationDbContext _context;
+
+    // The DbContext is injected via the constructor.
+    public CustomerService(ApplicationDbContext context)
+    {
+        _context = context;
+    }
+
+    public async Task<List<Customer>> GetAllCustomersAsync()
+    {
+        return await _context.Customers.ToListAsync();
+    }
+}
+```
+
+**Explanation:**
+- The `CustomerService` depends on the `ApplicationDbContext` to perform database operations.
+- The container takes care of constructing and disposing of the DbContext appropriately.
+
+## 5. Diagram: IoC Container and DI Workflow
+
+```mermaid
+flowchart TD
+    A[Application Startup]
+    B[Configure Services in Startup.cs]
+    C[IoC Container Registers Services]
+    D[HTTP Request Received]
+    E[Controller Requires Dependencies]
+    F[IoC Container Resolves Dependencies]
+    G[Controller Executes Action]
+    
+    A --> B
+    B --> C
+    C --> D
+    D --> E
+    E --> F
+    F --> G
+```
+
+**Explanation:**
+- At application startup, services are registered in Startup.cs.
+- The IoC container stores the service registrations and their lifetimes.
+- When an HTTP request arrives, the container resolves and injects the required dependencies into controllers or services.
+- The controller executes its action using the injected dependencies.
+
+## 6. Best Practices and Service Lifetimes
+### 6.1. Choosing the Right Lifetime
+Services in the IoC container can be registered with different lifetimes:
+| Lifetime    | Scope                                      | Typical Use Cases                            |
+|-------------|--------------------------------------------|----------------------------------------------|
+| **Singleton**   | Single instance for the entire application | Logging, configuration, caching services      |
+| **Scoped**      | One instance per HTTP request              | EF Core DbContext, business services in web apps|
+| **Transient**   | New instance every time it’s requested       | Lightweight, stateless services               |
+**Best Practices:**
+- **Prefer Constructor Injection:** It ensures dependencies are available at object creation and promotes immutability.
+- **Keep Constructors Lean:** Avoid constructors with too many parameters; consider grouping related services if necessary.
+- **Inject Interfaces:** Depend on abstractions rather than concrete implementations to allow easy swapping and testing.
+- **Avoid the Service Locator Pattern:** Do not manually resolve services within classes; rely on DI for cleaner code and easier maintenance.
+
+## 7. Additional Service Registration Examples
+```csharp
+services.AddScoped<IMyRepository, MyRepository>();
+services.AddSingleton<ILogger, MyLogger>();
+services.AddTransient<ISerializer, JsonSerializer>();
+```
+
+**Explanation:**
+- **Scoped:** One instance per request (suitable for database contexts).
+- **Singleton:** A single instance used throughout the application's lifetime.
+- **Transient:** A new instance each time the service is requested, ideal for lightweight services.
+
+## 8. Summary
+**Inversion of Control (IoC)** and **Dependency Injection (DI)** are critical design patterns in modern .NET development. Using an IoC container:
+- Reduces coupling between classes.
+- Promotes testability by making it easy to substitute dependencies with mocks.
+- Centralizes the configuration of service lifetimes, making it easier to manage resources.
+In ASP.NET Core, the built-in IoC container manages services like EF Core’s DbContext and application services. Through constructor injection, dependencies are provided automatically, leading to cleaner, more maintainable, and testable code.
+
+## 9. Resources and References
+- [Microsoft Docs - Dependency Injection in ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/dependency-injection)
+- [Microsoft Docs - EF Core DbContext Lifetime](https://learn.microsoft.com/en-us/ef/core/dbcontext-configuration/)
+- [Stackoverflow - What is Inversion of Control?](https://stackoverflow.com/questions/3058/what-is-inversion-of-control)
