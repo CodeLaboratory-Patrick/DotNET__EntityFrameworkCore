@@ -8817,3 +8817,188 @@ Both **ASP.NET Core Web API** and **ASP.NET Core MVC (Web App)** are built on th
 - [Microsoft Docs - ASP.NET Core MVC](https://learn.microsoft.com/en-us/aspnet/core/mvc)
 
 ---
+# Understanding DbContext and DbContextFactory in EF Core
+Entity Framework Core (EF Core) is a powerful object-relational mapper (ORM) that enables .NET developers to work with databases using strongly typed C# objects. Two fundamental components for managing data access in EF Core are the **DbContext** and the **DbContextFactory**. In this chapter, we explain what each is, their key characteristics, how they work, and best practices for using them effectively in .NET applications.
+## 1. What is DbContext?
+### Definition
+**DbContext** is the primary class in EF Core that represents a session with the database. It acts as a bridge between your domain models and the underlying database. The DbContext is responsible for:
+- **Querying Data:** Executing LINQ queries to retrieve data.
+- **Change Tracking:** Monitoring changes to entities.
+- **Persisting Data:** Saving changes back to the database.
+- **Configuration:** Configuring the model using the Fluent API or Data Annotations.
+### Characteristics
+- **Central Hub:** Connects your application’s domain models to the database.
+- **Scoped Lifetime:** Typically, a DbContext is scoped to a single unit of work (e.g., one HTTP request in an ASP.NET Core application).
+- **Change Tracker:** Automatically tracks the state of entities (Added, Modified, Deleted, Unchanged) and detects changes.
+- **Model Configuration:** Maps entities to database tables and configures relationships.
+- **Resource Management:** Implements `IDisposable` to properly release database connections and other resources.
+
+### Example Usage
+#### DbContext Class Definition
+```csharp
+public class ApplicationDbContext : DbContext
+{
+    public DbSet<Product> Products { get; set; }
+
+    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
+        : base(options)
+    {
+    }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        // Fluent API configuration for the Product entity.
+        modelBuilder.Entity<Product>(entity =>
+        {
+            entity.HasKey(e => e.ProductId);
+            entity.Property(e => e.Name)
+                  .IsRequired()
+                  .HasMaxLength(100);
+            entity.Property(e => e.Price)
+                  .HasColumnType("decimal(18,2)");
+        });
+    }
+}
+
+public class Product
+{
+    public int ProductId { get; set; }
+    public string Name { get; set; }
+    public decimal Price { get; set; }
+}
+```
+
+#### Using DbContext in a Controller
+```csharp
+public class ProductsController : Controller
+{
+    private readonly ApplicationDbContext _context;
+    
+    public ProductsController(ApplicationDbContext context)
+    {
+        _context = context;
+    }
+    
+    public async Task<IActionResult> Index()
+    {
+        var products = await _context.Products.ToListAsync();
+        return View(products);
+    }
+}
+```
+
+**Explanation:**  
+The `ApplicationDbContext` manages the `Products` table. In the `ProductsController`, the context is injected via the constructor and used to retrieve data from the database.
+
+## 2. What is DbContextFactory?
+### Definition
+A **DbContextFactory** is a design pattern and service in EF Core that provides a way to create new instances of a DbContext on demand. This is particularly useful when you need to create DbContext instances outside the standard dependency injection (DI) scope, such as in background services, console applications, or scenarios where multiple threads require their own context.
+### Characteristics
+- **Decouples Creation:** Separates the instantiation of the DbContext from its usage.
+- **On-Demand Instantiation:** Allows you to create a new DbContext instance whenever needed.
+- **Thread Safety:** Each call to create a context returns a new instance, ensuring that contexts are not shared across threads.
+- **Design-Time Support:** EF Core supports `IDesignTimeDbContextFactory<T>` for design-time operations like migrations.
+- **DI Integration:** You can register a DbContextFactory in the DI container using `AddDbContextFactory<T>()`.
+### Example Usage
+#### Implementing IDesignTimeDbContextFactory
+This interface is mainly used for design-time tasks such as migrations.
+```csharp
+public class ApplicationDbContextFactory : IDesignTimeDbContextFactory<ApplicationDbContext>
+{
+    public ApplicationDbContext CreateDbContext(string[] args)
+    {
+        var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
+        optionsBuilder.UseSqlServer("YourConnectionString");
+        
+        return new ApplicationDbContext(optionsBuilder.Options);
+    }
+}
+```
+
+#### Registering and Using AddDbContextFactory in ASP.NET Core
+**Service Registration in Startup.cs:**
+```csharp
+public void ConfigureServices(IServiceCollection services)
+{
+    // Register DbContextFactory for on-demand DbContext creation.
+    services.AddDbContextFactory<ApplicationDbContext>(options =>
+        options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
+        
+    services.AddControllersWithViews();
+}
+```
+
+**Using the Factory in a Service:**
+```csharp
+public class ProductService
+{
+    private readonly IDbContextFactory<ApplicationDbContext> _contextFactory;
+
+    public ProductService(IDbContextFactory<ApplicationDbContext> contextFactory)
+    {
+        _contextFactory = contextFactory;
+    }
+
+    public async Task<List<Product>> GetProductsAsync()
+    {
+        // Create a new DbContext instance for this operation.
+        using var context = _contextFactory.CreateDbContext();
+        return await context.Products.ToListAsync();
+    }
+}
+```
+
+**Explanation:**  
+Here, the `IDbContextFactory<ApplicationDbContext>` is injected into the `ProductService`. This allows the service to create new DbContext instances on demand, which is especially useful in scenarios like background processing or multi-threaded applications.
+
+## 3. Diagram: DbContext and DbContextFactory
+
+```mermaid
+flowchart TD
+    A[Application Startup]
+    B[Configure Services in DI Container]
+    C[Register ApplicationDbContext (Scoped)]
+    D[Register DbContextFactory (AddDbContextFactory)]
+    E[HTTP Request or Background Task]
+    F[Controller/Service Receives Dependency]
+    G[DbContext Instance Created]
+    H[Database Operations Executed]
+    
+    A --> B
+    B --> C
+    B --> D
+    E --> F
+    F --> G
+    G --> H
+```
+
+**Explanation:**  
+- At startup, services are configured in the DI container.  
+- The `ApplicationDbContext` is registered as a scoped service, while the `DbContextFactory` is registered to allow on-demand creation.  
+- When an HTTP request or background task requires a DbContext, the container injects either a context directly or a factory, which then creates a new context instance for database operations.
+
+## 4. Comparison Table: DbContext vs. DbContextFactory
+| Aspect                     | DbContext                                              | DbContextFactory                                               |
+|----------------------------|--------------------------------------------------------|----------------------------------------------------------------|
+| **Purpose**                | Manages database connections, queries, and tracking.   | Provides on-demand creation of new DbContext instances.         |
+| **Lifetime**               | Typically scoped per request (or unit of work).        | Flexible; each call returns a new instance.                     |
+| **Usage Scenario**         | Standard web application data operations.             | Background tasks, console apps, Blazor Server, multi-threaded scenarios. |
+| **Thread Safety**          | Not thread-safe; should not be shared across threads.   | Each instance is created separately, ensuring thread safety.     |
+| **Disposal**               | Managed by DI (automatically disposed at end of scope). | Caller is responsible for disposing the context instance.       |
+
+## 5. Summary
+- **DbContext**  
+  - Acts as the central class in EF Core for managing data access.
+  - Handles querying, change tracking, and persistence.
+  - Typically used within a scoped lifetime, such as one per HTTP request in web applications.
+- **DbContextFactory**  
+  - Provides a method for creating new DbContext instances on demand.
+  - Essential in scenarios where a new context is needed outside of the standard DI scope, such as background services or multi-threaded operations.
+  - Ensures that each unit of work gets a fresh, thread-safe DbContext instance.
+
+## 6. Resources and References
+- [Microsoft Docs: DbContext Class](https://learn.microsoft.com/en-us/ef/core/dbcontext-configuration/)
+- [Microsoft Docs: IDesignTimeDbContextFactory<T>](https://learn.microsoft.com/en-us/ef/core/cli/dbcontext-creation)
+- [Microsoft Docs: AddDbContextFactory](https://learn.microsoft.com/en-us/ef/core/dbcontext-configuration/#using-a-dbcontext-factory-eg-for-blazor)
+
+---
