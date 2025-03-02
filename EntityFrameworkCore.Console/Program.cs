@@ -4,9 +4,16 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using System.Globalization;
 
-//First we need an instance of Context
-using var context = new FootballLeagueDbContext();
-Console.WriteLine(context.DbPath);
+// First we need an instance of context
+var folder = Environment.SpecialFolder.LocalApplicationData;
+var path = Environment.GetFolderPath(folder);
+var dbPath = Path.Combine(path, "FootballLeague_EfCore.db");
+var optionsBuilder = new DbContextOptionsBuilder<FootballLeagueDbContext>();
+optionsBuilder.UseSqlite($"Data Source={dbPath}");
+using var context = new FootballLeagueDbContext(optionsBuilder.Options);
+
+//using var sqlServerContext = new FootballLeagueSqlServerDbContext();
+
 //await context.Database.EnsureDeletedAsync();
 //await context.Database.MigrateAsync();
 
@@ -67,6 +74,7 @@ Console.WriteLine(context.DbPath);
 
 // Simple Insert
 //await InsertOneRecord();
+//await InsertOneRecordWithAudit();
 
 // Loop Insert
 //await InsertWithLoop();
@@ -142,7 +150,7 @@ void OtherRawQueries()
 
     // Non-querying statement 
     var someName = "Random Team Name";
-    context.Database.ExecuteSqlInterpolated($"UPDATE Teams SET Name = {someName}")
+    context.Database.ExecuteSqlInterpolated($"UPDATE Teams SET Name = {someName}");
 
     int matchId = 1;
     context.Database.ExecuteSqlInterpolated($"EXEC dbo.DeleteMatch {matchId}");
@@ -438,6 +446,16 @@ async Task InsertOneRecord()
         CreatedDate = DateTime.Now,
     };
     await context.Coaches.AddAsync(newCoach);
+    await context.SaveChangesAsync();
+}
+
+async Task InsertOneRecordWithAudit()
+{
+    var newLeague = new League
+    {
+        Name = "New League With Audit"
+    };
+    await context.AddAsync(newLeague);
     await context.SaveChangesAsync();
 }
 
