@@ -3631,7 +3631,7 @@ flowchart TD
 Understanding **Entity States** in EF Core is pivotal for building **predictable**, **maintainable** data layers. By recognizing how states progress—from **Detached** to **Added**, **Unchanged**, **Modified**, or **Deleted**—you can orchestrate **inserts**, **updates**, and **deletes** with greater control. Properly managing states also helps avert unintended database operations, optimizing performance in **enterprise-grade** .NET applications.
 
 ---
-# 🚀 SaveChanges() and DetectChanges() in .NET Development: A Comprehensive Guide
+# 🚀 SaveChanges() and DetectChanges() in .NET Development
 ## 📘 Introduction
 In **Entity Framework Core (EF Core)**, managing the state of entities and persisting changes to the database are fundamental operations. Two key methods that facilitate this process are **SaveChanges()** and **DetectChanges()**. This guide explains in detail what each method does, their characteristics, and how to use them effectively in your application.
 
@@ -3767,8 +3767,7 @@ flowchart TD
 - [Entity Framework Core Documentation](https://docs.microsoft.com/en-us/ef/core/)
 
 ---
-# 🚀 Add() vs. AddAsync() in .NET Development: A Comprehensive Guide
-
+# 🚀 Add() vs. AddAsync() in .NET Development
 ## 📌 Introduction
 In **Entity Framework Core (EF Core)**, adding new entities to the `DbContext` is a fundamental operation when inserting data into a database. EF Core provides two primary methods for this: **Add()** and **AddAsync()**. Understanding the difference between these methods is crucial for optimizing performance and ensuring efficient data processing.
 This guide explores their **definitions**, **key characteristics**, **use cases**, and **best practices**, supplemented with examples, diagrams, and comparisons.
@@ -4118,7 +4117,7 @@ Understanding the differences between tracking and no-tracking update operations
 - [EF Core Performance Considerations](https://docs.microsoft.com/en-us/ef/core/performance/)
 
 ---
-# 🚀 Delete Operations in .NET Development: A Comprehensive Guide
+# 🚀 Delete Operations in .NET Development
 In .NET development, deleting data from a database is as important as creating and updating data. Efficient and effective delete operations ensure data integrity and support application requirements such as data cleanup, record removal, or soft deletion. This guide thoroughly explains delete operations, their characteristics, and how to implement them in .NET—particularly using Entity Framework Core (EF Core). We'll cover basic deletion, bulk deletion, and best practices, along with examples, diagrams, and tables for clarity.
 
 ## 1. What Are Delete Operations?
@@ -4264,7 +4263,7 @@ flowchart TD
 - **Soft Delete:** Implement soft deletion by marking records as deleted (e.g., using an `IsDeleted` flag) and filtering them out via global query filters.
 
 ---
-# 🚀 ExecuteUpdate and ExecuteDelete in .NET Development: A Comprehensive Guide
+# 🚀 ExecuteUpdate and ExecuteDelete in .NET Development
 ## 📌 Introduction
 In **Entity Framework Core (EF Core) 7** and later, two powerful methods—**`ExecuteUpdate`** and **`ExecuteDelete`**—enable high-performance, set-based update and delete operations directly in the database. These methods allow modifying or removing multiple records in a **single** database round trip, reducing memory overhead and significantly improving efficiency. This guide explores their characteristics, use cases, and implementation with examples, tables, and diagrams.
 
@@ -4383,7 +4382,7 @@ flowchart TD
 **ExecuteUpdate** and **ExecuteDelete** are powerful **bulk processing methods** introduced in **EF Core 7**, offering **high-performance updates and deletions** at the database level. By avoiding unnecessary entity tracking, these methods significantly reduce **memory usage** and **database round trips**, making them ideal for **large-scale** data modifications. Use them wisely to **improve efficiency** while ensuring **data integrity** in your .NET applications. 🚀
 
 ---
-# 🚀 Delete Operation vs. ExecuteDelete Operation in .NET Development: A Comprehensive Guide
+# 🚀 Delete Operation vs. ExecuteDelete Operation in .NET Development
 ## 📌 Introduction
 In .NET development, particularly when using **Entity Framework Core (EF Core)**, deleting records efficiently is crucial for maintaining application performance and data integrity. With EF Core 7, a new method called **`ExecuteDelete()`** was introduced, allowing bulk deletion without loading entities into memory. This document provides an in-depth comparison between traditional delete operations (`Remove()` / `RemoveRange()`) and `ExecuteDelete()`, covering their characteristics, use cases, and best practices.
 ## 1. Overview
@@ -4503,7 +4502,7 @@ flowchart TD
 - [EF Core Bulk Operations](https://docs.microsoft.com/en-us/ef/core/performance/)
 
 ---
-# 🚀 Database Migrations in .NET Development: A Comprehensive Guide
+# 🚀 Database Migrations in .NET Development
 ## 📌 Introduction
 **Database migrations** are an essential aspect of modern .NET development, especially when using **Entity Framework Core (EF Core)**. Migrations provide a structured approach to managing and applying schema changes as your application evolves. They allow developers to:
 - **Version-control** database changes alongside code.
@@ -4948,7 +4947,7 @@ Database migrations in EF Core provide a powerful framework for evolving your da
 - [EF Core GitHub Repository](https://github.com/dotnet/efcore)
 
 ---
-# 🚀 EF Bundles in .NET Development: A Comprehensive Guide
+# 🚀 EF Bundles in .NET Development
 Entity Framework (EF) Bundles are a powerful feature in modern .NET development that optimize database interactions by grouping multiple queries into a single round trip. Introduced in EF Core 7, this feature significantly reduces database latency and enhances performance, particularly for read-heavy applications.
 
 ## 1️⃣ Overview
@@ -5041,7 +5040,7 @@ EF Bundles offer a streamlined way to optimize database interactions in EF Core 
 - Improve **code maintainability** by reducing redundancy.
 
 ---
-# 🚀 EF Bundles in .NET Development: A Comprehensive Guide
+# 🚀 EF Bundles in .NET Development
 Entity Framework (EF) Bundles are a powerful feature in modern .NET development that optimize database interactions by grouping multiple queries into a single round trip. Introduced in EF Core 7, this feature significantly reduces database latency and enhances performance, particularly for read-heavy applications.
 
 ## 1️⃣ Overview
@@ -5135,7 +5134,7 @@ EF Bundles offer a streamlined way to optimize database interactions in EF Core 
 5. **Reduces Network Overhead**: Improves query efficiency by consolidating requests.
 
 ---
-# 🚀 Applying Migrations at Runtime in .NET Development: A Comprehensive Guide
+# 🚀 Applying Migrations at Runtime in .NET Development
 Entity Framework Core (EF Core) allows for **runtime database migrations**, enabling applications to automatically apply pending schema updates during execution. This feature enhances deployment automation, ensures consistency, and simplifies database maintenance, making it particularly useful for CI/CD pipelines and cloud-native applications.
 ## 1️⃣ Overview
 ### 🔍 What Are Runtime Migrations?
@@ -5241,7 +5240,7 @@ flowchart TD
 - [Migration guide: SQL Server to Azure SQL Database](https://learn.microsoft.com/en-us/data-migration/sql-server/database/guide)
 
 ---
-# 🚀 EnsureCreated() vs MigrateAsync() in .NET Development: A Comprehensive Guide
+# 🚀 EnsureCreated() vs MigrateAsync() in .NET Development
 Entity Framework Core (EF Core) offers multiple methods to initialize and update database schemas. Two commonly used approaches are `EnsureCreated()` and `MigrateAsync()`, each serving distinct purposes. Understanding their differences is crucial for choosing the right approach for your application.
 
 ## 1️⃣ Overview
@@ -5379,7 +5378,7 @@ flowchart TD
 - [Entity Framework Core Migrations](https://docs.microsoft.com/en-us/ef/core/managing-schemas/migrations/)
 
 ---
-# 🚀 Defining Relationships in .NET Development: A Comprehensive Guide
+# 🚀 Defining Relationships in .NET Development
 Entity relationships play a crucial role in .NET development, especially when using **Entity Framework Core (EF Core)** as an Object-Relational Mapping (ORM) framework. Understanding and correctly defining **one-to-one (1:1), one-to-many (1:N), and many-to-many (M:N)** relationships ensures **data integrity**, **efficient querying**, and **scalable application design**.
 
 ## 1️⃣ Overview
@@ -5546,7 +5545,7 @@ Entity relationships in EF Core define how **tables** connect in a **database sc
 - [Microsoft Docs: Entity Framework Core Fluent API](https://docs.microsoft.com/en-us/ef/core/modeling/)
 
 ---
-# 🚀 Navigation Properties in .NET Development: A Comprehensive Guide
+# 🚀 Navigation Properties in .NET Development
 ## 📖 Introduction
 **Navigation properties** are a key concept in **Entity Framework (EF) Core** that allow developers to define relationships between entities in a database model. They provide a way to traverse and query related entities, making it easier to manage complex data structures while maintaining referential integrity.
 In this guide, we will explore:
@@ -5719,7 +5718,7 @@ flowchart TD
 Navigation properties in EF Core allow for **seamless entity relationships** while ensuring **data integrity**. Understanding how to define and load relationships correctly is crucial for **efficient database operations** in .NET applications. With proper configuration and usage, developers can create **scalable and maintainable** applications.
 
 ---
-# 🚀 One-to-Many Relationship in .NET Development: A Comprehensive Guide
+# 🚀 One-to-Many Relationship in .NET Development
 A **one-to-many relationship** is a fundamental concept in relational database design and is widely used in .NET development with **Entity Framework (EF) Core**. This relationship models scenarios where **one record** in a primary (or "parent") entity is associated with **multiple records** in a related (or "child") entity. Understanding and properly configuring one-to-many relationships is critical for ensuring **data integrity, enforcing referential constraints, and enabling efficient querying.**
 
 ## 1️⃣ Overview
@@ -5850,7 +5849,7 @@ foreach (var order in customerWithOrders.Orders)
 By applying best practices, using efficient querying strategies, and leveraging EF Core’s powerful relationship mapping features, you can design **scalable, high-performance** applications with well-structured data models. 🚀
 
 ---
-# 🚀 ReferentialAction in .NET Development: A Comprehensive Guide
+# 🚀 ReferentialAction in .NET Development
 ## 📌 Introduction
 In **.NET Development**, particularly with **Entity Framework Core (EF Core)**, managing relationships between database entities is crucial for maintaining **referential integrity**. One key aspect of this is configuring **Referential Actions**, which determine what happens to **dependent entities** when a **principal entity** is deleted.
 The behavior of **referential actions** is specified using **`onDelete: ReferentialAction`**, which is mapped to the `DeleteBehavior` enumeration in EF Core. Understanding and properly configuring this setting is critical for data consistency, performance, and ensuring that database relationships function as expected.
@@ -5971,7 +5970,7 @@ In **Entity Framework Core**, `onDelete: ReferentialAction` allows developers to
 By carefully choosing and configuring `ReferentialAction`, you can enforce **data integrity**, optimize **database performance**, and align **business rules** with your entity relationships in EF Core.
 
 ---
-# 🚀 Many-to-Many Relationships in .NET Development: A Comprehensive Guide
+# 🚀 Many-to-Many Relationships in .NET Development
 Many-to-many relationships are a core concept in relational database design and play a crucial role in modeling complex data associations in .NET applications, especially when using Entity Framework (EF) Core. This guide explains what many-to-many relationships are, outlines their key characteristics, and demonstrates how to implement and use them effectively with additional details and extended examples.
 
 ## 1. What Are Many-to-Many Relationships?
@@ -7909,7 +7908,7 @@ A text-based diagram for clarity:
 - [Entity Framework Core Documentation](https://learn.microsoft.com/en-us/ef/core/)
 
 ---
-# Executing Raw SQL Statements in EF Core: A Comprehensive Guide
+# Executing Raw SQL Statements in EF Core
 ## 1. Overview
 ### What Are Raw SQL Statements in EF Core?
 Raw SQL statements are SQL commands written manually by the developer and executed directly against the database. In EF Core, you may choose to use raw SQL when:
@@ -8016,5 +8015,990 @@ flowchart TD
 - Decide if the command is a query (returning data) or a non-query.
 - Use `FromSqlRaw` or `FromSqlInterpolated` for queries, and `ExecuteSqlRaw` or `ExecuteSqlInterpolated` for non-query commands.
 - EF Core then executes the command and either maps the results to entities or returns the number of rows affected.
+
+---
+# Interacting with Stored Procedures, Views, and User-Defined Functions in EF Core
+Entity Framework Core (EF Core) offers advanced functionality beyond simple table mappings. In addition to LINQ-based queries, EF Core supports executing raw SQL commands that interact with database objects such as stored procedures, views, and user-defined functions. Leveraging these features allows you to integrate legacy SQL code, encapsulate complex logic in the database, and create read-only or computed data representations while still benefiting from EF Core’s type safety and change tracking.
+In this guide, we cover:
+1. Stored Procedures – Executing precompiled SQL routines.
+2. Views (Keyless Entities) – Mapping read-only database views to keyless entities.
+3. User-Defined Functions (UDFs) – Integrating custom database functions into LINQ queries.
+
+## 1. Stored Procedures
+### 1.1. Overview
+A stored procedure is a precompiled set of SQL statements stored in the database. They are used to encapsulate complex logic, enhance performance, and provide an additional layer of security by abstracting direct table access.
+#### Key Points
+- **Precompiled and Optimized:** Stored procedures are compiled once and can be reused, often resulting in faster execution.
+- **Encapsulation:** They centralize business logic on the database side.
+- **Security:** They restrict direct table access by exposing only the procedures.
+- **Reusability:** The same stored procedure can be called from multiple parts of an application or by different applications.
+
+### 1.2. Characteristics Table
+| Characteristic       | Description                                                                                         |
+|----------------------|-----------------------------------------------------------------------------------------------------|
+| Precompiled          | Stored procedures are compiled in advance, reducing runtime overhead.                               |
+| Encapsulation        | Business logic is maintained on the database side, isolating complex operations from application code. |
+| Security             | Direct table access is restricted; only the stored procedures are exposed.                         |
+| Reusability          | Can be invoked from various parts of the application.                                             |
+| EF Core Integration  | Executed using methods such as `FromSqlRaw()` or `ExecuteSqlRaw()`.                                  |
+
+### 1.3. Using Stored Procedures in EF Core
+#### Executing a Stored Procedure That Returns Entities
+Use `FromSqlRaw()` or `FromSqlInterpolated()` on a `DbSet<T>` when the stored procedure returns a result set that matches your entity.
+**Example:**
+Assume a stored procedure `GetActiveCustomers` exists in the database:
+```csharp
+var activeCustomers = await context.Customers
+    .FromSqlRaw("EXEC GetActiveCustomers")
+    .ToListAsync();
+```
+
+#### Executing a Non-Query Stored Procedure
+For stored procedures that perform actions (INSERT, UPDATE, DELETE) without returning entities, use `ExecuteSqlRaw()`.
+**Example:**
+```csharp
+int rowsAffected = await context.Database.ExecuteSqlRawAsync(
+    "EXEC UpdateCustomerStatus @p0, @p1", status, customerId);
+Console.WriteLine($"Rows affected: {rowsAffected}");
+```
+
+### 1.4. Diagram: Stored Procedures Workflow
+
+```mermaid
+flowchart TD
+    A[Stored Procedure in Database]
+    B[EF Core: FromSqlRaw / ExecuteSqlRaw]
+    C[SQL Execution]
+    D[Results Returned (Entities or Rows Affected)]
+    
+    A --> B
+    B --> C
+    C --> D
+```
+
+**Explanation:**  
+- The stored procedure is executed via EF Core methods.
+- The SQL command is sent to the database.
+- Depending on the command, either a result set is mapped to entities or the number of affected rows is returned.
+
+## 2. Views (Keyless Entities)
+### 2.1. Overview
+A database view is a virtual table defined by a query. In EF Core, keyless entities are used to map views (or tables without primary keys) to the object model. These entities are typically read-only and are used to encapsulate complex queries or aggregations.
+#### Key Points
+- **Read-Only:** Views are generally used only for data retrieval.
+- **No Primary Key:** Since views may not have a primary key, keyless entities are configured accordingly.
+- **Simplified Data Access:** Views can present complex data in a simplified form, reducing the need for elaborate query logic in the application.
+
+### 2.2. Characteristics Table
+| Characteristic         | Description                                                                                      |
+|------------------------|--------------------------------------------------------------------------------------------------|
+| Read-Only              | Keyless entities do not support insert, update, or delete operations.                             |
+| No Primary Key         | EF Core treats these entities without primary keys by using `HasNoKey()` configuration.           |
+| Simplified Queries     | Views encapsulate complex queries, providing a simplified data representation to the application.|
+| Mapping                | Mapped to a SQL view using the `.ToView("ViewName")` method in the model configuration.           |
+
+### 2.3. Using Views in EF Core
+#### Defining a Keyless Entity
+For example, assume you have a SQL view named `CustomerSummaryView` that aggregates customer data:
+```csharp
+public class CustomerSummary
+{
+    public int CustomerId { get; set; }
+    public string Name { get; set; }
+    public int OrderCount { get; set; }
+}
+
+public class ApplicationDbContext : DbContext
+{
+    public DbSet<CustomerSummary> CustomerSummaries { get; set; }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<CustomerSummary>()
+            .HasNoKey()                   // Configure as a keyless entity
+            .ToView("CustomerSummaryView"); // Map to the SQL view
+
+        base.OnModelCreating(modelBuilder);
+    }
+}
+```
+
+#### Querying a View
+```csharp
+var summaries = await context.CustomerSummaries.ToListAsync();
+foreach (var summary in summaries)
+{
+    Console.WriteLine($"{summary.CustomerId} - {summary.Name}: {summary.OrderCount} orders");
+}
+```
+
+### 2.4. Diagram: Views (Keyless Entities) Workflow
+
+```mermaid
+flowchart TD
+    A[Database View: CustomerSummaryView]
+    B[Model Configuration: HasNoKey(), ToView("CustomerSummaryView")]
+    C[Keyless Entity: CustomerSummary]
+    D[Query Returns Aggregated Data]
+    
+    A --> B
+    B --> C
+    C --> D
+```
+
+**Explanation:**  
+- The view is mapped to a keyless entity.
+- The entity is configured in the model using `HasNoKey()` and `.ToView()`.
+- Queries against this entity return read-only aggregated data.
+
+## 3. User-Defined Functions (UDFs)
+### 3.1. Overview
+User-defined functions (UDFs) are custom functions defined in the database. They can perform calculations or data transformations that you want to reuse across multiple queries. EF Core allows you to map these functions to C# static methods, enabling you to incorporate them into your LINQ queries.
+#### Key Points
+- **Encapsulation of Logic:** UDFs encapsulate complex calculations or business logic on the database side.
+- **Reusability:** Once defined, a UDF can be used across various queries.
+- **Performance:** Offloads computation to the database, which can be optimized for such tasks.
+- **EF Core Integration:** UDFs can be mapped using the Fluent API or the `DbFunction` attribute.
+
+### 3.2. Characteristics Table
+| Characteristic              | Description                                                                                   |
+|-----------------------------|-----------------------------------------------------------------------------------------------|
+| Encapsulation of Logic      | Encapsulates complex calculations that can be reused.                                       |
+| Reusable                    | Defined once in the database and used across multiple queries.                                |
+| Integrated with LINQ        | Can be mapped to C# methods and used directly within LINQ queries.                            |
+| Performance                 | Can improve performance by delegating computation to the database engine.                     |
+
+### 3.3. Using User-Defined Functions in EF Core
+#### Mapping a UDF
+Assume a UDF named `dbo.CalculateDiscount` exists in the database. Map it to a static C# method as follows:
+```csharp
+public static class DbFunctionsExtensions
+{
+    [DbFunction("CalculateDiscount", "dbo")]
+    public static decimal CalculateDiscount(this DbFunctions _, decimal price)
+    {
+        // This method has no implementation.
+        // EF Core will translate the method call to the corresponding database function.
+        throw new NotSupportedException();
+    }
+}
+
+public class ApplicationDbContext : DbContext
+{
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.HasDbFunction(() => DbFunctionsExtensions.CalculateDiscount(default, default))
+            .HasName("CalculateDiscount")
+            .HasSchema("dbo");
+
+        base.OnModelCreating(modelBuilder);
+    }
+}
+```
+
+#### Using the Mapped UDF in a LINQ Query
+```csharp
+var productsWithDiscount = await context.Products
+    .Select(p => new 
+    {
+        p.ProductId,
+        p.Name,
+        DiscountedPrice = EF.Functions.CalculateDiscount(p.Price)
+    })
+    .ToListAsync();
+
+foreach (var product in productsWithDiscount)
+{
+    Console.WriteLine($"{product.Name} - Discounted Price: {product.DiscountedPrice}");
+}
+```
+
+### 3.4. Diagram: UDF Mapping and Execution
+
+```mermaid
+flowchart TD
+    A[Database UDF: dbo.CalculateDiscount]
+    B[EF Core DbFunction Mapping]
+    C[LINQ Query Calls EF.Functions.CalculateDiscount]
+    D[SQL Query Invokes UDF]
+    E[Results Returned with Discounted Prices]
+    
+    A --> B
+    B --> C
+    C --> D
+    D --> E
+```
+
+**Explanation:**  
+- The UDF is defined in the database.
+- EF Core maps the UDF to a static method using `DbFunction` and Fluent API configuration.
+- When used in a LINQ query, EF Core translates the method call into a SQL function call, returning computed results.
+
+## 4. Summary
+EF Core provides advanced mechanisms to interact with various database objects beyond simple table mappings. You can:
+- **Execute Stored Procedures:** Run precompiled SQL routines for data retrieval or non-query operations.
+- **Map Views as Keyless Entities:** Represent read-only virtual tables (or complex queries) in your object model.
+- **Integrate User-Defined Functions:** Map database functions to C# methods, allowing custom computations within LINQ queries.
+
+## 5. Feature Comparison Table
+| Feature                     | Purpose                                        | EF Core Approach                                         |
+|-----------------------------|------------------------------------------------|----------------------------------------------------------|
+| **Stored Procedures**       | Execute precompiled SQL routines               | `FromSqlRaw()`, `FromSqlInterpolated()`, `ExecuteSqlRaw()`|
+| **Views (Keyless Entities)**| Map read-only or aggregated data              | `HasNoKey()`, `.ToView("ViewName")`                       |
+| **User-Defined Functions**  | Integrate custom database computations         | `[DbFunction]` attribute and Fluent API mapping          |
+
+## 6. References
+- [Microsoft Docs - Stored Procedures in EF Core](https://learn.microsoft.com/en-us/ef/core/querying/raw-sql)
+- [Microsoft Docs - Keyless Entity Types](https://learn.microsoft.com/en-us/ef/core/modeling/keyless-entity-types)
+- [Microsoft Docs - User-Defined Functions in EF Core](https://learn.microsoft.com/en-us/ef/core/querying/user-defined-function-mapping)
+
+---
+# How EF Core and ASP.NET Core Work and What They Are
+## 1. Entity Framework Core (EF Core)
+### 1.1. Definition
+**Entity Framework Core (EF Core)** is a modern, open-source object-relational mapper (ORM) for .NET. It allows developers to interact with relational databases using strongly typed C# objects. EF Core eliminates the need for writing extensive data-access code and supports various approaches to database development, including code-first and database-first.
+### 1.2. Key Characteristics
+- **Cross-Platform and Open Source:**  
+  EF Core runs on Windows, Linux, and macOS and is maintained as an open-source project.
+- **Code-First and Database-First:**  
+  Developers can design their domain models first or generate models from an existing database.
+- **LINQ Integration:**  
+  Allows queries to be written in C# using LINQ, which is then translated into SQL.
+- **Change Tracking:**  
+  Automatically tracks changes to entities and manages their state (Added, Modified, Deleted).
+- **Migrations:**  
+  Supports incremental database schema updates as your model evolves.
+- **Provider Agnostic:**  
+  Works with multiple database providers (SQL Server, SQLite, PostgreSQL, MySQL, etc.).
+### 1.3. How EF Core Works
+1. **DbContext:**  
+   The primary class that manages the database connection and entity sets (via `DbSet<T>`). It also handles the change tracker.
+2. **Model Building:**  
+   EF Core builds a model from your entity classes, which is then used to generate or update the database schema.
+3. **Query Translation:**  
+   LINQ queries against `DbSet<T>` are translated into SQL statements that run against the database.
+4. **Change Persistence:**  
+   Calling `SaveChanges()` inspects the tracked entities, generates the necessary SQL commands, and applies those changes to the database.
+### 1.4. Example: Basic Query with EF Core
+```csharp
+using (var context = new ApplicationDbContext())
+{
+    // Retrieve products with a price greater than 100 using LINQ.
+    var products = await context.Products
+        .Where(p => p.Price > 100)
+        .ToListAsync();
+
+    foreach (var product in products)
+    {
+        Console.WriteLine($"{product.ProductId}: {product.Name} - {product.Price:C}");
+    }
+}
+```
+
+## 2. ASP.NET Core
+### 2.1. Definition
+**ASP.NET Core** is a high-performance, cross-platform framework for building modern web applications, APIs, and microservices. It is designed to be modular and lightweight while providing a powerful set of features for handling HTTP requests, routing, dependency injection, and middleware.
+### 2.2. Key Characteristics
+- **Cross-Platform:**  
+  Runs on Windows, Linux, and macOS.
+- **Modular and Lightweight:**  
+  Uses a modular architecture; you add only the packages your application needs.
+- **High Performance:**  
+  Optimized for speed and scalability, making it suitable for high-load web applications.
+- **Built-in Dependency Injection:**  
+  Comes with a robust DI framework to manage dependencies across your application.
+- **Middleware Pipeline:**  
+  Uses a configurable middleware pipeline to process HTTP requests and responses.
+- **Unified Development Model:**  
+  Supports multiple patterns including MVC (Model-View-Controller), Razor Pages, and Web APIs.
+### 2.3. How ASP.NET Core Works
+1. **Startup Class:**  
+   Contains `ConfigureServices` (for configuring dependency injection, adding services) and `Configure` (for setting up the middleware pipeline and routing).
+2. **Middleware Pipeline:**  
+   A series of middleware components process each HTTP request. Middleware handles tasks such as authentication, logging, error handling, and routing.
+3. **Routing:**  
+   Maps incoming HTTP requests to specific controllers or endpoints.
+4. **Hosting:**  
+   Can be hosted on platforms like Kestrel, IIS, Nginx, or Apache and is well suited for cloud deployment.
+### 2.4. Example: Basic ASP.NET Core Startup
+```csharp
+public class Startup
+{
+    public void ConfigureServices(IServiceCollection services)
+    {
+        // Add MVC services.
+        services.AddControllersWithViews();
+
+        // Register EF Core DbContext with dependency injection.
+        services.AddDbContext<ApplicationDbContext>(options =>
+            options.UseSqlServer("YourConnectionString"));
+    }
+
+    public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+    {
+        if (env.IsDevelopment())
+        {
+            app.UseDeveloperExceptionPage();
+        }
+        else
+        {
+            app.UseExceptionHandler("/Home/Error");
+            app.UseHsts();
+        }
+        
+        app.UseHttpsRedirection();
+        app.UseStaticFiles();
+
+        app.UseRouting();
+
+        app.UseAuthorization();
+
+        app.UseEndpoints(endpoints =>
+        {
+            endpoints.MapControllerRoute(
+                name: "default",
+                pattern: "{controller=Home}/{action=Index}/{id?}");
+        });
+    }
+}
+```
+
+## 3. How EF Core and ASP.NET Core Work Together
+When building data-driven web applications, EF Core and ASP.NET Core are commonly used in tandem. ASP.NET Core manages HTTP requests and the web server pipeline, while EF Core handles data access and persistence.
+### 3.1. Integration Workflow
+1. **Dependency Injection:**  
+   ASP.NET Core’s DI container registers the EF Core `DbContext` so it can be injected into controllers and services.
+2. **Request Processing:**  
+   An HTTP request is received and routed to a controller action.
+3. **Data Operations:**  
+   The controller uses the injected `DbContext` to perform queries or updates via EF Core.
+4. **Query Translation and Execution:**  
+   EF Core translates LINQ queries into SQL, executes them, and maps the results to objects.
+5. **Response Generation:**  
+   The controller processes the data and returns an appropriate HTTP response (view or API result).
+
+### 3.2. Example: Sample Controller
+```csharp
+[ApiController]
+[Route("api/[controller]")]
+public class CustomersController : ControllerBase
+{
+    private readonly ApplicationDbContext _context;
+    public CustomersController(ApplicationDbContext context)
+    {
+        _context = context;
+    }
+
+    [HttpGet]
+    public async Task<IEnumerable<Customer>> Get()
+    {
+        return await _context.Customers.ToListAsync();
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> Create(Customer customer)
+    {
+        _context.Customers.Add(customer);
+        await _context.SaveChangesAsync();
+        return Ok(customer);
+    }
+}
+```
+
+**Explanation:**  
+- The `ApplicationDbContext` is injected into the controller.
+- The GET method retrieves customer data.
+- The POST method creates a new customer and persists the changes to the database using `SaveChangesAsync()`.
+
+### 3.3. Diagram: Integration of EF Core and ASP.NET Core
+
+```mermaid
+flowchart TD
+    A[HTTP Request]
+    B[ASP.NET Core Middleware Pipeline]
+    C[Controller Action Invoked]
+    D[EF Core DbContext (Injected)]
+    E[LINQ Query / Data Operations]
+    F[Database]
+    G[Data Mapped to Entities]
+    H[Controller Returns HTTP Response]
+    
+    A --> B
+    B --> C
+    C --> D
+    D --> E
+    E --> F
+    F --> G
+    G --> H
+```
+
+**Explanation:**  
+- An HTTP request enters the ASP.NET Core pipeline.
+- A controller action is triggered and uses the injected `DbContext` to execute data operations.
+- EF Core translates and executes queries against the database, mapping results back to entities.
+- The controller then returns an appropriate HTTP response.
+
+## 4. Comparison Table: EF Core vs. ASP.NET Core
+| Aspect                   | EF Core                                             | ASP.NET Core                                     |
+|--------------------------|-----------------------------------------------------|--------------------------------------------------|
+| **Primary Purpose**      | Object-relational mapping and data access           | Building web applications, APIs, and middleware  |
+| **Data Querying**        | Uses LINQ to generate SQL and track changes         | Handles HTTP requests, routing, and middleware   |
+| **Configuration**        | Configured via Fluent API, data annotations, migrations | Configured via Startup classes and middleware    |
+| **Dependency Injection** | Registered as DbContext in the DI container         | Provides DI container for controllers and services|
+| **Platform**             | Cross-platform; supports multiple database providers  | Cross-platform web framework                      |
+| **Performance**          | Optimized query generation and change tracking       | Scalable server architecture and high throughput |
+
+## 5. Resources and References
+- [Microsoft Docs - Dependency Injection in ASP.NET Core](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/dependency-injection)
+
+---
+# IoC Container and Dependency Injection in EF Core .NET Development
+## 1. Introduction
+In modern .NET development—especially when using ASP.NET Core and EF Core—inversion of control (IoC) and dependency injection (DI) are foundational design patterns. They help build modular applications by managing the creation and lifetime of dependencies externally rather than hard-coding them within classes. This approach promotes loose coupling, easier testing, and greater maintainability.
+This chapter explains:
+- **Inversion of Control (IoC):** The principle that transfers the control of dependency management from the application code to an external container.
+- **Dependency Injection (DI):** A technique for implementing IoC where dependencies are provided (injected) to classes rather than being created by them.
+- **IoC Containers in .NET:** How ASP.NET Core’s built-in IoC container is used to register and resolve services like EF Core’s DbContext.
+- **Best Practices and Examples:** Detailed code examples, diagrams, and tables that illustrate how to configure and use these patterns in real applications.
+
+## 2. Understanding Inversion of Control (IoC) and Dependency Injection (DI)
+### 2.1. Inversion of Control (IoC)
+**Definition:**  
+Inversion of Control is a design principle where the control flow of a program is inverted compared to traditional procedural programming. Instead of classes creating their own dependencies, an external component (the IoC container) is responsible for constructing and providing them.
+**Purpose:**
+- **Reduce Coupling:** Classes depend on abstractions rather than concrete implementations.
+- **Enhance Reusability:** Dependencies can be swapped out without modifying dependent classes.
+- **Improve Testability:** It becomes easier to substitute real dependencies with mocks or stubs in unit tests.
+
+### 2.2. Dependency Injection (DI)
+**Definition:**  
+Dependency Injection is a pattern that implements IoC by "injecting" dependencies into a class, usually through its constructor, properties, or methods, rather than having the class instantiate its own dependencies.
+**Common Forms of DI:**
+- **Constructor Injection:** Dependencies are provided as parameters to the class constructor.
+- **Property Injection:** Dependencies are assigned through public properties.
+- **Method Injection:** Dependencies are passed as parameters to a method when needed.
+
+**Benefits:**
+- **Loose Coupling:** Classes interact with interfaces or abstract classes instead of concrete types.
+- **Testability:** Easier to substitute dependencies during unit testing.
+- **Maintainability:** Centralized configuration in the IoC container simplifies changes to dependency management.
+
+## 3. IoC Containers in .NET
+### 3.1. What is an IoC Container?
+An IoC container is a framework that manages the creation, lifetime, and resolution of class dependencies. In ASP.NET Core, the built-in container is part of the framework and is used to register services such as EF Core’s DbContext, application services, logging, and more.
+**Key Characteristics:**
+- **Registration:**  
+  Services are registered with specific lifetimes (Transient, Scoped, Singleton).
+- **Resolution:**  
+  The container automatically creates and injects service instances into classes that depend on them.
+- **Lifetime Management:**  
+  It controls the scope and lifetime of service instances, which is crucial for resources like database connections.
+
+### 3.2. Example: Service Registration in ASP.NET Core
+```csharp
+public void ConfigureServices(IServiceCollection services)
+{
+    // Register the EF Core DbContext with a scoped lifetime (one per HTTP request)
+    services.AddDbContext<ApplicationDbContext>(options =>
+        options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
+
+    // Register application-specific services
+    services.AddScoped<ICustomerService, CustomerService>();
+
+    // Register controllers and views
+    services.AddControllersWithViews();
+}
+```
+
+**Explanation:**
+- The `AddDbContext<T>()` method registers the `ApplicationDbContext` with a scoped lifetime.
+- `AddScoped<TService, TImplementation>()` is used to register other services so that a new instance is created per HTTP request.
+
+## 4. Dependency Injection in Action
+### 4.1. Constructor Injection Example in an ASP.NET Core Controller
+Constructor injection is the most common method of DI, ensuring that a class’s dependencies are provided when the class is created.
+```csharp
+[ApiController]
+[Route("api/[controller]")]
+public class CustomersController : ControllerBase
+{
+    private readonly ICustomerService _customerService;
+
+    // The IoC container injects the ICustomerService instance via the constructor.
+    public CustomersController(ICustomerService customerService)
+    {
+        _customerService = customerService;
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> Index()
+    {
+        var customers = await _customerService.GetAllCustomersAsync();
+        return Ok(customers);
+    }
+}
+```
+
+**Explanation:**
+- `CustomersController` does not create an instance of `ICustomerService` itself. Instead, it relies on the IoC container to inject the proper implementation.
+- This promotes loose coupling and makes the controller easier to test.
+
+### 4.2. Injecting EF Core DbContext via DI
+```csharp
+public class CustomerService : ICustomerService
+{
+    private readonly ApplicationDbContext _context;
+
+    // The DbContext is injected via the constructor.
+    public CustomerService(ApplicationDbContext context)
+    {
+        _context = context;
+    }
+
+    public async Task<List<Customer>> GetAllCustomersAsync()
+    {
+        return await _context.Customers.ToListAsync();
+    }
+}
+```
+
+**Explanation:**
+- The `CustomerService` depends on the `ApplicationDbContext` to perform database operations.
+- The container takes care of constructing and disposing of the DbContext appropriately.
+
+## 5. Diagram: IoC Container and DI Workflow
+
+```mermaid
+flowchart TD
+    A[Application Startup]
+    B[Configure Services in Startup.cs]
+    C[IoC Container Registers Services]
+    D[HTTP Request Received]
+    E[Controller Requires Dependencies]
+    F[IoC Container Resolves Dependencies]
+    G[Controller Executes Action]
+    
+    A --> B
+    B --> C
+    C --> D
+    D --> E
+    E --> F
+    F --> G
+```
+
+**Explanation:**
+- At application startup, services are registered in Startup.cs.
+- The IoC container stores the service registrations and their lifetimes.
+- When an HTTP request arrives, the container resolves and injects the required dependencies into controllers or services.
+- The controller executes its action using the injected dependencies.
+
+## 6. Best Practices and Service Lifetimes
+### 6.1. Choosing the Right Lifetime
+Services in the IoC container can be registered with different lifetimes:
+| Lifetime    | Scope                                      | Typical Use Cases                            |
+|-------------|--------------------------------------------|----------------------------------------------|
+| **Singleton**   | Single instance for the entire application | Logging, configuration, caching services      |
+| **Scoped**      | One instance per HTTP request              | EF Core DbContext, business services in web apps|
+| **Transient**   | New instance every time it’s requested       | Lightweight, stateless services               |
+**Best Practices:**
+- **Prefer Constructor Injection:** It ensures dependencies are available at object creation and promotes immutability.
+- **Keep Constructors Lean:** Avoid constructors with too many parameters; consider grouping related services if necessary.
+- **Inject Interfaces:** Depend on abstractions rather than concrete implementations to allow easy swapping and testing.
+- **Avoid the Service Locator Pattern:** Do not manually resolve services within classes; rely on DI for cleaner code and easier maintenance.
+
+## 7. Additional Service Registration Examples
+```csharp
+services.AddScoped<IMyRepository, MyRepository>();
+services.AddSingleton<ILogger, MyLogger>();
+services.AddTransient<ISerializer, JsonSerializer>();
+```
+
+**Explanation:**
+- **Scoped:** One instance per request (suitable for database contexts).
+- **Singleton:** A single instance used throughout the application's lifetime.
+- **Transient:** A new instance each time the service is requested, ideal for lightweight services.
+
+## 8. Summary
+**Inversion of Control (IoC)** and **Dependency Injection (DI)** are critical design patterns in modern .NET development. Using an IoC container:
+- Reduces coupling between classes.
+- Promotes testability by making it easy to substitute dependencies with mocks.
+- Centralizes the configuration of service lifetimes, making it easier to manage resources.
+In ASP.NET Core, the built-in IoC container manages services like EF Core’s DbContext and application services. Through constructor injection, dependencies are provided automatically, leading to cleaner, more maintainable, and testable code.
+
+## 9. Resources and References
+- [Microsoft Docs - Dependency Injection in ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/dependency-injection)
+- [Microsoft Docs - EF Core DbContext Lifetime](https://learn.microsoft.com/en-us/ef/core/dbcontext-configuration/)
+- [Stackoverflow - What is Inversion of Control?](https://stackoverflow.com/questions/3058/what-is-inversion-of-control)
+
+---
+# ASP.NET Core Web API vs. ASP.NET Core Web App (MVC)
+Modern .NET development leverages ASP.NET Core to build robust and scalable applications. Two common approaches are:
+- **ASP.NET Core Web API:** Focused on exposing data via HTTP endpoints.
+- **ASP.NET Core Web App (MVC):** Focused on rendering dynamic HTML views using the Model-View-Controller pattern.
+Both application types are built on ASP.NET Core, sharing the same underlying framework and dependency injection mechanisms, but they differ in their primary output and usage scenarios.
+
+## 1. ASP.NET Core Web API
+### Definition
+ASP.NET Core Web API is designed for building RESTful services that expose data (usually in JSON or XML format) over HTTP. It is ideal for scenarios where your application serves data to a variety of clients such as mobile apps, single-page applications (SPAs), or other microservices.
+### Key Characteristics
+- **Data-Centric:** Primarily returns data rather than HTML.
+- **Stateless:** Typically designed as stateless services.
+- **Lightweight:** Minimal overhead; optimized for handling HTTP requests and responses quickly.
+- **Interoperability:** Can be consumed by various client applications.
+- **Attribute-Based Routing:** Uses attributes like `[ApiController]`, `[HttpGet]`, `[HttpPost]`, etc., for routing and request handling.
+- **Security & Versioning:** Often includes token-based authentication and API versioning mechanisms.
+### Usage Scenario
+- Building RESTful endpoints that deliver JSON data.
+- Supporting microservices or headless backends.
+### Example Code
+```csharp
+[ApiController]
+[Route("api/[controller]")]
+public class ProductsController : ControllerBase
+{
+    private readonly ApplicationDbContext _context;
+    
+    public ProductsController(ApplicationDbContext context)
+    {
+        _context = context;
+    }
+    
+    // GET: api/Products
+    [HttpGet]
+    public async Task<ActionResult<IEnumerable<Product>>> GetProducts()
+    {
+        return await _context.Products.ToListAsync();
+    }
+}
+```
+
+**Explanation:**  
+This controller uses the `[ApiController]` attribute to enforce best practices like model validation. The `GetProducts` method retrieves product data from the EF Core `DbContext` and returns it as JSON.
+
+## 2. ASP.NET Core Web App (MVC)
+### Definition
+ASP.NET Core Web App (MVC) uses the Model-View-Controller pattern to build web applications that render dynamic HTML pages. It separates concerns into three parts:
+- **Model:** Represents the data and business logic.
+- **View:** Handles the user interface.
+- **Controller:** Manages user input and interactions, and selects the view to render.
+### Key Characteristics
+- **Presentation-Focused:** Returns server-rendered HTML views.
+- **Separation of Concerns:** Clearly divides responsibilities among models, views, and controllers.
+- **Full-Featured:** Supports model binding, validation, and view templating with Razor.
+- **State Management:** Can manage user sessions and cookies, enhancing the user experience.
+- **Routing:** Uses a conventional routing scheme (e.g., `{controller=Home}/{action=Index}/{id?}`) for mapping URLs to actions.
+### Usage Scenario
+- Building traditional web applications where the server renders the complete UI.
+- Applications where SEO and server-rendered content are important.
+### Example Code
+**Controller Example:**
+```csharp
+public class HomeController : Controller
+{
+    private readonly ApplicationDbContext _context;
+
+    public HomeController(ApplicationDbContext context)
+    {
+        _context = context;
+    }
+
+    // GET: /Home/Index
+    public async Task<IActionResult> Index()
+    {
+        var products = await _context.Products.ToListAsync();
+        return View(products);
+    }
+}
+```
+
+**Razor View Example (Index.cshtml):**
+
+```html
+@model IEnumerable<Product>
+
+<h1>Products</h1>
+<ul>
+@foreach (var product in Model)
+{
+    <li>@product.Name - @product.Price:C</li>
+}
+</ul>
+```
+
+**Explanation:**  
+The `HomeController` retrieves product data and passes it to a Razor view that renders an HTML list. This approach is ideal for server-rendered websites.
+
+## 3. Key Differences Between Web API and MVC
+| **Aspect**             | **ASP.NET Core Web API**                                       | **ASP.NET Core Web App (MVC)**                              |
+|------------------------|----------------------------------------------------------------|-------------------------------------------------------------|
+| **Primary Purpose**    | Exposing data via HTTP endpoints (JSON/XML responses).         | Rendering dynamic HTML views for end users.               |
+| **Response Type**      | Data-centric responses (typically JSON).                       | View-centric responses (HTML generated via Razor).        |
+| **Controller Base**    | Inherits from `ControllerBase` with `[ApiController]`.         | Inherits from `Controller` and uses view rendering methods. |
+| **State Management**   | Typically stateless; ideal for microservices.                  | Can manage user sessions, cookies, and stateful interactions.|
+| **Routing**            | Attribute-based routing tailored for APIs.                     | Conventional routing with controllers, actions, and views. |
+
+## 4. Integration with EF Core
+Both ASP.NET Core Web API and MVC applications commonly use EF Core for data access. The integration involves:
+- **Dependency Injection:**  
+  The EF Core `DbContext` is registered in the DI container and injected into controllers or services.
+
+- **Data Operations:**  
+  EF Core is used to query, update, and persist data. LINQ queries are translated into SQL and executed against the database.
+
+### Example: Injecting DbContext in a Controller (Applicable to Both)
+```csharp
+public class CustomersController : ControllerBase // For Web API use ControllerBase; for MVC use Controller
+{
+    private readonly ApplicationDbContext _dbContext;
+
+    public CustomersController(ApplicationDbContext dbContext)
+    {
+        _dbContext = dbContext;
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetCustomers()
+    {
+        var customers = await _dbContext.Customers.ToListAsync();
+        return Ok(customers); // For Web API, returns JSON; for MVC, you might return a view instead.
+    }
+}
+```
+
+**Explanation:**  
+This sample demonstrates how the `ApplicationDbContext` is injected into a controller via constructor injection, enabling the controller to perform database operations using EF Core.
+
+## 5. Diagram: ASP.NET Core Web API vs. MVC Architecture
+
+```mermaid
+flowchart TD
+    subgraph Web API
+        A1[HTTP Request]
+        A2[API Controller (ControllerBase)]
+        A3[Service/Business Logic]
+        A4[EF Core DbContext]
+        A5[Database Query]
+        A6[JSON Response]
+        A1 --> A2
+        A2 --> A3
+        A3 --> A4
+        A4 --> A5
+        A5 --> A6
+    end
+
+    subgraph MVC Web App
+        B1[HTTP Request]
+        B2[MVC Controller (Controller)]
+        B3[Service/Business Logic]
+        B4[EF Core DbContext]
+        B5[Database Query]
+        B6[Razor View Rendering]
+        B7[HTML Response]
+        B1 --> B2
+        B2 --> B3
+        B3 --> B4
+        B4 --> B5
+        B5 --> B6
+        B6 --> B7
+    end
+```
+
+**Explanation:**  
+- In the **Web API** architecture, an HTTP request is processed by an API controller, which uses EF Core to retrieve data and returns it as JSON.
+- In the **MVC** architecture, an HTTP request is processed by an MVC controller, data is retrieved using EF Core, and a Razor view renders the HTML output.
+
+## 6. Conclusion
+Both **ASP.NET Core Web API** and **ASP.NET Core MVC (Web App)** are built on the ASP.NET Core platform, sharing common features such as dependency injection and middleware. However, they serve different purposes:
+- **Web API** is optimized for exposing data through RESTful endpoints (ideal for mobile apps, SPAs, and microservices).
+- **MVC Web App** is designed for building server-rendered web applications with rich user interfaces.
+
+## 7. Resources and References
+- [Microsoft Docs - ASP.NET Core Web API](https://learn.microsoft.com/en-us/aspnet/core/web-api)
+- [Microsoft Docs - ASP.NET Core MVC](https://learn.microsoft.com/en-us/aspnet/core/mvc)
+
+---
+# Understanding DbContext and DbContextFactory in EF Core
+Entity Framework Core (EF Core) is a powerful object-relational mapper (ORM) that enables .NET developers to work with databases using strongly typed C# objects. Two fundamental components for managing data access in EF Core are the **DbContext** and the **DbContextFactory**. In this chapter, we explain what each is, their key characteristics, how they work, and best practices for using them effectively in .NET applications.
+## 1. What is DbContext?
+### Definition
+**DbContext** is the primary class in EF Core that represents a session with the database. It acts as a bridge between your domain models and the underlying database. The DbContext is responsible for:
+- **Querying Data:** Executing LINQ queries to retrieve data.
+- **Change Tracking:** Monitoring changes to entities.
+- **Persisting Data:** Saving changes back to the database.
+- **Configuration:** Configuring the model using the Fluent API or Data Annotations.
+### Characteristics
+- **Central Hub:** Connects your application’s domain models to the database.
+- **Scoped Lifetime:** Typically, a DbContext is scoped to a single unit of work (e.g., one HTTP request in an ASP.NET Core application).
+- **Change Tracker:** Automatically tracks the state of entities (Added, Modified, Deleted, Unchanged) and detects changes.
+- **Model Configuration:** Maps entities to database tables and configures relationships.
+- **Resource Management:** Implements `IDisposable` to properly release database connections and other resources.
+
+### Example Usage
+#### DbContext Class Definition
+```csharp
+public class ApplicationDbContext : DbContext
+{
+    public DbSet<Product> Products { get; set; }
+
+    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
+        : base(options)
+    {
+    }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        // Fluent API configuration for the Product entity.
+        modelBuilder.Entity<Product>(entity =>
+        {
+            entity.HasKey(e => e.ProductId);
+            entity.Property(e => e.Name)
+                  .IsRequired()
+                  .HasMaxLength(100);
+            entity.Property(e => e.Price)
+                  .HasColumnType("decimal(18,2)");
+        });
+    }
+}
+
+public class Product
+{
+    public int ProductId { get; set; }
+    public string Name { get; set; }
+    public decimal Price { get; set; }
+}
+```
+
+#### Using DbContext in a Controller
+```csharp
+public class ProductsController : Controller
+{
+    private readonly ApplicationDbContext _context;
+    
+    public ProductsController(ApplicationDbContext context)
+    {
+        _context = context;
+    }
+    
+    public async Task<IActionResult> Index()
+    {
+        var products = await _context.Products.ToListAsync();
+        return View(products);
+    }
+}
+```
+
+**Explanation:**  
+The `ApplicationDbContext` manages the `Products` table. In the `ProductsController`, the context is injected via the constructor and used to retrieve data from the database.
+
+## 2. What is DbContextFactory?
+### Definition
+A **DbContextFactory** is a design pattern and service in EF Core that provides a way to create new instances of a DbContext on demand. This is particularly useful when you need to create DbContext instances outside the standard dependency injection (DI) scope, such as in background services, console applications, or scenarios where multiple threads require their own context.
+### Characteristics
+- **Decouples Creation:** Separates the instantiation of the DbContext from its usage.
+- **On-Demand Instantiation:** Allows you to create a new DbContext instance whenever needed.
+- **Thread Safety:** Each call to create a context returns a new instance, ensuring that contexts are not shared across threads.
+- **Design-Time Support:** EF Core supports `IDesignTimeDbContextFactory<T>` for design-time operations like migrations.
+- **DI Integration:** You can register a DbContextFactory in the DI container using `AddDbContextFactory<T>()`.
+### Example Usage
+#### Implementing IDesignTimeDbContextFactory
+This interface is mainly used for design-time tasks such as migrations.
+```csharp
+public class ApplicationDbContextFactory : IDesignTimeDbContextFactory<ApplicationDbContext>
+{
+    public ApplicationDbContext CreateDbContext(string[] args)
+    {
+        var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
+        optionsBuilder.UseSqlServer("YourConnectionString");
+        
+        return new ApplicationDbContext(optionsBuilder.Options);
+    }
+}
+```
+
+#### Registering and Using AddDbContextFactory in ASP.NET Core
+**Service Registration in Startup.cs:**
+```csharp
+public void ConfigureServices(IServiceCollection services)
+{
+    // Register DbContextFactory for on-demand DbContext creation.
+    services.AddDbContextFactory<ApplicationDbContext>(options =>
+        options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
+        
+    services.AddControllersWithViews();
+}
+```
+
+**Using the Factory in a Service:**
+```csharp
+public class ProductService
+{
+    private readonly IDbContextFactory<ApplicationDbContext> _contextFactory;
+
+    public ProductService(IDbContextFactory<ApplicationDbContext> contextFactory)
+    {
+        _contextFactory = contextFactory;
+    }
+
+    public async Task<List<Product>> GetProductsAsync()
+    {
+        // Create a new DbContext instance for this operation.
+        using var context = _contextFactory.CreateDbContext();
+        return await context.Products.ToListAsync();
+    }
+}
+```
+
+**Explanation:**  
+Here, the `IDbContextFactory<ApplicationDbContext>` is injected into the `ProductService`. This allows the service to create new DbContext instances on demand, which is especially useful in scenarios like background processing or multi-threaded applications.
+
+## 3. Diagram: DbContext and DbContextFactory
+
+```mermaid
+flowchart TD
+    A[Application Startup]
+    B[Configure Services in DI Container]
+    C[Register ApplicationDbContext (Scoped)]
+    D[Register DbContextFactory (AddDbContextFactory)]
+    E[HTTP Request or Background Task]
+    F[Controller/Service Receives Dependency]
+    G[DbContext Instance Created]
+    H[Database Operations Executed]
+    
+    A --> B
+    B --> C
+    B --> D
+    E --> F
+    F --> G
+    G --> H
+```
+
+**Explanation:**  
+- At startup, services are configured in the DI container.  
+- The `ApplicationDbContext` is registered as a scoped service, while the `DbContextFactory` is registered to allow on-demand creation.  
+- When an HTTP request or background task requires a DbContext, the container injects either a context directly or a factory, which then creates a new context instance for database operations.
+
+## 4. Comparison Table: DbContext vs. DbContextFactory
+| Aspect                     | DbContext                                              | DbContextFactory                                               |
+|----------------------------|--------------------------------------------------------|----------------------------------------------------------------|
+| **Purpose**                | Manages database connections, queries, and tracking.   | Provides on-demand creation of new DbContext instances.         |
+| **Lifetime**               | Typically scoped per request (or unit of work).        | Flexible; each call returns a new instance.                     |
+| **Usage Scenario**         | Standard web application data operations.             | Background tasks, console apps, Blazor Server, multi-threaded scenarios. |
+| **Thread Safety**          | Not thread-safe; should not be shared across threads.   | Each instance is created separately, ensuring thread safety.     |
+| **Disposal**               | Managed by DI (automatically disposed at end of scope). | Caller is responsible for disposing the context instance.       |
+
+## 5. Summary
+- **DbContext**  
+  - Acts as the central class in EF Core for managing data access.
+  - Handles querying, change tracking, and persistence.
+  - Typically used within a scoped lifetime, such as one per HTTP request in web applications.
+- **DbContextFactory**  
+  - Provides a method for creating new DbContext instances on demand.
+  - Essential in scenarios where a new context is needed outside of the standard DI scope, such as background services or multi-threaded operations.
+  - Ensures that each unit of work gets a fresh, thread-safe DbContext instance.
+
+## 6. Resources and References
+- [Microsoft Docs: DbContext Class](https://learn.microsoft.com/en-us/ef/core/dbcontext-configuration/)
+- [Microsoft Docs: IDesignTimeDbContextFactory<T>](https://learn.microsoft.com/en-us/ef/core/cli/dbcontext-creation)
+- [Microsoft Docs: AddDbContextFactory](https://learn.microsoft.com/en-us/ef/core/dbcontext-configuration/#using-a-dbcontext-factory-eg-for-blazor)
 
 ---
