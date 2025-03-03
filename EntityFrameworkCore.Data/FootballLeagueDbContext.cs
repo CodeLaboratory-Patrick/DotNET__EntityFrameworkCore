@@ -34,6 +34,12 @@ namespace EntityFrameworkCore.Data
             modelBuilder.HasDbFunction(typeof(FootballLeagueDbContext).GetMethod(nameof(GetEarliestTeamMatch), new[] { typeof(int) })).HasName("fn_GetEarliestMatch");
         }
 
+        protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+        {
+            configurationBuilder.Properties<string>().HaveMaxLength(100);
+            configurationBuilder.Properties<decimal>().HavePrecision(16, 2);
+        }
+
         public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
             var entries = ChangeTracker.Entries<BaseDomainModel>().Where(q => q.State == EntityState.Modified || 
@@ -64,7 +70,7 @@ namespace EntityFrameworkCore.Data
 
             IConfigurationRoot configuration = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile("appsettings.json")
+                .AddJsonFile("appsettings.json", optional: true)
                 .Build();
 
             var dbPath = Path.Combine(path, configuration.GetConnectionString("SqliteDatabaseConnectionString"));
