@@ -12,7 +12,7 @@ var optionsBuilder = new DbContextOptionsBuilder<FootballLeagueDbContext>();
 optionsBuilder.UseSqlite($"Data Source={dbPath}");
 using var context = new FootballLeagueDbContext(optionsBuilder.Options);
 
-//using var sqlServerContext = new FootballLeagueSqlServerDbContext();
+using var sqlServerContext = new FootballLeagueSqlServerDbContext();
 
 //await context.Database.EnsureDeletedAsync();
 //await context.Database.MigrateAsync();
@@ -140,6 +140,25 @@ using var context = new FootballLeagueDbContext(optionsBuilder.Options);
 //OtherRawQueries();
 
 #endregion
+
+void TemporalTableQuery()
+{
+    var teamHistory = sqlServerContext.Teams
+        .TemporalAll()
+        .Where(q => q.Id == 1)
+        .Select(team => new
+        {
+            team.Name,
+            ValueFrom = EF.Property<DateTime>(team, "PeriodStart"),
+            ValueTo = EF.Property<DateTime>(team, "PeriodEnd"),
+        })
+        .ToList();
+
+    foreach (var record in teamHistory)
+    {
+        Console.WriteLine($"{record.Name} | From {record.ValueFrom} | To {record.ValueTo}");
+    }
+}
 
 void OtherRawQueries()
 {
