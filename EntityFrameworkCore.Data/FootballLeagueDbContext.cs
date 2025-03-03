@@ -64,7 +64,7 @@ namespace EntityFrameworkCore.Data
 
             IConfigurationRoot configuration = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile("appsettings.json")
+                .AddJsonFile("appsettings.json", optional: true)
                 .Build();
 
             var dbPath = Path.Combine(path, configuration.GetConnectionString("SqliteDatabaseConnectionString"));

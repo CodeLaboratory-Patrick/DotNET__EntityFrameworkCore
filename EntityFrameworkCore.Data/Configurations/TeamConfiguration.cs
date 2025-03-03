@@ -10,6 +10,16 @@ namespace EntityFrameworkCore.Data.Configurations
         {
             builder.HasIndex(m => m.Name).IsUnique();
 
+            // Composite Key Configuration
+            //builder.HasIndex(q => new { q.CoachId, q.LeagueId }).IsUnique();
+
+            // For SQL Server Only
+            //builder.Property(q => q.Version)
+            //    .IsRowVersion();
+
+            builder.Property(q => q.Name).HasMaxLength(100).IsRequired();
+
+            // For SQL Server Temporal Tables
             builder.ToTable("Teams", b => b.IsTemporal());
 
             builder.HasMany(e => e.HomeMatches)
