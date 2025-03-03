@@ -9002,3 +9002,158 @@ flowchart TD
 - [Microsoft Docs: AddDbContextFactory](https://learn.microsoft.com/en-us/ef/core/dbcontext-configuration/#using-a-dbcontext-factory-eg-for-blazor)
 
 ---
+# Overriding SaveChanges in .NET Development
+In Entity Framework Core (EF Core), the `SaveChanges()` and `SaveChangesAsync()` methods are responsible for committing all tracked changes from your DbContext to the database. Overriding these methods allows you to inject custom logic into the persistence process. This custom logic can be used for tasks such as auditing, enforcing business rules, validating entities, implementing soft deletes, and logging.
+By overriding SaveChanges, you gain a single point of control that is executed every time data is persisted, ensuring consistency and reducing the need to duplicate cross-cutting concerns throughout your application.
+
+## 1. What Does It Mean to Override SaveChanges?
+### Definition
+Overriding `SaveChanges()` involves creating a new version of the method in your derived DbContext class. In this custom implementation, you can:
+- **Apply Pre-Save Logic:** Modify or validate entities before the changes are persisted.
+- **Implement Audit Logging:** Record details about changes (such as timestamps) or log errors.
+- **Enforce Business Rules:** Execute additional validation or transformation logic.
+- **Customize Error Handling:** Intercept and manage exceptions that occur during saving.
+### Why Override SaveChanges?
+- **Centralized Control:** Provides a single point to apply consistent logic for every save operation.
+- **Enhanced Validation:** Enforce custom business rules or additional data validation.
+- **Audit and Logging:** Automatically set audit fields (e.g., timestamps, user IDs) or log all changes.
+- **Soft Deletes:** Instead of physically deleting records, mark them as deleted by setting a flag.
+
+## 2. Characteristics of Overriding SaveChanges
+The table below summarizes key characteristics and considerations when overriding SaveChanges in EF Core.
+| **Aspect**              | **Description**                                                                                  |
+|-------------------------|--------------------------------------------------------------------------------------------------|
+| **Interception Point**  | Provides a hook before (and optionally after) changes are persisted to the database.             |
+| **Pre-Save Processing** | Allows operations such as validation, transformation, and audit logging on entities.             |
+| **Error Handling**      | Enables customized exception handling during the save process.                                 |
+| **Centralization**      | Offers a single, consistent place to enforce business rules on all database commits.             |
+| **Performance Impact**  | Additional logic may affect performance; ensure the overridden method is optimized and tested.   |
+
+## 3. How to Override SaveChanges
+There are two primary methods to override: the synchronous `SaveChanges()` and the asynchronous `SaveChangesAsync()`. Below are detailed examples for both.
+### 3.1. Overriding SaveChanges (Synchronous)
+#### Example: Adding Audit Logging and Timestamps
+```csharp
+public class ApplicationDbContext : DbContext
+{
+    public DbSet<Product> Products { get; set; }
+
+    public override int SaveChanges()
+    {
+        // Pre-save logic: Update audit fields.
+        foreach (var entry in ChangeTracker.Entries())
+        {
+            if (entry.Entity is BaseEntity baseEntity)
+            {
+                if (entry.State == EntityState.Added)
+                {
+                    baseEntity.CreatedOn = DateTime.UtcNow;
+                }
+                else if (entry.State == EntityState.Modified)
+                {
+                    baseEntity.UpdatedOn = DateTime.UtcNow;
+                }
+            }
+        }
+        
+        // Optional: Log information before saving.
+        Console.WriteLine("Saving changes to the database...");
+        
+        // Call the base SaveChanges to persist the changes.
+        return base.SaveChanges();
+    }
+}
+```
+
+**Explanation:**  
+- The `SaveChanges()` method is overridden to iterate over all tracked entities.
+- For entities that derive from a common base class (`BaseEntity`), it sets audit fields like `CreatedOn` for new entries and `UpdatedOn` for modified entries.
+- Additional logic, such as logging, can be executed before calling `base.SaveChanges()`.
+
+### 3.2. Overriding SaveChangesAsync (Asynchronous)
+#### Example: Custom Error Handling with Audit Logic
+```csharp
+public class ApplicationDbContext : DbContext
+{
+    public DbSet<Product> Products { get; set; }
+
+    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        // Pre-save logic: Update audit fields.
+        foreach (var entry in ChangeTracker.Entries())
+        {
+            if (entry.Entity is BaseEntity baseEntity)
+            {
+                if (entry.State == EntityState.Added)
+                {
+                    baseEntity.CreatedOn = DateTime.UtcNow;
+                }
+                else if (entry.State == EntityState.Modified)
+                {
+                    baseEntity.UpdatedOn = DateTime.UtcNow;
+                }
+            }
+        }
+
+        try
+        {
+            // Save changes asynchronously.
+            return await base.SaveChangesAsync(cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            // Custom error handling: Log the error details.
+            Console.Error.WriteLine($"Error saving changes: {ex.Message}");
+            throw;
+        }
+    }
+}
+```
+
+**Explanation:**  
+- This asynchronous version mirrors the synchronous override by updating audit fields.
+- It includes a try-catch block for custom error handling, logging errors, and then re-throwing the exception.
+
+## 4. Diagram: Overriding SaveChanges Workflow
+
+```mermaid
+flowchart TD
+    A[Call SaveChanges/SaveChangesAsync]
+    B[Iterate over ChangeTracker Entries]
+    C[Apply Pre-Save Logic (Audit, Validation)]
+    D[Optional Logging/Modifications]
+    E[Call base.SaveChanges()/SaveChangesAsync()]
+    F[Persist Changes to Database]
+    G[Return Number of Affected Rows]
+    
+    A --> B
+    B --> C
+    C --> D
+    D --> E
+    E --> F
+    F --> G
+```
+
+**Explanation:**  
+- The process starts when `SaveChanges()` or `SaveChangesAsync()` is called.
+- The method iterates over all tracked entities to apply custom pre-save logic.
+- Optional logging or data modifications can occur before invoking the base method.
+- Finally, changes are persisted to the database and the method returns the number of affected rows.
+
+## 5. Use Cases for Overriding SaveChanges
+| **Use Case**       | **Description**                                                                                              |
+|--------------------|--------------------------------------------------------------------------------------------------------------|
+| **Auditing**       | Automatically set fields like `CreatedOn` and `UpdatedOn` or record user information when entities are added/modified. |
+| **Soft Deletes**   | Instead of deleting records, mark them as deleted by setting a flag (e.g., `IsDeleted = true`).                |
+| **Custom Validation** | Enforce additional business rules not covered by built-in validation mechanisms before saving data.         |
+| **Logging**        | Record details about the changes (which entities were modified, added, or deleted) for debugging or audit trails.   |
+
+## 6. Conclusion
+Overriding `SaveChanges()` and `SaveChangesAsync()` in EF Core is a powerful technique for implementing cross-cutting concerns like auditing, validation, and error handling in a centralized way. By intercepting the save process, you ensure that every change to your entities is processed consistently, enhancing the overall robustness and maintainability of your application. Always consider the potential performance impact and thoroughly test any custom logic integrated into these methods.
+
+## 7. Resources and References
+- [Microsoft Docs: DbContext.SaveChanges Method](https://learn.microsoft.com/en-us/dotnet/api/microsoft.entityframeworkcore.dbcontext.savechanges)
+- [Microsoft Docs: DbContext.SaveChangesAsync Method](https://learn.microsoft.com/en-us/dotnet/api/microsoft.entityframeworkcore.dbcontext.savechangesasync)
+- [Microsoft Docs: Change Tracking in EF Core](https://learn.microsoft.com/en-us/ef/core/change-tracking/)
+
+---
