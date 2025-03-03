@@ -9509,3 +9509,151 @@ Database transactions in EF Core are a critical feature for maintaining data con
 - [Microsoft Docs: TransactionScope Class](https://learn.microsoft.com/en-us/dotnet/api/system.transactions.transactionscope)
 
 ---
+# Database Connection Resiliency in .NET Development
+Database connection resiliency is critical in modern .NET applications, especially when interacting with remote databases. It is designed to handle transient failures—temporary errors that occur due to network issues, high load, or brief outages—by automatically retrying failed operations. This ensures that your application remains robust and available even when faced with intermittent connectivity problems.
+## 1. Overview
+### What is Database Connection Resiliency?
+A database connection resiliency strategy enables an application or ORM (such as Entity Framework Core) to detect transient failures and automatically retry the failed database operations. This is typically implemented through built-in execution strategies that wrap your database operations in retry logic.
+### ACID Properties in Transactions
+Database transactions must satisfy the ACID properties:
+- **Atomicity:** All operations within a transaction are completed successfully or none are.
+- **Consistency:** The database moves from one consistent state to another.
+- **Isolation:** Concurrent transactions do not interfere with each other.
+- **Durability:** Once a transaction commits, its changes persist even in the event of a failure.
+While these properties ensure data integrity, transient faults (such as timeouts or network glitches) may occur. Connection resiliency addresses these issues by retrying operations automatically.
+### Why is Connection Resiliency Important?
+- **High Availability:** Ensures that applications continue to operate during temporary database outages.
+- **Improved User Experience:** Reduces error rates and minimizes downtime caused by transient issues.
+- **Cost Efficiency:** Minimizes the need for extensive manual error handling code by automatically handling transient failures.
+
+## 2. Key Characteristics
+The following table summarizes the key characteristics of database connection resiliency in EF Core:
+| **Characteristic**         | **Description**                                                                                         |
+|----------------------------|---------------------------------------------------------------------------------------------------------|
+| Automatic Retries          | Implements retry logic for transient failures (e.g., connection timeouts, deadlocks).                   |
+| Transient Fault Handling   | Targets temporary errors likely to succeed on a retry.                                                |
+| Configurable Policies      | Allows customization of retry count, delay between retries, and exception handling behavior.           |
+| Integrated with EF Core    | Built-in execution strategies (e.g., `SqlServerRetryingExecutionStrategy`) handle retries automatically. |
+| Asynchronous Support       | Works seamlessly with asynchronous operations to avoid blocking the main thread.                        |
+
+## 3. Implementing Connection Resiliency in EF Core
+EF Core provides execution strategies that enable connection resiliency. These strategies automatically retry failed operations based on predefined policies.
+### 3.1. Using the Default Execution Strategy
+EF Core may automatically enable a retry execution strategy (for example, when using SQL Server). In simple cases, each call to `SaveChanges()` is wrapped in its own implicit transaction with a retry mechanism.
+#### Implicit Transaction Example
+```csharp
+using var context = new ApplicationDbContext();
+
+var product = new Product { Name = "Laptop", Price = 1200m };
+context.Products.Add(product);
+context.SaveChanges(); // Implicit transaction with retry if transient error occurs
+```
+
+### 3.2. Explicitly Using an Execution Strategy
+For more complex operations involving multiple steps or transactions, you can explicitly create and use an execution strategy.
+#### Asynchronous Explicit Transaction Example
+```csharp
+var strategy = context.Database.CreateExecutionStrategy();
+
+await strategy.ExecuteAsync(async () =>
+{
+    using (var transaction = await context.Database.BeginTransactionAsync())
+    {
+        try
+        {
+            // Perform multiple operations
+            context.Products.Add(new Product { Name = "Resilient Product", Price = 100 });
+            await context.SaveChangesAsync();
+
+            // Commit the transaction if all operations succeed
+            await transaction.CommitAsync();
+        }
+        catch
+        {
+            // Roll back the transaction on failure
+            await transaction.RollbackAsync();
+            throw;
+        }
+    }
+});
+```
+
+**Explanation:**  
+- The execution strategy retries the entire delegate if a transient error occurs.
+- A transaction is manually started to group multiple operations.
+- If any operation fails, the transaction is rolled back, ensuring atomicity.
+
+### 3.3. Configuring Custom Retry Policies
+You can customize the retry policy by configuring the execution strategy in your DbContext options. For example, when using SQL Server, you can specify the maximum number of retries and the maximum delay between retries.
+#### Example: Configuring Retry Settings in Startup.cs
+```csharp
+services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseSqlServer(
+        Configuration.GetConnectionString("DefaultConnection"),
+        sqlServerOptions =>
+        {
+            sqlServerOptions.EnableRetryOnFailure(
+                maxRetryCount: 5,
+                maxRetryDelay: TimeSpan.FromSeconds(10),
+                errorNumbersToAdd: null);
+        }));
+```
+
+**Explanation:**  
+- `EnableRetryOnFailure` sets up the execution strategy with a maximum of 5 retries and a delay of up to 10 seconds between retries.
+- You can specify additional SQL error numbers that should be considered transient.
+
+## 4. Diagram: Connection Resiliency Workflow
+
+```mermaid
+flowchart TD
+    A[Start Database Operation]
+    B[Attempt Operation (e.g., SaveChanges)]
+    C{Operation Succeeds?}
+    D[Return Result]
+    E[Operation Fails (Transient Error)]
+    F[Retry Operation (with Delay)]
+    G{Max Retries Reached?}
+    H[Throw Exception]
+    
+    A --> B
+    B -- Success --> D
+    B -- Failure --> E
+    E --> F
+    F --> C
+    C -- Failure and max retries reached --> G
+    G --> H
+```
+
+**Explanation:**  
+- The operation is attempted (B).
+- If it succeeds, the result is returned (D).
+- If a transient error occurs, the operation is retried after a delay (F).
+- If the maximum number of retries is reached without success, an exception is thrown (H).
+
+## 5. Additional Patterns and Considerations
+### Advanced Resiliency Patterns
+- **Polly and Circuit Breakers:**  
+  Libraries like Polly can define advanced retry and circuit breaker policies. A circuit breaker can temporarily halt retry attempts if failures persist, preventing overload.
+- **Context Re-Initialization:**  
+  If a DbContext fails mid-transaction, you may need to recreate it to ensure a clean state.
+- **Cloud-Specific Settings:**  
+  For cloud-based databases (e.g., Azure SQL), follow recommended resiliency settings provided by the service.
+
+### Common Resiliency Settings
+| Setting               | Description                              | Example Value                    |
+|-----------------------|------------------------------------------|----------------------------------|
+| **maxRetryCount**     | Maximum number of retry attempts         | 5                                |
+| **maxRetryDelay**     | Maximum delay between retries            | TimeSpan.FromSeconds(10)         |
+| **errorNumbersToAdd** | Additional SQL error codes to consider as transient | Custom list (e.g., [4060, 10928]) |
+
+## 6. Conclusion
+Database connection resiliency is vital for ensuring that your .NET applications remain stable and responsive despite transient failures. EF Core’s built-in execution strategies enable automatic retries for temporary issues, and you can customize these strategies to suit your needs. Whether you rely on implicit transactions provided by `SaveChanges()` or implement explicit transaction management with custom retry policies, employing connection resiliency techniques is crucial—especially in cloud-based or high-load environments.
+By understanding and implementing these patterns, you can enhance your application's robustness, reduce downtime, and provide a better user experience even when facing intermittent connectivity issues.
+
+## 7. Resources and References
+- [Microsoft Docs: EF Core Connection Resiliency](https://learn.microsoft.com/en-us/ef/core/miscellaneous/connection-resiliency)
+- [Microsoft Docs: CreateExecutionStrategy Method](https://learn.microsoft.com/en-us/dotnet/api/microsoft.entityframeworkcore.infrastructure.databasefacade.createexecutionstrategy?view=efcore-9.0)
+- [Microsoft Docs: TransactionScope Class](https://learn.microsoft.com/en-us/dotnet/api/system.transactions.transactionscope)
+
+---
