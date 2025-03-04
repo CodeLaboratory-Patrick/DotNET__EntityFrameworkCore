@@ -154,6 +154,36 @@ using var sqlServerContext = new FootballLeagueSqlServerDbContext();
 
 #endregion
 
+void GlobalQueryFilters()
+{
+    var leagues = context.Leagues.ToList();
+    Console.WriteLine("List all leagues");
+    foreach (var l in leagues)
+    {
+        Console.WriteLine(l.Name);
+    }
+    var league = context.Leagues.Find(1);
+    league.IsDeleted = true;
+    Console.WriteLine("Soft Delete league with the id 1");
+    context.SaveChanges();
+
+    Console.WriteLine("List all leagues - global filter ignores 'deleted' record");
+    leagues = context.Leagues.ToList();
+    foreach (var l in leagues)
+    {
+        Console.WriteLine(l.Name);
+    }
+
+    Console.WriteLine("List all leagues - global filter is ignored in the query");
+    leagues = context.Leagues
+        .IgnoreQueryFilters()
+        .ToList();
+    foreach (var l in leagues)
+    {
+        Console.WriteLine(l.Name);
+    }
+}
+
 async Task ConcurrencyChecks()
 {
     var team = context.Teams.Find(1);
