@@ -17,6 +17,10 @@ namespace EntityFrameworkCore.Data.Configurations
             //builder.Property(q => q.Version)
             //    .IsRowVersion();
 
+            // For SQLite Server
+            //builder.Property(q => q.Version)
+            //    .IsConcurrencyToken();
+
             builder.Property(q => q.Name).HasMaxLength(100).IsRequired();
 
             // For SQL Server Temporal Tables

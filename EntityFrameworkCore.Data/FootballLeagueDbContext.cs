@@ -54,6 +54,8 @@ namespace EntityFrameworkCore.Data
                     entry.Entity.CreatedDate = DateTime.Now;
                     entry.Entity.CreatedBy = "Simple User 1";
                 }
+
+                entry.Entity.Version = Guid.NewGuid();
             }
             return base.SaveChangesAsync(cancellationToken);
         }

@@ -154,6 +154,22 @@ using var sqlServerContext = new FootballLeagueSqlServerDbContext();
 
 #endregion
 
+async Task ConcurrencyChecks()
+{
+    var team = context.Teams.Find(1);
+    team.Name = "New Team With Concurrency Check 1";
+
+    try
+    {
+        await context.SaveChangesAsync();
+    }
+    catch (DbUpdateConcurrencyException ex)
+    {
+        Console.WriteLine(ex.Message);
+        //throw;
+    }
+}
+
 void TransactionSupport()
 {
     var transaction = context.Database.BeginTransaction();
