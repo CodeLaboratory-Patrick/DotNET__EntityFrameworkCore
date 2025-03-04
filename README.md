@@ -9002,3 +9002,804 @@ flowchart TD
 - [Microsoft Docs: AddDbContextFactory](https://learn.microsoft.com/en-us/ef/core/dbcontext-configuration/#using-a-dbcontext-factory-eg-for-blazor)
 
 ---
+# Overriding SaveChanges in .NET Development
+In Entity Framework Core (EF Core), the `SaveChanges()` and `SaveChangesAsync()` methods are responsible for committing all tracked changes from your DbContext to the database. Overriding these methods allows you to inject custom logic into the persistence process. This custom logic can be used for tasks such as auditing, enforcing business rules, validating entities, implementing soft deletes, and logging.
+By overriding SaveChanges, you gain a single point of control that is executed every time data is persisted, ensuring consistency and reducing the need to duplicate cross-cutting concerns throughout your application.
+
+## 1. What Does It Mean to Override SaveChanges?
+### Definition
+Overriding `SaveChanges()` involves creating a new version of the method in your derived DbContext class. In this custom implementation, you can:
+- **Apply Pre-Save Logic:** Modify or validate entities before the changes are persisted.
+- **Implement Audit Logging:** Record details about changes (such as timestamps) or log errors.
+- **Enforce Business Rules:** Execute additional validation or transformation logic.
+- **Customize Error Handling:** Intercept and manage exceptions that occur during saving.
+### Why Override SaveChanges?
+- **Centralized Control:** Provides a single point to apply consistent logic for every save operation.
+- **Enhanced Validation:** Enforce custom business rules or additional data validation.
+- **Audit and Logging:** Automatically set audit fields (e.g., timestamps, user IDs) or log all changes.
+- **Soft Deletes:** Instead of physically deleting records, mark them as deleted by setting a flag.
+
+## 2. Characteristics of Overriding SaveChanges
+The table below summarizes key characteristics and considerations when overriding SaveChanges in EF Core.
+| **Aspect**              | **Description**                                                                                  |
+|-------------------------|--------------------------------------------------------------------------------------------------|
+| **Interception Point**  | Provides a hook before (and optionally after) changes are persisted to the database.             |
+| **Pre-Save Processing** | Allows operations such as validation, transformation, and audit logging on entities.             |
+| **Error Handling**      | Enables customized exception handling during the save process.                                 |
+| **Centralization**      | Offers a single, consistent place to enforce business rules on all database commits.             |
+| **Performance Impact**  | Additional logic may affect performance; ensure the overridden method is optimized and tested.   |
+
+## 3. How to Override SaveChanges
+There are two primary methods to override: the synchronous `SaveChanges()` and the asynchronous `SaveChangesAsync()`. Below are detailed examples for both.
+### 3.1. Overriding SaveChanges (Synchronous)
+#### Example: Adding Audit Logging and Timestamps
+```csharp
+public class ApplicationDbContext : DbContext
+{
+    public DbSet<Product> Products { get; set; }
+
+    public override int SaveChanges()
+    {
+        // Pre-save logic: Update audit fields.
+        foreach (var entry in ChangeTracker.Entries())
+        {
+            if (entry.Entity is BaseEntity baseEntity)
+            {
+                if (entry.State == EntityState.Added)
+                {
+                    baseEntity.CreatedOn = DateTime.UtcNow;
+                }
+                else if (entry.State == EntityState.Modified)
+                {
+                    baseEntity.UpdatedOn = DateTime.UtcNow;
+                }
+            }
+        }
+        
+        // Optional: Log information before saving.
+        Console.WriteLine("Saving changes to the database...");
+        
+        // Call the base SaveChanges to persist the changes.
+        return base.SaveChanges();
+    }
+}
+```
+
+**Explanation:**  
+- The `SaveChanges()` method is overridden to iterate over all tracked entities.
+- For entities that derive from a common base class (`BaseEntity`), it sets audit fields like `CreatedOn` for new entries and `UpdatedOn` for modified entries.
+- Additional logic, such as logging, can be executed before calling `base.SaveChanges()`.
+
+### 3.2. Overriding SaveChangesAsync (Asynchronous)
+#### Example: Custom Error Handling with Audit Logic
+```csharp
+public class ApplicationDbContext : DbContext
+{
+    public DbSet<Product> Products { get; set; }
+
+    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        // Pre-save logic: Update audit fields.
+        foreach (var entry in ChangeTracker.Entries())
+        {
+            if (entry.Entity is BaseEntity baseEntity)
+            {
+                if (entry.State == EntityState.Added)
+                {
+                    baseEntity.CreatedOn = DateTime.UtcNow;
+                }
+                else if (entry.State == EntityState.Modified)
+                {
+                    baseEntity.UpdatedOn = DateTime.UtcNow;
+                }
+            }
+        }
+
+        try
+        {
+            // Save changes asynchronously.
+            return await base.SaveChangesAsync(cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            // Custom error handling: Log the error details.
+            Console.Error.WriteLine($"Error saving changes: {ex.Message}");
+            throw;
+        }
+    }
+}
+```
+
+**Explanation:**  
+- This asynchronous version mirrors the synchronous override by updating audit fields.
+- It includes a try-catch block for custom error handling, logging errors, and then re-throwing the exception.
+
+## 4. Diagram: Overriding SaveChanges Workflow
+
+```mermaid
+flowchart TD
+    A[Call SaveChanges/SaveChangesAsync]
+    B[Iterate over ChangeTracker Entries]
+    C[Apply Pre-Save Logic (Audit, Validation)]
+    D[Optional Logging/Modifications]
+    E[Call base.SaveChanges()/SaveChangesAsync()]
+    F[Persist Changes to Database]
+    G[Return Number of Affected Rows]
+    
+    A --> B
+    B --> C
+    C --> D
+    D --> E
+    E --> F
+    F --> G
+```
+
+**Explanation:**  
+- The process starts when `SaveChanges()` or `SaveChangesAsync()` is called.
+- The method iterates over all tracked entities to apply custom pre-save logic.
+- Optional logging or data modifications can occur before invoking the base method.
+- Finally, changes are persisted to the database and the method returns the number of affected rows.
+
+## 5. Use Cases for Overriding SaveChanges
+| **Use Case**       | **Description**                                                                                              |
+|--------------------|--------------------------------------------------------------------------------------------------------------|
+| **Auditing**       | Automatically set fields like `CreatedOn` and `UpdatedOn` or record user information when entities are added/modified. |
+| **Soft Deletes**   | Instead of deleting records, mark them as deleted by setting a flag (e.g., `IsDeleted = true`).                |
+| **Custom Validation** | Enforce additional business rules not covered by built-in validation mechanisms before saving data.         |
+| **Logging**        | Record details about the changes (which entities were modified, added, or deleted) for debugging or audit trails.   |
+
+## 6. Conclusion
+Overriding `SaveChanges()` and `SaveChangesAsync()` in EF Core is a powerful technique for implementing cross-cutting concerns like auditing, validation, and error handling in a centralized way. By intercepting the save process, you ensure that every change to your entities is processed consistently, enhancing the overall robustness and maintainability of your application. Always consider the potential performance impact and thoroughly test any custom logic integrated into these methods.
+
+## 7. Resources and References
+- [Microsoft Docs: DbContext.SaveChanges Method](https://learn.microsoft.com/en-us/dotnet/api/microsoft.entityframeworkcore.dbcontext.savechanges)
+- [Microsoft Docs: DbContext.SaveChangesAsync Method](https://learn.microsoft.com/en-us/dotnet/api/microsoft.entityframeworkcore.dbcontext.savechangesasync)
+- [Microsoft Docs: Change Tracking in EF Core](https://learn.microsoft.com/en-us/ef/core/change-tracking/)
+
+---
+# Configurations in EF Core: Data Annotations vs. Fluent API
+In Entity Framework Core (EF Core), model configuration is essential for mapping your entity classes to the underlying database schema. This configuration determines how classes, properties, keys, relationships, and constraints are translated into database tables and columns. EF Core offers two primary approaches for configuration:
+1. **Data Annotations** – Attributes added directly to your entity classes and properties.
+2. **Fluent API** – A programmatic way to configure your model using method chaining within the `OnModelCreating` method of your DbContext.
+This chapter explains each approach, compares their features and limitations, and discusses when to use one method over the other.
+
+## 1. Overview of EF Core Configuration
+Configuration in EF Core defines:
+- **Mapping:** How entity classes correspond to database tables.
+- **Keys and Relationships:** Defining primary keys, foreign keys, and relationships between entities.
+- **Property Constraints:** Specifying required fields, maximum lengths, column types, and precision.
+- **Indexes and Other Settings:** Additional configurations such as indexes and table names.
+Both Data Annotations and the Fluent API serve these purposes but differ in syntax, flexibility, and separation of concerns.
+
+## 2. Data Annotations
+### Definition
+Data Annotations are attributes that you add directly to your entity classes and properties. They reside in the `System.ComponentModel.DataAnnotations` namespace and provide a declarative way to define configuration settings.
+### Characteristics
+- **Simplicity:**  
+  Easy to apply; configuration is written next to the property definitions.
+- **Co-located with Model:**  
+  Constraints and mapping details appear directly in the entity class.
+- **Limited Flexibility:**  
+  Suitable for common scenarios but not ideal for complex configurations.
+- **Declarative:**  
+  Provides straightforward, readable instructions for EF Core.
+
+### Example
+```csharp
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+public class Product
+{
+    [Key]
+    public int Id { get; set; }
+
+    [Required]
+    [MaxLength(100)]
+    public string Name { get; set; }
+
+    [Column(TypeName = "decimal(16,2)")]
+    public decimal Price { get; set; }
+    
+    // Foreign key property and navigation property
+    public int CategoryId { get; set; }
+    
+    [ForeignKey("CategoryId")]
+    public Category Category { get; set; }
+}
+```
+
+#### Explanation
+
+- **[Key]:** Marks the `Id` property as the primary key.
+- **[Required]:** Specifies that the `Name` property must have a value.
+- **[MaxLength(100)]:** Limits the maximum length of the `Name` property to 100 characters.
+- **[Column(TypeName = "decimal(16,2)")]:** Defines the database column type for the `Price` property.
+
+### Pros & Cons of Data Annotations
+| Aspect            | Details                                                        |
+|-------------------|----------------------------------------------------------------|
+| **Pros**          | Simple to implement; configuration is inline with the model; great for common scenarios. |
+| **Cons**          | Limited flexibility for complex configurations; can clutter the model classes with attributes. |
+
+## 3. Fluent API
+### Definition
+The Fluent API is a code-based configuration approach that allows you to configure your EF Core model in a centralized manner, typically within the `OnModelCreating` method of your DbContext. It provides a fluent, chainable syntax for complex mappings and configurations.
+### Characteristics
+- **High Flexibility:**  
+  Supports advanced configurations like composite keys, many-to-many relationships, and custom mappings.
+- **Centralized Configuration:**  
+  Keeps configuration separate from the domain model, leading to cleaner entity classes.
+- **Override Capability:**  
+  Fluent API settings can override data annotation defaults if needed.
+- **Chainable Syntax:**  
+  Method chaining allows for concise, readable configuration code.
+
+### Example
+```csharp
+public class ApplicationDbContext : DbContext
+{
+    public DbSet<Product> Products { get; set; }
+    
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<Product>(entity =>
+        {
+            // Define primary key
+            entity.HasKey(p => p.Id);
+            
+            // Configure property constraints
+            entity.Property(p => p.Name)
+                  .IsRequired()
+                  .HasMaxLength(100);
+            
+            // Configure column type and precision for Price
+            entity.Property(p => p.Price)
+                  .HasColumnType("decimal(16,2)");
+            
+            // Configure relationship with Category
+            entity.HasOne(p => p.Category)
+                  .WithMany(c => c.Products)
+                  .HasForeignKey(p => p.CategoryId);
+        });
+    }
+}
+```
+
+#### Explanation
+
+- **modelBuilder.Entity<Product>:** Begins configuration for the Product entity.
+- **HasKey:** Specifies the primary key.
+- **IsRequired/HasMaxLength:** Configures property constraints.
+- **HasColumnType:** Sets the database column type.
+- **HasOne/WithMany/HasForeignKey:** Configures relationships between entities.
+
+### Pros & Cons of Fluent API
+| Aspect            | Details                                                        |
+|-------------------|----------------------------------------------------------------|
+| **Pros**          | Extremely flexible; ideal for complex configurations; keeps entity classes clean. |
+| **Cons**          | Configuration is separated from the model, which can make it less immediately visible; typically requires more code. |
+
+## 4. Comparison: Data Annotations vs. Fluent API
+| **Criteria**                 | **Data Annotations**                                      | **Fluent API**                                           |
+|------------------------------|-----------------------------------------------------------|----------------------------------------------------------|
+| **Definition Location**      | In the entity classes using attributes                  | In the DbContext’s OnModelCreating method or configuration classes |
+| **Simplicity**               | Very simple and quick for common scenarios                | More verbose; requires additional code for advanced scenarios        |
+| **Flexibility**              | Limited to standard cases                                  | Supports complex configurations (composite keys, many-to-many relationships, etc.) |
+| **Separation of Concerns**   | Can clutter entity classes with configuration code         | Keeps entity classes clean by separating mapping logic   |
+| **Override Capability**      | Harder to override once applied                           | Fluent settings can override data annotations easily     |
+
+## 5. Diagram: Configuration Approaches in EF Core
+
+```mermaid
+flowchart TD
+    A[Entity Classes]
+    B[Data Annotations]
+    C[Fluent API in OnModelCreating]
+    
+    A --> B[Inline Configuration]
+    A --> C[Centralized Configuration]
+    B & C --> D[Final Model Mapping]
+    D --> E[Database Schema]
+```
+
+**Explanation:**  
+- **Data Annotations:** Applied directly within the entity classes.
+- **Fluent API:** Configured centrally in the DbContext.
+- EF Core merges both to create the final model mapping that defines the database schema.
+
+## 6. Combined Approach
+It is common to use both Data Annotations and Fluent API together. For example, you might use Data Annotations for basic constraints and Fluent API to override or add complex configuration.
+### Combined Example
+```csharp
+public class Product
+{
+    [Key]
+    public int Id { get; set; }
+    
+    [Required]
+    [StringLength(100)]
+    public string Name { get; set; }
+    
+    public decimal Price { get; set; }
+}
+
+// In DbContext:
+protected override void OnModelCreating(ModelBuilder modelBuilder)
+{
+    modelBuilder.Entity<Product>()
+        .Property(p => p.Name)
+        .HasMaxLength(150) // Overrides the annotation's maximum length
+        .IsUnicode(false);
+
+    modelBuilder.Entity<Product>()
+        .Property(p => p.Price)
+        .HasColumnType("decimal(16,2)");
+}
+```
+
+**Explanation:**  
+- The `Product` entity uses Data Annotations for basic settings.
+- The Fluent API in `OnModelCreating` further refines the configuration, overriding the default maximum length and setting additional properties like Unicode support.
+
+## 7. Conclusion
+Both Data Annotations and Fluent API are powerful tools for configuring EF Core models. Data Annotations are simple and intuitive, making them ideal for small projects or simple scenarios where configuration requirements are minimal. The Fluent API, on the other hand, offers extensive flexibility and is better suited for complex configurations, ensuring that all mapping logic can be centralized and maintained separately from the domain model.
+Choosing the right approach depends on your project's complexity and your team's preferences. In many cases, a combination of both methods provides the best balance between simplicity and flexibility.
+
+## 8. Resources and References
+- [Microsoft Docs: Data Annotations in EF Core](https://learn.microsoft.com/en-us/ef/core/modeling/#data-annotations)
+
+---
+# Database Transaction Support in .NET Development
+Database transaction support is essential in .NET development to ensure data integrity and consistency when executing multiple related operations. In the context of Entity Framework Core (EF Core), transactions allow you to group a set of operations so that they either all succeed or all fail. This guarantees atomicity, consistency, isolation, and durability (ACID properties) in your application.
+## 1. What Are Database Transactions?
+### Definition
+**database transaction** is a sequence of operations performed as a single logical unit of work. For a transaction to be reliable, it must satisfy the following ACID properties:
+- **Atomicity:** All operations in a transaction complete successfully, or none do.
+- **Consistency:** The database moves from one valid state to another.
+- **Isolation:** Concurrent transactions do not interfere with each other.
+- **Durability:** Once committed, changes are permanent even if a system failure occurs.
+
+### Why Use Transactions?
+- **Data Integrity:** Ensures that partial updates do not leave the database in an inconsistent state.
+- **Error Handling:** Automatically rolls back all changes if an error occurs during any operation.
+- **Concurrency Control:** Manages how multiple transactions interact with one another.
+- **Multi-Step Workflows:** Groups several dependent operations so that they are committed as a single unit.
+
+## 2. Transaction Management in EF Core
+EF Core provides several mechanisms to manage transactions, including implicit transactions (wrapped automatically by `SaveChanges()`) and explicit transaction management for grouping multiple operations.
+### 2.1. Implicit Transactions
+By default, each call to `SaveChanges()` or `SaveChangesAsync()` is wrapped in a transaction. This is sufficient for simple, single-operation scenarios.
+**Example: Implicit Transaction**
+```csharp
+using var context = new ApplicationDbContext();
+var product = new Product { Name = "Laptop", Price = 1200m };
+context.Products.Add(product);
+context.SaveChanges(); // Implicit transaction wraps this call
+```
+
+### 2.2. Explicit Transactions
+For complex workflows where you need to group multiple calls to `SaveChanges()`, you can explicitly control transactions using the `BeginTransaction()` method.
+#### Synchronous Example
+```csharp
+using (var context = new ApplicationDbContext())
+{
+    using (var transaction = context.Database.BeginTransaction())
+    {
+        try
+        {
+            // Multiple database operations
+            context.Products.Add(new Product { Name = "New Product", Price = 50 });
+            context.Customers.Add(new Customer { Name = "New Customer" });
+            
+            context.SaveChanges();
+
+            // Commit the transaction if all operations succeed
+            transaction.Commit();
+        }
+        catch (Exception ex)
+        {
+            // Roll back the transaction if any operation fails
+            transaction.Rollback();
+            Console.WriteLine($"Transaction failed: {ex.Message}");
+        }
+    }
+}
+```
+
+#### Asynchronous Example
+```csharp
+using (var context = new ApplicationDbContext())
+{
+    using (var transaction = await context.Database.BeginTransactionAsync())
+    {
+        try
+        {
+            context.Products.Add(new Product { Name = "Async Product", Price = 75 });
+            context.Customers.Add(new Customer { Name = "Async Customer" });
+            
+            await context.SaveChangesAsync();
+
+            // Commit the transaction
+            await transaction.CommitAsync();
+        }
+        catch (Exception ex)
+        {
+            // Roll back the transaction
+            await transaction.RollbackAsync();
+            Console.WriteLine($"Transaction failed: {ex.Message}");
+        }
+    }
+}
+```
+
+### 2.3. Using Execution Strategies
+For applications with high concurrency or transient faults (e.g., cloud applications), EF Core’s execution strategies can be used to automatically retry failed transactions.
+```csharp
+var strategy = context.Database.CreateExecutionStrategy();
+await strategy.ExecuteAsync(async () =>
+{
+    using (var transaction = await context.Database.BeginTransactionAsync())
+    {
+        try
+        {
+            context.Products.Add(new Product { Name = "Resilient Product", Price = 100 });
+            await context.SaveChangesAsync();
+            
+            await transaction.CommitAsync();
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
+    }
+});
+```
+
+## 3. Diagram: Transaction Workflow in EF Core
+
+```mermaid
+flowchart TD
+    A[Begin Transaction]
+    B[Perform Operations (Add, Update, Delete)]
+    C[Call SaveChanges()/SaveChangesAsync()]
+    D{Operations Succeed?}
+    E[Commit Transaction]
+    F[Rollback Transaction]
+    
+    A --> B
+    B --> C
+    C --> D
+    D -- Yes --> E
+    D -- No --> F
+```
+
+**Explanation:**
+- **A:** Start a transaction explicitly.
+- **B:** Execute multiple database operations.
+- **C:** Persist changes using `SaveChanges()` or `SaveChangesAsync()`.
+- **D:** Check if all operations were successful.
+- **E:** If yes, commit the transaction.
+- **F:** If any operation fails, roll back the transaction.
+
+## 4. Isolation Levels
+Isolation levels determine how a transaction is isolated from the effects of other transactions. Common isolation levels include:
+- **Read Committed:** Default in many databases; only committed data is visible.
+- **Repeatable Read:** Prevents other transactions from modifying data that is read.
+- **Serializable:** Most strict isolation; transactions are completely isolated.
+- **Snapshot:** Uses row versioning to minimize blocking.
+In EF Core, you can set the isolation level using a `TransactionScope` or provider-specific configurations.
+
+## 5. Comparison Table: Implicit vs. Explicit Transactions
+| **Aspect**              | **Implicit Transactions**                      | **Explicit Transactions**                                     |
+|-------------------------|------------------------------------------------|---------------------------------------------------------------|
+| **Usage**               | Each `SaveChanges()` is automatically wrapped. | Developer manually starts, commits, and rolls back transactions. |
+| **Grouping**            | Single operation per call.                     | Multiple `SaveChanges()` calls can be grouped together.        |
+| **Control**             | Less control over the transaction scope.       | Full control over transaction boundaries and isolation.        |
+| **Simplicity**          | Simpler for basic operations.                  | More code is required, but more suitable for complex workflows.  |
+
+## 6. Conclusion
+Database transactions in EF Core are a critical feature for maintaining data consistency and integrity. Implicit transactions provided by EF Core's `SaveChanges()` method are sufficient for simple scenarios. However, for complex workflows involving multiple operations or for scenarios requiring advanced control (such as handling transient errors or using specific isolation levels), explicit transaction management is necessary. By leveraging these transaction management techniques, you can ensure that your application's data remains consistent even in the face of errors or concurrent operations.
+
+## 7. Resources and References
+- [Microsoft Docs: Transactions in EF Core](https://learn.microsoft.com/en-us/ef/core/saving/transactions)
+- [Microsoft Docs: DatabaseFacade.BeginTransaction Method](https://learn.microsoft.com/en-us/dotnet/api/microsoft.entityframeworkcore.infrastructure.databasefacade.begintransaction?view=efcore-9.0)
+- [Microsoft Docs: Execution Strategies](https://learn.microsoft.com/en-us/ef/core/miscellaneous/connection-resiliency)
+- [Microsoft Docs: TransactionScope Class](https://learn.microsoft.com/en-us/dotnet/api/system.transactions.transactionscope)
+
+---
+# Database Connection Resiliency in .NET Development
+Database connection resiliency is critical in modern .NET applications, especially when interacting with remote databases. It is designed to handle transient failures—temporary errors that occur due to network issues, high load, or brief outages—by automatically retrying failed operations. This ensures that your application remains robust and available even when faced with intermittent connectivity problems.
+## 1. Overview
+### What is Database Connection Resiliency?
+A database connection resiliency strategy enables an application or ORM (such as Entity Framework Core) to detect transient failures and automatically retry the failed database operations. This is typically implemented through built-in execution strategies that wrap your database operations in retry logic.
+### ACID Properties in Transactions
+Database transactions must satisfy the ACID properties:
+- **Atomicity:** All operations within a transaction are completed successfully or none are.
+- **Consistency:** The database moves from one consistent state to another.
+- **Isolation:** Concurrent transactions do not interfere with each other.
+- **Durability:** Once a transaction commits, its changes persist even in the event of a failure.
+While these properties ensure data integrity, transient faults (such as timeouts or network glitches) may occur. Connection resiliency addresses these issues by retrying operations automatically.
+### Why is Connection Resiliency Important?
+- **High Availability:** Ensures that applications continue to operate during temporary database outages.
+- **Improved User Experience:** Reduces error rates and minimizes downtime caused by transient issues.
+- **Cost Efficiency:** Minimizes the need for extensive manual error handling code by automatically handling transient failures.
+
+## 2. Key Characteristics
+The following table summarizes the key characteristics of database connection resiliency in EF Core:
+| **Characteristic**         | **Description**                                                                                         |
+|----------------------------|---------------------------------------------------------------------------------------------------------|
+| Automatic Retries          | Implements retry logic for transient failures (e.g., connection timeouts, deadlocks).                   |
+| Transient Fault Handling   | Targets temporary errors likely to succeed on a retry.                                                |
+| Configurable Policies      | Allows customization of retry count, delay between retries, and exception handling behavior.           |
+| Integrated with EF Core    | Built-in execution strategies (e.g., `SqlServerRetryingExecutionStrategy`) handle retries automatically. |
+| Asynchronous Support       | Works seamlessly with asynchronous operations to avoid blocking the main thread.                        |
+
+## 3. Implementing Connection Resiliency in EF Core
+EF Core provides execution strategies that enable connection resiliency. These strategies automatically retry failed operations based on predefined policies.
+### 3.1. Using the Default Execution Strategy
+EF Core may automatically enable a retry execution strategy (for example, when using SQL Server). In simple cases, each call to `SaveChanges()` is wrapped in its own implicit transaction with a retry mechanism.
+#### Implicit Transaction Example
+```csharp
+using var context = new ApplicationDbContext();
+
+var product = new Product { Name = "Laptop", Price = 1200m };
+context.Products.Add(product);
+context.SaveChanges(); // Implicit transaction with retry if transient error occurs
+```
+
+### 3.2. Explicitly Using an Execution Strategy
+For more complex operations involving multiple steps or transactions, you can explicitly create and use an execution strategy.
+#### Asynchronous Explicit Transaction Example
+```csharp
+var strategy = context.Database.CreateExecutionStrategy();
+
+await strategy.ExecuteAsync(async () =>
+{
+    using (var transaction = await context.Database.BeginTransactionAsync())
+    {
+        try
+        {
+            // Perform multiple operations
+            context.Products.Add(new Product { Name = "Resilient Product", Price = 100 });
+            await context.SaveChangesAsync();
+
+            // Commit the transaction if all operations succeed
+            await transaction.CommitAsync();
+        }
+        catch
+        {
+            // Roll back the transaction on failure
+            await transaction.RollbackAsync();
+            throw;
+        }
+    }
+});
+```
+
+**Explanation:**  
+- The execution strategy retries the entire delegate if a transient error occurs.
+- A transaction is manually started to group multiple operations.
+- If any operation fails, the transaction is rolled back, ensuring atomicity.
+
+### 3.3. Configuring Custom Retry Policies
+You can customize the retry policy by configuring the execution strategy in your DbContext options. For example, when using SQL Server, you can specify the maximum number of retries and the maximum delay between retries.
+#### Example: Configuring Retry Settings in Startup.cs
+```csharp
+services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseSqlServer(
+        Configuration.GetConnectionString("DefaultConnection"),
+        sqlServerOptions =>
+        {
+            sqlServerOptions.EnableRetryOnFailure(
+                maxRetryCount: 5,
+                maxRetryDelay: TimeSpan.FromSeconds(10),
+                errorNumbersToAdd: null);
+        }));
+```
+
+**Explanation:**  
+- `EnableRetryOnFailure` sets up the execution strategy with a maximum of 5 retries and a delay of up to 10 seconds between retries.
+- You can specify additional SQL error numbers that should be considered transient.
+
+## 4. Diagram: Connection Resiliency Workflow
+
+```mermaid
+flowchart TD
+    A[Start Database Operation]
+    B[Attempt Operation (e.g., SaveChanges)]
+    C{Operation Succeeds?}
+    D[Return Result]
+    E[Operation Fails (Transient Error)]
+    F[Retry Operation (with Delay)]
+    G{Max Retries Reached?}
+    H[Throw Exception]
+    
+    A --> B
+    B -- Success --> D
+    B -- Failure --> E
+    E --> F
+    F --> C
+    C -- Failure and max retries reached --> G
+    G --> H
+```
+
+**Explanation:**  
+- The operation is attempted (B).
+- If it succeeds, the result is returned (D).
+- If a transient error occurs, the operation is retried after a delay (F).
+- If the maximum number of retries is reached without success, an exception is thrown (H).
+
+## 5. Additional Patterns and Considerations
+### Advanced Resiliency Patterns
+- **Polly and Circuit Breakers:**  
+  Libraries like Polly can define advanced retry and circuit breaker policies. A circuit breaker can temporarily halt retry attempts if failures persist, preventing overload.
+- **Context Re-Initialization:**  
+  If a DbContext fails mid-transaction, you may need to recreate it to ensure a clean state.
+- **Cloud-Specific Settings:**  
+  For cloud-based databases (e.g., Azure SQL), follow recommended resiliency settings provided by the service.
+
+### Common Resiliency Settings
+| Setting               | Description                              | Example Value                    |
+|-----------------------|------------------------------------------|----------------------------------|
+| **maxRetryCount**     | Maximum number of retry attempts         | 5                                |
+| **maxRetryDelay**     | Maximum delay between retries            | TimeSpan.FromSeconds(10)         |
+| **errorNumbersToAdd** | Additional SQL error codes to consider as transient | Custom list (e.g., [4060, 10928]) |
+
+## 6. Conclusion
+Database connection resiliency is vital for ensuring that your .NET applications remain stable and responsive despite transient failures. EF Core’s built-in execution strategies enable automatic retries for temporary issues, and you can customize these strategies to suit your needs. Whether you rely on implicit transactions provided by `SaveChanges()` or implement explicit transaction management with custom retry policies, employing connection resiliency techniques is crucial—especially in cloud-based or high-load environments.
+By understanding and implementing these patterns, you can enhance your application's robustness, reduce downtime, and provide a better user experience even when facing intermittent connectivity issues.
+
+## 7. Resources and References
+- [Microsoft Docs: EF Core Connection Resiliency](https://learn.microsoft.com/en-us/ef/core/miscellaneous/connection-resiliency)
+- [Microsoft Docs: CreateExecutionStrategy Method](https://learn.microsoft.com/en-us/dotnet/api/microsoft.entityframeworkcore.infrastructure.databasefacade.createexecutionstrategy?view=efcore-9.0)
+- [Microsoft Docs: TransactionScope Class](https://learn.microsoft.com/en-us/dotnet/api/system.transactions.transactionscope)
+
+---
+# Global Query Filters in EF Core
+Global query filters in Entity Framework Core (EF Core) allow you to apply a LINQ predicate automatically to all queries for a given entity type. This feature is especially useful for scenarios such as soft deletion, multi-tenancy, or applying security restrictions. By defining a global filter in your model configuration, you can ensure that every query automatically respects these conditions without the need to manually add filters in your code.
+
+## 1. Overview
+### What Are Global Query Filters?
+Global query filters are predicates defined in the model configuration (usually in the `OnModelCreating` method of your `DbContext`) that are automatically applied to all queries involving a specific entity type. Once configured, they add a default `WHERE` clause to every query, ensuring that only the desired rows are returned.
+#### Key Points:
+- **Automatic Filtering:** The filter is applied to every query for the entity unless explicitly bypassed.
+- **Centralized Logic:** The filtering logic is centralized, reducing repetition in your code.
+- **Dynamic Conditions:** Filters can use parameters, making them dynamic (for example, filtering by a current tenant or user).
+- **Override Capability:** Global filters can be bypassed using methods such as `IgnoreQueryFilters()` when needed.
+
+## 2. Key Characteristics
+The following table summarizes the key characteristics of global query filters:
+| **Characteristic**         | **Description**                                                                                                   |
+|----------------------------|-------------------------------------------------------------------------------------------------------------------|
+| **Global Scope**           | Automatically applied to all queries for the specified entity type.                                              |
+| **Centralized Configuration** | Defined in one location (usually `OnModelCreating`), ensuring consistent filtering across the application.       |
+| **Dynamic Filtering**      | Can utilize parameters, allowing dynamic conditions (e.g., current tenant or user context).                         |
+| **Non-Intrusive**          | No need to add filtering logic to each individual query; it works transparently in the background.                  |
+| **Override Option**        | Can be bypassed on a per-query basis using methods like `IgnoreQueryFilters()`.                                    |
+
+## 3. How to Use Global Query Filters
+Global query filters are set up in the `OnModelCreating` method of your `DbContext`. Below are examples for common scenarios.
+### 3.1. Soft Delete Example
+In many applications, you may want to mark records as "deleted" without physically removing them from the database. This is typically achieved by having a Boolean property (e.g., `IsDeleted`) in your entity.
+#### Entity Definition
+```csharp
+public class Product
+{
+    public int ProductId { get; set; }
+    public string Name { get; set; }
+    public decimal Price { get; set; }
+    public bool IsDeleted { get; set; }  // Soft-delete flag
+}
+```
+
+#### Configuring the Global Query Filter
+```csharp
+public class ApplicationDbContext : DbContext
+{
+    public DbSet<Product> Products { get; set; }
+    
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        // Apply a global query filter to exclude soft-deleted products.
+        modelBuilder.Entity<Product>().HasQueryFilter(p => !p.IsDeleted);
+        
+        base.OnModelCreating(modelBuilder);
+    }
+}
+```
+
+**Explanation:**  
+Every query involving `Products` will now automatically include the condition `WHERE IsDeleted = 0`, ensuring that soft-deleted products are excluded from results.
+
+### 3.2. Multi-Tenancy Example
+For multi-tenant applications, you might want to ensure that queries only return data for the current tenant. You can achieve this by adding a tenant identifier to your entities and applying a dynamic filter.
+#### Entity Definition
+```csharp
+public class Product
+{
+    public int ProductId { get; set; }
+    public string Name { get; set; }
+    public int TenantId { get; set; }  // Tenant identifier
+}
+```
+
+#### Configuring a Dynamic Global Query Filter
+```csharp
+public class ApplicationDbContext : DbContext
+{
+    // This property is set at runtime based on the current tenant.
+    public int CurrentTenantId { get; set; }
+    
+    public DbSet<Product> Products { get; set; }
+    
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        // Apply a global filter to return only products that belong to the current tenant.
+        modelBuilder.Entity<Product>().HasQueryFilter(p => p.TenantId == CurrentTenantId);
+        
+        base.OnModelCreating(modelBuilder);
+    }
+}
+```
+
+**Usage:**  
+Before running queries, set `CurrentTenantId` on your context to the tenant value. This will ensure that every query on `Products` returns only those records matching the current tenant.
+
+### 3.3. Bypassing Global Query Filters
+There might be cases where you need to retrieve data without the global filters. EF Core provides the `IgnoreQueryFilters()` method for this purpose.
+#### Example: Ignoring Global Filters
+```csharp
+var allProducts = await context.Products
+    .IgnoreQueryFilters()
+    .ToListAsync();
+```
+
+**Explanation:**  
+This query returns all products, including those that would normally be excluded by the global query filter.
+
+## 4. Diagram: Global Query Filter Workflow
+
+```mermaid
+flowchart TD
+    A[Define Entity: Product]
+    B[Add Property: IsDeleted (for soft delete) or TenantId (for multi-tenancy)]
+    C[Configure Global Query Filter in OnModelCreating]
+    D[EF Core Automatically Applies Filter to All Queries on Product]
+    E[Query: context.Products.ToListAsync()]
+    F[Results: Only products matching the filter condition]
+    G[Bypass Filter using IgnoreQueryFilters() if needed]
+
+    A --> B
+    B --> C
+    C --> D
+    D --> E
+    E --> F
+    E -- If .IgnoreQueryFilters() used --> G
+```
+
+**Explanation:**  
+- **Steps A-B:** Define the entity and add the relevant property.
+- **Step C:** Configure the global filter in the `OnModelCreating` method.
+- **Steps D-F:** All queries automatically include the filter, returning only the desired records.
+- **Step G:** Using `IgnoreQueryFilters()` overrides the global filter, returning all records.
+
+## 5. Comparison: Global Query Filter vs. Per-Query Filtering
+The table below compares global query filters with manually adding a `WHERE` clause in each query:
+| **Aspect**                    | **Global Query Filter**                                          | **Per-Query Filter (LINQ .Where)**                          |
+|-------------------------------|------------------------------------------------------------------|-------------------------------------------------------------|
+| **Scope**                     | Automatically applied to all queries for an entity type.         | Must be manually applied to each query.                     |
+| **Maintainability**           | Centralized configuration; adheres to the DRY principle.         | Can lead to repetitive code if applied in multiple places.  |
+| **Override Capability**       | Can be bypassed using `.IgnoreQueryFilters()`.                   | No global setting to bypass; each query is independent.     |
+| **Use Case**                  | Ideal for soft deletes, multi-tenancy, and global security rules.  | Best for one-off filtering conditions specific to a query.  |
+
+## 6. Conclusion
+Global query filters in EF Core provide a powerful, centralized way to enforce consistent filtering conditions across all queries for an entity type. This feature is particularly useful for implementing soft delete functionality, multi-tenancy, and other cross-cutting concerns without cluttering individual queries with repetitive conditions. By defining these filters in the `OnModelCreating` method, you ensure that every query automatically respects the intended data restrictions. Additionally, the ability to override these filters using `.IgnoreQueryFilters()` offers the flexibility needed for specialized queries.
+Implementing global query filters enhances code maintainability, improves security, and reduces the risk of data inconsistencies by enforcing uniform filtering rules at the model level.
+
+## 7. Resources and References
+- [Microsoft Docs: Global Query Filters](https://learn.microsoft.com/en-us/ef/core/querying/filters)
+- [Microsoft Docs: EF Core Querying](https://learn.microsoft.com/en-us/ef/core/querying/)
+
+---
