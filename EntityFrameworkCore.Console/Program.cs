@@ -141,6 +141,66 @@ using var sqlServerContext = new FootballLeagueSqlServerDbContext();
 
 #endregion
 
+# region Additional Queries
+//TemporalTableQuery();
+
+//TransactionSupport();
+
+// Concurrency Checks
+//await ConcurrencyChecks();
+
+// Global Query Filters
+//GlobalQueryFilters();
+
+#endregion
+
+void TransactionSupport()
+{
+    var transaction = context.Database.BeginTransaction();
+    var league = new League
+    {
+        Name = "Testing Transactions"
+    };
+
+    context.Add(league);
+    context.SaveChanges();
+    transaction.CreateSavepoint("CreatedLeague");
+
+    var coach = new Coach
+    {
+        Name = "Transaction Coach"
+    };
+
+    context.Add(coach);
+    context.SaveChanges();
+
+    var teams = new List<Team>
+{
+    new Team
+    {
+        Name = "Transaction Team 1",
+        LeagueId = league.Id,
+        CoachId = coach.Id
+    }
+};
+    context.AddRange(teams);
+    context.SaveChanges();
+
+    try
+    {
+        transaction.Commit();
+    }
+    catch (Exception)
+    {
+        // Roll back entire operation
+        //transaction.Rollback();
+
+        // Rollback to specific point 
+        transaction.RollbackToSavepoint("CreatedLeague");
+        throw;
+    }
+}
+
 void TemporalTableQuery()
 {
     var teamHistory = sqlServerContext.Teams
