@@ -9933,3 +9933,153 @@ Temporal table support in EF Core allows .NET developers to seamlessly track his
 
 ## 8. Resources and References
 - [Microsoft Docs: Temporal Tables in SQL Server](https://docs.microsoft.com/en-us/sql/relational-databases/tables/temporal-tables?view=sql-server-ver15)
+
+---
+# Handling Data Concurrency Issues in .NET Development
+In multi-user and high-load applications, data concurrency issues arise when multiple users or processes try to update the same data simultaneously. In .NET development using Entity Framework Core (EF Core), managing these concurrency conflicts is essential for maintaining data integrity and ensuring a smooth user experience. This chapter explains what data concurrency issues are, the characteristics of concurrency control strategies (both optimistic and pessimistic), and provides practical examples to handle these issues effectively in EF Core.
+
+## 1. Overview
+### What Are Data Concurrency Issues?
+Data concurrency issues occur when two or more transactions attempt to modify the same data simultaneously. Without proper control, this can result in:
+- **Lost Updates:** Changes made by one transaction are overwritten by another.
+- **Data Inconsistency:** The database can end up in an inconsistent state.
+- **Conflicts:** Simultaneous updates cause conflicts that must be resolved.
+### Concurrency Control Approaches in EF Core
+EF Core primarily supports **optimistic concurrency**, which assumes conflicts are rare and verifies data consistency only when saving changes. Alternatively, **pessimistic concurrency** locks data during transactions to prevent conflicts, although this approach is less commonly used with EF Core.
+
+## 2. Key Characteristics of Concurrency Handling
+The following table summarizes the key characteristics of concurrency control in EF Core:
+| **Characteristic**        | **Description**                                                                                              |
+|---------------------------|--------------------------------------------------------------------------------------------------------------|
+| **Optimistic Concurrency**| Assumes that conflicts are rare; uses a concurrency token (such as a timestamp or row version) to detect changes. |
+| **Concurrency Token**     | A designated property (commonly a `byte[]` using `[Timestamp]` or Fluent API configuration) used to track modifications. |
+| **Conflict Detection**    | EF Core throws a `DbUpdateConcurrencyException` if it detects that data has been modified by another transaction. |
+| **Pessimistic Concurrency**| Locks data during transactions to prevent other updates; generally implemented using raw SQL rather than EF Core’s built-in features. |
+| **Resolution Strategies** | Application logic must resolve conflicts—either by merging changes, reloading data, or prompting the user for input. |
+
+## 3. Handling Concurrency in EF Core
+### 3.1. Implementing Optimistic Concurrency
+Optimistic concurrency is the most common approach in EF Core. This strategy involves adding a concurrency token to your entity so that EF Core can detect when the data has been modified by another process.
+#### 3.1.1. Defining a Concurrency Token
+**Using Data Annotations:**
+```csharp
+public class Product
+{
+    public int ProductId { get; set; }
+    public string Name { get; set; }
+    public decimal Price { get; set; }
+    
+    [Timestamp]
+    public byte[] RowVersion { get; set; }
+}
+```
+
+**Using Fluent API:**
+```csharp
+protected override void OnModelCreating(ModelBuilder modelBuilder)
+{
+    modelBuilder.Entity<Product>()
+        .Property(p => p.RowVersion)
+        .IsRowVersion();
+}
+```
+
+**Explanation:**  
+Both methods configure the `RowVersion` property as a concurrency token. When a record is updated, the `RowVersion` is checked to ensure that no other process has modified the data.
+
+#### 3.1.2. Handling Concurrency Exceptions
+When a concurrency conflict is detected, EF Core throws a `DbUpdateConcurrencyException`. You can catch this exception and implement a resolution strategy.
+```csharp
+try
+{
+    await context.SaveChangesAsync();
+}
+catch (DbUpdateConcurrencyException ex)
+{
+    foreach (var entry in ex.Entries)
+    {
+        if (entry.Entity is Product)
+        {
+            // Retrieve the current database values
+            var databaseValues = await entry.GetDatabaseValuesAsync();
+            // Option 1: Overwrite the original values with the current database values
+            entry.OriginalValues.SetValues(databaseValues);
+            
+            // Option 2: Merge the changes manually or prompt the user
+            // (This example simply updates the original values to match the database)
+        }
+        else
+        {
+            throw;
+        }
+    }
+    // Optionally, retry SaveChangesAsync() after conflict resolution.
+}
+```
+
+**Explanation:**  
+The code catches the concurrency exception and iterates through the conflicting entries. For each entry, it retrieves the current database values and updates the original values, which can allow a retry of the save operation.
+
+### 3.2. Handling Pessimistic Concurrency
+While EF Core’s built-in support focuses on optimistic concurrency, you can implement pessimistic concurrency by acquiring locks at the database level using raw SQL.
+
+```sql
+BEGIN TRANSACTION;
+
+SELECT *
+FROM Products
+WHERE ProductId = 1
+WITH (UPDLOCK, ROWLOCK);
+
+-- Perform the update operation here
+
+COMMIT TRANSACTION;
+```
+
+**Explanation:**  
+This SQL snippet demonstrates how to lock a row for update, preventing other users from modifying the data until the transaction is completed.
+
+## 4. Diagram: Concurrency Handling Workflow in EF Core
+
+```mermaid
+flowchart TD
+    A[User 1 loads Product entity]
+    B[User 2 loads the same Product entity]
+    C[User 1 updates the Product and calls SaveChanges()]
+    D[Database updates the row and changes RowVersion]
+    E[User 2 attempts to update with old RowVersion]
+    F[EF Core detects the mismatch]
+    G[DbUpdateConcurrencyException is thrown]
+    H[Application handles the conflict (reloads/merges changes)]
+    
+    A --> C
+    B --> E
+    C --> D
+    D --> E
+    E --> F
+    F --> G
+    G --> H
+```
+
+**Explanation:**  
+- Two users load the same product.
+- User 1 saves changes first, updating the `RowVersion`.
+- User 2 then attempts to save changes with an outdated `RowVersion`, triggering a concurrency exception.
+- The application handles the exception by reloading the current values or merging changes.
+
+## 6. Comparison Table: Optimistic vs. Pessimistic Concurrency
+| **Aspect**               | **Optimistic Concurrency**                              | **Pessimistic Concurrency**                              |
+|--------------------------|---------------------------------------------------------|----------------------------------------------------------|
+| **Locking Behavior**     | No locks during data read; check at SaveChanges time     | Locks records during transaction                        |
+| **Performance**          | Generally higher performance in low-conflict scenarios   | Can cause performance issues under high contention       |
+| **Conflict Detection**   | Uses a concurrency token (e.g., RowVersion)             | Prevents conflicts by blocking other transactions          |
+| **Implementation**       | Supported natively by EF Core                           | Requires manual SQL or additional libraries              |
+| **Use Case**             | Suitable for most web applications                      | Best for scenarios where conflicts must be prevented (e.g., banking) |
+
+## 7. Conclusion
+Handling data concurrency effectively is crucial in multi-user and high-load applications. EF Core primarily uses optimistic concurrency, where a concurrency token (typically a row version or timestamp) is used to detect conflicts during save operations. When a conflict occurs, EF Core throws a `DbUpdateConcurrencyException`, which must be handled to merge changes or notify users. In rare cases, pessimistic concurrency may be applied using manual locking via raw SQL.
+
+## 8. Resources and References
+- [Microsoft Docs: Concurrency in EF Core](https://learn.microsoft.com/en-us/ef/core/saving/concurrency)
+- [Microsoft Docs: Handling Concurrency Conflicts](https://learn.microsoft.com/en-us/ef/core/saving/concurrency#resolving-concurrency-conflicts)
+- [RowVersion Documentation](https://learn.microsoft.com/en-us/sql/t-sql/data-types/rowversion-transact-sql)
