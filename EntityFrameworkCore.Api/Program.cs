@@ -27,15 +27,17 @@ var dbPath = Path.Combine(path, sqliteDatabaseName);
 var connectionString = $"Data Source={dbPath}";
 
 builder.Services.AddDbContext<FootballLeagueDbContext>(options => {
-    options.UseSqlite(connectionString);
+    options.UseSqlite(connectionString, sqliteOptions => {
+        sqliteOptions.CommandTimeout(30);
+    });
+    //options.UseSqlServer(builder.Configuration.GetConnectionString("SqlDatabaseConnectionString"));
     //.UseLazyLoadingProxies()
     options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
     options.LogTo(Console.WriteLine, LogLevel.Information);
 
     if (!builder.Environment.IsProduction())
     {
-        //EnableSensitiveDataLogging + EnableDetailedErrors => Do not use this in production
-        options.EnableSensitiveDataLogging();
+        options.EnableSensitiveDataLogging();//OK in testing a project, but be careful about enabling this in production.
         options.EnableDetailedErrors();
     }
 });

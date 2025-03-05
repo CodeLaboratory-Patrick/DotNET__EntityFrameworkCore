@@ -141,6 +141,112 @@ using var sqlServerContext = new FootballLeagueSqlServerDbContext();
 
 #endregion
 
+# region Additional Queries
+//TemporalTableQuery();
+
+//TransactionSupport();
+
+// Concurrency Checks
+//await ConcurrencyChecks();
+
+// Global Query Filters
+//GlobalQueryFilters();
+
+#endregion
+
+void GlobalQueryFilters()
+{
+    var leagues = context.Leagues.ToList();
+    Console.WriteLine("List all leagues");
+    foreach (var l in leagues)
+    {
+        Console.WriteLine(l.Name);
+    }
+    var league = context.Leagues.Find(1);
+    league.IsDeleted = true;
+    Console.WriteLine("Soft Delete league with the id 1");
+    context.SaveChanges();
+
+    Console.WriteLine("List all leagues - global filter ignores 'deleted' record");
+    leagues = context.Leagues.ToList();
+    foreach (var l in leagues)
+    {
+        Console.WriteLine(l.Name);
+    }
+
+    Console.WriteLine("List all leagues - global filter is ignored in the query");
+    leagues = context.Leagues
+        .IgnoreQueryFilters()
+        .ToList();
+    foreach (var l in leagues)
+    {
+        Console.WriteLine(l.Name);
+    }
+}
+
+async Task ConcurrencyChecks()
+{
+    var team = context.Teams.Find(1);
+    team.Name = "New Team With Concurrency Check 1";
+
+    try
+    {
+        await context.SaveChangesAsync();
+    }
+    catch (DbUpdateConcurrencyException ex)
+    {
+        Console.WriteLine(ex.Message);
+        //throw;
+    }
+}
+
+void TransactionSupport()
+{
+    var transaction = context.Database.BeginTransaction();
+    var league = new League
+    {
+        Name = "Testing Transactions"
+    };
+
+    context.Add(league);
+    context.SaveChanges();
+    transaction.CreateSavepoint("CreatedLeague");
+
+    var coach = new Coach
+    {
+        Name = "Transaction Coach"
+    };
+
+    context.Add(coach);
+    context.SaveChanges();
+
+    var teams = new List<Team>
+{
+    new Team
+    {
+        Name = "Transaction Team 1",
+        LeagueId = league.Id,
+        CoachId = coach.Id
+    }
+};
+    context.AddRange(teams);
+    context.SaveChanges();
+
+    try
+    {
+        transaction.Commit();
+    }
+    catch (Exception)
+    {
+        // Roll back entire operation
+        //transaction.Rollback();
+
+        // Rollback to specific point 
+        transaction.RollbackToSavepoint("CreatedLeague");
+        throw;
+    }
+}
+
 void TemporalTableQuery()
 {
     var teamHistory = sqlServerContext.Teams
