@@ -10261,3 +10261,167 @@ Temporal query methods in EF Core empower you to perform sophisticated historica
 - [Microsoft Docs: EF Core Temporal Tables](https://learn.microsoft.com/en-us/sql/relational-databases/tables/temporal-tables?view=sql-server-ver16)
 
 ---
+# Data Validation with Data Annotations in .NET Development
+Data validation is crucial to ensure that your application maintains data integrity and provides clear, user-friendly error messages. In .NET, Data Annotations offer a simple, declarative way to specify validation rules and metadata directly on your model classes. This approach not only simplifies validation logic but also integrates seamlessly with ASP.NET Core MVC and Entity Framework.
+## 1. Overview
+### What Are Data Annotations?
+Data Annotations are attributes defined in the `System.ComponentModel.DataAnnotations` namespace. They allow you to:
+- **Define Validation Rules:**  
+  Specify constraints such as `[Required]`, `[StringLength]`, `[Range]`, etc., on your model properties.
+- **Provide Metadata:**  
+  Include display names, formatting options, and custom error messages to enhance user interfaces.
+- **Control Model Behavior:**  
+  Influence model binding and how Entity Framework maps classes to database tables.
+### Why Use Data Annotations?
+- **Simplicity:**  
+  Validation rules are declared directly on the model properties, keeping your code clear and maintainable.
+- **Declarative Syntax:**  
+  Attributes make your validation intentions explicit and self-documenting.
+- **Seamless Integration:**  
+  ASP.NET Core MVC automatically enforces these rules during model binding and provides client-side validation support.
+
+## 2. Characteristics of Data Annotations
+| **Characteristic**           | **Description**                                                                                                     |
+|------------------------------|---------------------------------------------------------------------------------------------------------------------|
+| **Declarative Attributes**   | Validation rules are defined as attributes directly on model properties (e.g., `[Required]`, `[Range]`).            |
+| **Built-In Support**         | ASP.NET Core and Entity Framework natively support many common validation attributes.                                |
+| **Automatic Integration**    | Client-side and server-side validation are automatically applied during model binding in MVC/Web API.                 |
+| **Customizable**             | Custom validation attributes can be created to handle domain-specific rules.                                         |
+| **Self-Documenting**         | The annotations serve as documentation for the expected data constraints.                                          |
+
+## 3. Using Data Annotations for Data Validation
+Data Annotations can be applied directly to your model classes to enforce validation rules. They are used during model binding to check input and generate error messages if validation fails.
+### 3.1. Basic Usage in Model Classes
+Consider a simple `Product` model that uses Data Annotations for basic validation:
+```csharp
+using System;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+public class Product
+{
+    [Key]
+    public int ProductId { get; set; }
+    
+    [Required(ErrorMessage = "Product name is required.")]
+    [StringLength(100, ErrorMessage = "Product name cannot exceed 100 characters.")]
+    public string Name { get; set; }
+    
+    [Range(0.01, 10000.00, ErrorMessage = "Price must be between 0.01 and 10,000.00.")]
+    public decimal Price { get; set; }
+    
+    [DataType(DataType.Date)]
+    [Display(Name = "Manufacture Date")]
+    public DateTime ManufactureDate { get; set; }
+}
+```
+
+**Explanation:**  
+- `[Key]` marks `ProductId` as the primary key.
+- `[Required]` ensures `Name` is provided.
+- `[StringLength(100)]` restricts the length of `Name` to 100 characters.
+- `[Range]` sets the valid range for `Price`.
+- `[DataType]` and `[Display]` provide UI-related metadata.
+
+### 3.2. Creating Custom Validation Attributes
+For more complex validation, you can create custom attributes.
+```csharp
+using System;
+using System.ComponentModel.DataAnnotations;
+
+public class NotInFutureAttribute : ValidationAttribute
+{
+    public override bool IsValid(object value)
+    {
+        if (value is DateTime dateValue)
+        {
+            return dateValue <= DateTime.Now;
+        }
+        return true;
+    }
+}
+
+public class Event
+{
+    public int EventId { get; set; }
+    
+    [Required]
+    public string Title { get; set; }
+    
+    [NotInFuture(ErrorMessage = "Event date cannot be in the future.")]
+    public DateTime EventDate { get; set; }
+}
+```
+
+**Explanation:**  
+The `NotInFutureAttribute` checks if a given date is not in the future. If the condition fails, it returns a custom error message.
+
+### 3.3. Validating Models in ASP.NET Core
+In an ASP.NET Core MVC application, model validation is automatically performed during model binding. Consider the following controller action:
+```csharp
+public class ProductsController : Controller
+{
+    [HttpPost]
+    public IActionResult Create(Product product)
+    {
+        if (!ModelState.IsValid)
+        {
+            // Return the view with validation errors.
+            return View(product);
+        }
+        
+        // Save the product to the database.
+        // _context.Products.Add(product);
+        // _context.SaveChanges();
+        
+        return RedirectToAction("Index");
+    }
+}
+```
+
+**Explanation:**  
+If the model does not meet the validation rules, `ModelState.IsValid` will be false, and the controller can return the view with error messages for user correction.
+
+## 4. Diagram: Data Validation Flow with Data Annotations
+
+```mermaid
+flowchart TD
+    A[User Submits Form Data]
+    B[ASP.NET Core Model Binding]
+    C[Validation via Data Annotations]
+    D{Is Model Valid?}
+    E[Proceed to Save Data]
+    F[Return Error Messages to User]
+    
+    A --> B
+    B --> C
+    C --> D
+    D -- Yes --> E
+    D -- No --> F
+```
+
+**Explanation:**  
+- **A to B:** Data is submitted by the user and bound to a model.
+- **C:** Data Annotations validate the input automatically.
+- **D:** If the model is valid, processing continues; otherwise, error messages are returned to the user.
+
+## 5. Comparison of Common Data Annotations
+| **Attribute**             | **Purpose**                                           | **Example**                                        |
+|---------------------------|-------------------------------------------------------|----------------------------------------------------|
+| `[Required]`              | Ensures the property is not null or empty.           | `[Required] public string Name { get; set; }`       |
+| `[StringLength(100)]`     | Sets a maximum length for a string.                  | `[StringLength(100)] public string Description { get; set; }` |
+| `[MaxLength(100)]`        | Specifies the maximum length of a property.          | `[MaxLength(100)] public string Title { get; set; }`  |
+| `[Range(0.01, 10000.00)]`  | Validates that a numeric property falls within a range. | `[Range(0.01, 10000.00)] public decimal Price { get; set; }` |
+| `[RegularExpression("pattern")]` | Validates the format of a property using a regex. | `[RegularExpression(@"^[a-zA-Z0-9]*$")] public string Code { get; set; }` |
+| `[EmailAddress]`          | Validates that the property contains a valid email address. | `[EmailAddress] public string Email { get; set; }`  |
+| `[Compare("OtherProperty")]` | Ensures that two properties have matching values.     | `[Compare("Password")] public string ConfirmPassword { get; set; }` |
+
+## 6. Conclusion
+Data validation using Data Annotations in .NET provides a straightforward, declarative approach to enforcing business rules and ensuring data integrity. By applying attributes such as `[Required]`, `[StringLength]`, `[Range]`, and custom validation attributes directly on your model properties, you can automatically enforce validation rules both on the server and, in many cases, on the client. This not only simplifies the development process but also leads to more maintainable and robust applications. Additionally, integration with ASP.NET Core's model binding and automatic client-side validation further enhances the overall user experience.
+
+## 7. Resources and References
+- [Microsoft Docs: Data Annotations](https://learn.microsoft.com/en-us/dotnet/api/system.componentmodel.dataannotations)
+- [ASP.NET Core Model Validation](https://learn.microsoft.com/en-us/aspnet/core/mvc/models/validation)
+- [FluentValidation](https://fluentvalidation.net/) (for advanced scenarios)
+
+---
