@@ -10425,3 +10425,131 @@ Data validation using Data Annotations in .NET provides a straightforward, decla
 - [FluentValidation](https://fluentvalidation.net/) (for advanced scenarios)
 
 ---
+# Pre-Convention Model Configuration in EF Core
+In Entity Framework Core (EF Core), model configuration is critical for mapping your domain classes to your database schema accurately. Pre-convention model configuration allows you to define global, type-specific conventions that are applied to all entities and properties before the final model is built. This approach enforces consistency across your model and reduces repetitive configuration code.
+
+## 1. Overview
+### What is Pre-Convention Model Configuration?
+Pre-convention model configuration is the process of setting up default global rules for how properties are configured in your EF Core model. Instead of decorating each property with data annotations or writing repetitive Fluent API code, you define conventions that apply to all properties of a given type across your model. This is done by overriding the `ConfigureConventions(ModelConfigurationBuilder configurationBuilder)` method in your DbContext.
+
+### Why Use Pre-Convention Model Configuration?
+- **Global Consistency:**  
+  Automatically applies configuration rules to every property of a specified type, ensuring uniformity across the model.
+- **Reduced Boilerplate:**  
+  Eliminates the need to repeatedly configure common settings (such as default string lengths or decimal precision) on each entity, thereby adhering to the DRY (Don't Repeat Yourself) principle.
+- **Ease of Maintenance:**  
+  When a change is required (for example, updating the default maximum string length), you modify the convention in one place rather than editing each property individually.
+- **Precedence:**  
+  Conventions set in `ConfigureConventions` are applied before explicit configurations (data annotations or Fluent API settings), allowing you to override or complement them as needed.
+
+## 2. Key Characteristics
+| **Characteristic**             | **Description**                                                                                                          |
+|--------------------------------|--------------------------------------------------------------------------------------------------------------------------|
+| **Global Application**         | Applies configuration rules to all properties of a specified type across the entire model.                                |
+| **Type-Specific Rules**        | Enables you to define conventions for specific data types (e.g., strings, decimals) without configuring each property individually. |
+| **Precedence Over Defaults**   | Conventions are applied before any explicit configurations are made, ensuring consistency while allowing overrides.       |
+| **Reduced Boilerplate**        | Minimizes repetitive code by centralizing common configuration settings.                                                |
+| **Ease of Maintenance**        | Simplifies updates to default settings, as changes are made in one location rather than scattered across multiple entities. |
+
+## 3. How to Implement Pre-Convention Model Configuration
+In EF Core 6 and later, you can override the `ConfigureConventions` method in your DbContext to set global configuration rules.
+### 3.1. Example: Configuring Global Conventions
+The following example demonstrates how to set default conventions for all string and decimal properties in your model.
+```csharp
+public class ApplicationDbContext : DbContext
+{
+    public DbSet<Product> Products { get; set; }
+    
+    // Override ConfigureConventions to set global default rules.
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+    {
+        // For all string properties, set a maximum length of 100.
+        configurationBuilder.Properties<string>().HaveMaxLength(100);
+
+        // For all decimal properties, set precision to 16 and scale to 2.
+        configurationBuilder.Properties<decimal>().HavePrecision(16, 2);
+    }
+}
+
+public class Product
+{
+    public int ProductId { get; set; }
+    public string Name { get; set; }
+    public decimal Price { get; set; }
+}
+```
+
+**Explanation:**  
+- `configurationBuilder.Properties<string>().HaveMaxLength(100);`  
+  This statement ensures that every property of type `string` in the model has a default maximum length of 100 characters, unless overridden by an explicit configuration.
+- `configurationBuilder.Properties<decimal>().HavePrecision(16, 2);`  
+  This line configures all properties of type `decimal` to have a precision of 16 digits in total with 2 decimal places.
+
+### 3.2. Overriding Conventions for Specific Properties
+Even with global conventions in place, you may need to override settings for specific properties. This can be done in the `OnModelCreating` method.
+```csharp
+protected override void OnModelCreating(ModelBuilder modelBuilder)
+{
+    // Global conventions applied via ConfigureConventions
+    // ...
+
+    // Override the global string length for the Name property of Product.
+    modelBuilder.Entity<Product>()
+        .Property(p => p.Name)
+        .HasMaxLength(200); // Overrides the global setting of 100
+
+    base.OnModelCreating(modelBuilder);
+}
+```
+
+**Explanation:**  
+The above configuration sets a specific maximum length of 200 for the `Name` property of the `Product` entity, overriding the global convention that sets it to 100.
+
+## 4. Diagram: Pre-Convention Model Configuration Workflow
+
+```mermaid
+flowchart TD
+    A[Define Entity Classes]
+    B[DbContext Overrides ConfigureConventions]
+    C[Set Global Convention for Strings: MaxLength(100)]
+    D[Set Global Convention for Decimals: Precision(16,2)]
+    E[EF Core Builds Final Model with Global Conventions]
+    F[Explicit Configurations (if any) override global settings]
+    G[Final Database Schema with Consistent Settings]
+    
+    A --> B
+    B --> C
+    B --> D
+    C & D --> E
+    E --> F
+    F --> G
+```
+
+**Explanation:**  
+- **A:** Start with your domain model classes.
+- **B:** In the DbContext, override `ConfigureConventions` to apply global rules.
+- **C & D:** Global rules are defined for specific types.
+- **E:** EF Core builds the final model with these conventions.
+- **F:** Any explicit configuration (e.g., via Fluent API) can override the global defaults.
+- **G:** The final database schema is created with consistent configurations across entities.
+
+## 5. Comparison: Configuration Approaches
+| **Approach**                 | **Description**                                                       | **Example**                                              |
+|------------------------------|-----------------------------------------------------------------------|----------------------------------------------------------|
+| **Pre-Convention Configuration** | Global, type-specific rules set in ConfigureConventions, applied before model finalization. | `configurationBuilder.Properties<string>().HaveMaxLength(100)` |
+| **Data Annotations**         | Attributes placed directly on model properties to specify configuration. | `[MaxLength(100)]` on a string property                   |
+| **Fluent API**               | Per-entity or per-property configuration defined in OnModelCreating.   | `.Property(p => p.Name).HasMaxLength(200)`                |
+
+**Benefits of Pre-Convention Configuration:**
+- **Centralized Configuration:** Reduces repetitive code and ensures consistency.
+- **Ease of Maintenance:** Changing a default value in one place updates all applicable properties.
+- **DRY Principle:** Avoids redundancy by not requiring the same configuration on each property.
+
+## 6. Conclusion
+Pre-Convention Model Configuration in EF Core provides a powerful way to enforce global rules across your entire data model. By overriding the `ConfigureConventions` method in your DbContext, you can specify default configurations for common property types—such as setting a default maximum string length or decimal precision—thus ensuring consistency, reducing boilerplate code, and simplifying maintenance.
+
+## 7. Resources and References
+- [Microsoft Docs: EF Core Model Configuration](https://learn.microsoft.com/en-us/ef/core/modeling/)
+- [Microsoft Docs: DbContext.ConfigureConventions(ModelConfigurationBuilder) Method](https://learn.microsoft.com/en-us/dotnet/api/microsoft.entityframeworkcore.dbcontext.configureconventions?view=efcore-9.0)
+
+---
