@@ -9803,3 +9803,133 @@ Implementing global query filters enhances code maintainability, improves securi
 - [Microsoft Docs: EF Core Querying](https://learn.microsoft.com/en-us/ef/core/querying/)
 
 ---
+# Temporal Table Support in .NET Development
+Temporal tables are a powerful feature in modern relational databases—such as SQL Server 2016 and later—that automatically keep track of data changes over time. In .NET development, particularly with Entity Framework Core (EF Core 6 and later), temporal table support enables you to perform point-in-time analysis, audit data modifications, and query historical data without having to manually manage history tables.
+
+## 1. What Are Temporal Tables?
+### Definition
+- **temporal table** is a system-versioned table that maintains a full history of data changes. It consists of:
+- **current table** that stores the latest data.
+- **history table** that stores all previous versions of each row, along with the period during which each version was valid.
+
+### Key Characteristics
+- **Automatic History Management:**  
+  The database engine automatically moves outdated row versions from the current table to the history table.
+- **System-Versioning:**  
+  Each row includes period columns (typically named `ValidFrom` and `ValidTo`) that indicate the time span during which the row was valid.
+- **Point-in-Time Queries:**  
+  You can query the data as it existed at any specific moment, which is ideal for auditing and historical analysis.
+- **Minimal Maintenance:**  
+  Once configured, the system handles history tracking with little to no additional administrative effort.
+
+## 2. Configuring Temporal Tables in EF Core
+EF Core 6 and later include native support for temporal tables, making it easy to enable system-versioning directly in your model configuration.
+### 2.1. Basic Setup
+Suppose you have a `Product` entity and you want to enable temporal table support.
+#### Entity Definition
+```csharp
+public class Product
+{
+    public int ProductId { get; set; }
+    public string Name { get; set; }
+    public decimal Price { get; set; }
+}
+```
+
+#### DbContext Configuration Using Fluent API
+```csharp
+public class ApplicationDbContext : DbContext
+{
+    public DbSet<Product> Products { get; set; }
+    
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        // Configure the Product entity as a temporal table
+        modelBuilder.Entity<Product>()
+            .ToTable("Products", b => b.IsTemporal(
+                t =>
+                {
+                    t.HasPeriodStart("ValidFrom");
+                    t.HasPeriodEnd("ValidTo");
+                    t.UseHistoryTable("ProductsHistory");
+                }));
+                
+        base.OnModelCreating(modelBuilder);
+    }
+}
+```
+
+**Explanation:**  
+- The `ToTable` method is used with a lambda expression that calls `IsTemporal()`.
+- `HasPeriodStart("ValidFrom")` and `HasPeriodEnd("ValidTo")` define the period columns that track the validity of each row.
+- `UseHistoryTable("ProductsHistory")` specifies the name of the history table.
+
+## 3. Querying Historical Data
+EF Core provides methods to query temporal data using built-in temporal query operators.
+### 3.1. Point-in-Time Query
+Retrieve data as it existed at a specific moment.
+```csharp
+var asOfDate = new DateTime(2023, 01, 01);
+var historicalProducts = await context.Products
+    .TemporalAsOf(asOfDate)
+    .ToListAsync();
+```
+
+**Explanation:**  
+- `TemporalAsOf(asOfDate)` returns the state of the `Products` table as of the specified date.
+
+### 3.2. Full History Query
+Retrieve all versions of data for an entity.
+```csharp
+var productHistory = await context.Products
+    .TemporalAll()
+    .Where(p => p.ProductId == 1)
+    .ToListAsync();
+```
+
+**Explanation:**  
+- `TemporalAll()` returns both current and historical rows for the entity. You can further filter to get the history for a specific product.
+
+### 3.3. Bypassing Temporal Filters
+If necessary, you can ignore the temporal query filters (if they exist as part of your model configuration).
+```csharp
+var allProducts = await context.Products
+    .IgnoreQueryFilters()
+    .ToListAsync();
+```
+
+**Explanation:**  
+- `.IgnoreQueryFilters()` overrides any global query filters, including temporal ones, to return all records.
+
+## 4. Diagram: Temporal Table Architecture
+
+```mermaid
+flowchart TD
+    A[Current Table: Products]
+    B[History Table: ProductsHistory]
+    C[ValidFrom Column]
+    D[ValidTo Column]
+
+    A -- "Holds current data" --> C
+    A -- "Holds current data" --> D
+    B -- "Stores historical versions" --> C
+    B -- "Stores historical versions" --> D
+```
+
+**Explanation:**  
+- **Current Table:** Stores the latest version of each row along with period columns.
+- **History Table:** Automatically maintains previous versions of each row with the same period columns.
+
+## 5. Comparison: Temporal Tables vs. Traditional Tables
+| **Aspect**               | **Temporal Tables**                                       | **Traditional Tables**                                   |
+|--------------------------|-----------------------------------------------------------|----------------------------------------------------------|
+| **History Tracking**     | Automatically tracks all changes with history table.      | Requires manual implementation for history tracking.    |
+| **Point-in-Time Queries**| Supports querying data as of a specific time.              | Not natively supported; requires custom logic.          |
+| **Maintenance**          | Minimal; system handles data versioning automatically.    | High; history management must be manually maintained.   |
+| **Audit and Compliance** | Provides a built-in audit trail for data changes.         | No built-in audit trail available.                      |
+
+## 7. Conclusion
+Temporal table support in EF Core allows .NET developers to seamlessly track historical changes in data without complex custom implementations. By enabling system-versioned tables, you can perform point-in-time queries, audit data modifications, and improve overall data integrity. Configured via the Fluent API in the `OnModelCreating` method, temporal tables reduce maintenance overhead and enhance reporting and compliance capabilities. Whether you need to track soft deletes, implement auditing, or analyze historical data, EF Core’s temporal table support offers a robust and integrated solution.
+
+## 8. Resources and References
+- [Microsoft Docs: Temporal Tables in SQL Server](https://docs.microsoft.com/en-us/sql/relational-databases/tables/temporal-tables?view=sql-server-ver15)
