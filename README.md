@@ -10553,3 +10553,167 @@ Pre-Convention Model Configuration in EF Core provides a powerful way to enforce
 - [Microsoft Docs: DbContext.ConfigureConventions(ModelConfigurationBuilder) Method](https://learn.microsoft.com/en-us/dotnet/api/microsoft.entityframeworkcore.dbcontext.configureconventions?view=efcore-9.0)
 
 ---
+# Support for Database Transactions in .NET Development
+Database transactions are essential for ensuring data integrity, consistency, and reliability in any application that interacts with a relational database. In .NET development—especially when using Entity Framework Core (EF Core)—transactions allow you to group multiple operations into a single unit of work. This chapter covers what database transactions are, their key characteristics (including the ACID properties), and best practices for using transactions effectively in EF Core.
+## 1. Overview
+### What is a Database Transaction?
+A **database transaction** is a sequence of operations executed as a single logical unit of work. Transactions ensure that either all operations are successfully committed or none are, thereby preserving data integrity. They adhere to the following ACID properties:
+- **Atomicity:** All operations within a transaction succeed or none do.
+- **Consistency:** The database transitions from one valid state to another.
+- **Isolation:** Concurrent transactions do not interfere with each other.
+- **Durability:** Once committed, the changes are permanent even in the event of a failure.
+
+### Why Use Transactions?
+Transactions are used to:
+- **Ensure Data Integrity:** Prevent partial updates that could corrupt the database.
+- **Improve Error Handling:** Automatically roll back changes if an error occurs.
+- **Control Concurrency:** Manage how multiple operations interact with the data.
+- **Enforce Business Rules:** Guarantee that related operations are applied together.
+
+## 2. Characteristics of Database Transaction Support in EF Core
+| **Characteristic**              | **Description**                                                                                         |
+|---------------------------------|---------------------------------------------------------------------------------------------------------|
+| **Atomic Operations**           | Groups multiple operations so they either all succeed or all fail together.                            |
+| **Change Tracking Integration** | EF Core automatically tracks entity changes and applies them as part of the transaction.               |
+| **Isolation Levels**            | Supports configuring isolation levels to control the interaction between concurrent transactions.      |
+| **Asynchronous Support**        | Transactions can be managed asynchronously using methods such as `BeginTransactionAsync()`.              |
+| **Retry and Resiliency**        | Can be combined with execution strategies to automatically retry operations on transient failures.      |
+
+## 3. Using Transactions in EF Core
+EF Core supports both implicit and explicit transaction management.
+### 3.1. Implicit Transactions
+By default, EF Core wraps each call to `SaveChanges()` or `SaveChangesAsync()` in a transaction. This is sufficient for many simple operations.
+#### Example: Implicit Transaction
+```csharp
+using var context = new ApplicationDbContext();
+
+var product = new Product { Name = "Laptop", Price = 1200m };
+context.Products.Add(product);
+context.SaveChanges(); // Automatically wrapped in a transaction
+```
+
+**Explanation:**  
+When `SaveChanges()` is called, EF Core automatically creates a transaction. If any operation fails, the transaction is rolled back, ensuring that partial changes are not persisted.
+
+### 3.2. Explicit Transaction Management
+For scenarios requiring multiple operations to be grouped into a single unit of work, you can manage transactions explicitly.
+#### Synchronous Example
+```csharp
+using (var context = new ApplicationDbContext())
+{
+    using (var transaction = context.Database.BeginTransaction())
+    {
+        try
+        {
+            context.Products.Add(new Product { Name = "Explicit Product", Price = 75 });
+            context.Customers.Add(new Customer { Name = "John Doe" });
+            
+            context.SaveChanges();
+            transaction.Commit();
+        }
+        catch (Exception ex)
+        {
+            transaction.Rollback();
+            Console.WriteLine($"Transaction failed: {ex.Message}");
+        }
+    }
+}
+```
+
+#### Asynchronous Example
+```csharp
+using (var context = new ApplicationDbContext())
+{
+    using (var transaction = await context.Database.BeginTransactionAsync())
+    {
+        try
+        {
+            context.Products.Add(new Product { Name = "Async Product", Price = 100 });
+            context.Customers.Add(new Customer { Name = "Jane Doe" });
+            
+            await context.SaveChangesAsync();
+            await transaction.CommitAsync();
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync();
+            Console.WriteLine($"Transaction failed: {ex.Message}");
+        }
+    }
+}
+```
+
+**Explanation:**  
+In explicit transactions, you manually begin a transaction, execute multiple operations (possibly across several calls to `SaveChanges()`), and then commit or roll back the transaction based on the success or failure of the operations.
+
+### 3.3. Combining Transactions with Execution Strategies
+To handle transient errors in high-load or cloud-based environments, you can combine explicit transactions with EF Core's execution strategies.
+```csharp
+var strategy = context.Database.CreateExecutionStrategy();
+
+await strategy.ExecuteAsync(async () =>
+{
+    using (var transaction = await context.Database.BeginTransactionAsync())
+    {
+        try
+        {
+            context.Products.Add(new Product { Name = "Resilient Product", Price = 150 });
+            await context.SaveChangesAsync();
+            await transaction.CommitAsync();
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
+    }
+});
+```
+
+**Explanation:**  
+This example demonstrates how to use an execution strategy that automatically retries the entire transaction if a transient error occurs. This approach enhances the resilience of your database operations.
+
+## 4. Diagram: Transaction Workflow in EF Core
+
+```mermaid
+flowchart TD
+    A[Begin Transaction]
+    B[Perform Multiple Operations]
+    C[Call SaveChanges()/SaveChangesAsync()]
+    D{Operations Succeed?}
+    E[Commit Transaction]
+    F[Rollback Transaction]
+    
+    A --> B
+    B --> C
+    C --> D
+    D -- Yes --> E
+    D -- No --> F
+```
+
+**Explanation:**  
+- **A:** A transaction is explicitly started.
+- **B:** Multiple database operations (inserts, updates, deletes) are performed.
+- **C:** Changes are saved to the database.
+- **D:** The outcome is checked; if successful, the transaction is committed (E); if not, the transaction is rolled back (F).
+
+## 5. Comparison: Implicit vs. Explicit Transactions
+| **Aspect**             | **Implicit Transactions**                            | **Explicit Transactions**                                |
+|------------------------|------------------------------------------------------|----------------------------------------------------------|
+| **Usage**              | Automatically wraps each `SaveChanges()` call        | Manually defined, allowing grouping of multiple operations |
+| **Granularity**        | Single operation per call                            | Suitable for multi-step workflows spanning multiple SaveChanges calls |
+| **Control**            | Less control; managed by EF Core                     | Full control over when to commit or roll back            |
+| **Simplicity**         | Simpler for basic operations                         | Requires additional code, but ideal for complex scenarios |
+| **Rollback**           | Automatic rollback on failure during SaveChanges()   | Must manually call rollback in a try-catch block          |
+
+## 6. Conclusion
+Database transaction support in .NET, especially when using EF Core, is crucial for ensuring that data operations are executed atomically, maintaining data integrity and consistency. EF Core automatically wraps `SaveChanges()` in a transaction for basic operations, but explicit transaction management gives you finer control for multi-step or complex workflows. Combining explicit transactions with execution strategies further enhances resiliency by handling transient errors. By understanding and applying these techniques, you can build robust and reliable .NET applications that maintain data consistency even under concurrent or error-prone conditions.
+
+## 7. Resources and References
+- [Microsoft Docs: Transactions in EF Core](https://docs.microsoft.com/en-us/ef/core/saving/transactions)
+- [Microsoft Docs: DatabaseFacade.BeginTransactionAsync Method](https://learn.microsoft.com/en-us/dotnet/api/microsoft.entityframeworkcore.infrastructure.databasefacade.begintransactionasync?view=efcore-9.0)
+- [EF Core Execution Strategies](https://docs.microsoft.com/en-us/ef/core/miscellaneous/connection-resiliency)
+- [System.Transactions Namespace](https://docs.microsoft.com/en-us/dotnet/api/system.transactions)
+
+---
+
