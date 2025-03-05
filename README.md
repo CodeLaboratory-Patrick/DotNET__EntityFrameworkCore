@@ -10083,3 +10083,181 @@ Handling data concurrency effectively is crucial in multi-user and high-load app
 - [Microsoft Docs: Concurrency in EF Core](https://learn.microsoft.com/en-us/ef/core/saving/concurrency)
 - [Microsoft Docs: Handling Concurrency Conflicts](https://learn.microsoft.com/en-us/ef/core/saving/concurrency#resolving-concurrency-conflicts)
 - [RowVersion Documentation](https://learn.microsoft.com/en-us/sql/t-sql/data-types/rowversion-transact-sql)
+
+---
+# Temporal Query Methods in EF Core
+Modern relational databases such as SQL Server 2016 and later support temporal tables—system-versioned tables that automatically keep track of data changes over time. With EF Core 6 and later, you can leverage temporal table support not only to enable auditing and data recovery but also to perform powerful “time travel” queries using specialized temporal query methods. These methods allow you to query the state of your data as it existed at a specific point in time or over a period.
+
+## 1. Overview of Temporal Query Methods
+When temporal tables are enabled in your database, EF Core provides a set of temporal query methods that extend the typical LINQ querying experience. The primary temporal query methods include:
+- **TemporalAsOf(DateTime pointInTime):**  
+  Retrieves data as it existed at a specific point in time.
+- **TemporalAll():**  
+  Returns all records, both current and historical.
+- **TemporalBetween(DateTime start, DateTime end):**  
+  Retrieves records that were active at any time during the specified period.
+- **TemporalFromTo(DateTime start, DateTime end):**  
+  Retrieves records that were valid at any point during the interval, using specific boundary semantics.
+- **TemporalContainedIn(DateTime start, DateTime end):**  
+  Returns records whose entire validity period is contained within the specified time range.
+
+## 2. Characteristics of Temporal Query Methods
+| **Method**              | **Definition**                                                | **Use Case**                                              |
+|-------------------------|---------------------------------------------------------------|-----------------------------------------------------------|
+| **TemporalAsOf**        | Returns the state of the data as it existed at a specific time. | Point-in-time analysis (e.g., snapshot as of Jan 1, 2023).  |
+| **TemporalAll**         | Retrieves all current and historical records.                | Audit trails or full historical analysis.                 |
+| **TemporalBetween**     | Retrieves records that were active at any time between two dates. | Identifying records that were active during a period.      |
+| **TemporalFromTo**      | Retrieves records valid at any point within a specified interval. | Period-based queries with specific boundary rules.         |
+| **TemporalContainedIn** | Retrieves records whose validity period is entirely within a specified interval. | Ensuring continuous validity across a time range.          |
+
+## 3. Configuring Temporal Tables in EF Core
+Before you can use temporal query methods, your tables must be configured as temporal tables. EF Core 6 and later support temporal tables natively, and configuration is done via the Fluent API in the `OnModelCreating` method of your `DbContext`.
+### 3.1. Example: Configuring a Temporal Table
+Consider a simple `Product` entity:
+```csharp
+public class Product
+{
+    public int ProductId { get; set; }
+    public string Name { get; set; }
+    public decimal Price { get; set; }
+}
+```
+
+Configure the `Product` entity as a temporal table:
+```csharp
+public class ApplicationDbContext : DbContext
+{
+    public DbSet<Product> Products { get; set; }
+    
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<Product>()
+            .ToTable("Products", t => t.IsTemporal(
+                temporalOptions =>
+                {
+                    temporalOptions.HasPeriodStart("ValidFrom");
+                    temporalOptions.HasPeriodEnd("ValidTo");
+                    temporalOptions.UseHistoryTable("ProductsHistory");
+                }));
+                
+        base.OnModelCreating(modelBuilder);
+    }
+}
+```
+
+**Explanation:**  
+- The call to `.ToTable("Products", t => t.IsTemporal(...))` marks the table as system-versioned.
+- `HasPeriodStart("ValidFrom")` and `HasPeriodEnd("ValidTo")` define the period columns that track row validity.
+- `UseHistoryTable("ProductsHistory")` specifies the history table that stores past versions of the data.
+
+### 3.2. Applying Migrations
+After configuring your temporal table, run the following commands to add a migration and update the database schema:
+
+```bash
+dotnet ef migrations add AddTemporalSupportToProduct
+dotnet ef database update
+```
+
+EF Core will generate the necessary SQL to create the current table with period columns and the associated history table.
+
+## 4. Querying Temporal Data
+Once your table is configured as temporal, EF Core provides several query methods to retrieve historical data.
+### 4.1. TemporalAsOf
+Retrieve the state of data as it existed at a specific point in time.
+```csharp
+DateTime asOfDate = new DateTime(2023, 01, 01);
+var productsAsOf = await context.Products
+    .TemporalAsOf(asOfDate)
+    .ToListAsync();
+```
+
+**Explanation:**  
+`TemporalAsOf(asOfDate)` filters the data to show the state of the `Products` table at the specified date.
+
+### 4.2. TemporalAll
+Retrieve both current and historical records.
+```csharp
+var allProductsHistory = await context.Products
+    .TemporalAll()
+    .ToListAsync();
+```
+
+**Explanation:**  
+`TemporalAll()` returns every version of each product, including current and past states.
+
+### 4.3. TemporalBetween
+Retrieve records that were valid at any time within a specified period.
+```csharp
+var productsBetween = await context.Products
+    .TemporalBetween(new DateTime(2023, 01, 01), new DateTime(2023, 06, 01))
+    .ToListAsync();
+```
+
+**Explanation:**  
+`TemporalBetween(start, end)` returns records that were active during any portion of the given period.
+
+### 4.4. TemporalFromTo
+Retrieve records valid at any point during the specified interval.
+```csharp
+var productsFromTo = await context.Products
+    .TemporalFromTo(new DateTime(2023, 01, 01), new DateTime(2023, 06, 01))
+    .ToListAsync();
+```
+
+**Explanation:**  
+This method functions similarly to `TemporalBetween` but may interpret the boundaries differently depending on the database semantics.
+
+### 4.5. TemporalContainedIn
+Retrieve records whose entire validity period is contained within a specific interval.
+```csharp
+var productsContained = await context.Products
+    .TemporalContainedIn(new DateTime(2023, 01, 01), new DateTime(2023, 06, 01))
+    .ToListAsync();
+```
+
+**Explanation:**  
+`TemporalContainedIn(start, end)` returns only those records that were continuously valid throughout the specified time range.
+
+## 5. Diagram: Temporal Query Workflow
+
+```mermaid
+flowchart TD
+    A[Temporal Table Configured in SQL Server]
+    B[EF Core DbSet<Product> with Temporal Support]
+    
+    subgraph Temporal Query Methods
+        C[TemporalAsOf(pointInTime)]
+        D[TemporalAll()]
+        E[TemporalBetween(start, end)]
+        F[TemporalFromTo(start, end)]
+        G[TemporalContainedIn(start, end)]
+    end
+    
+    B --> C
+    B --> D
+    B --> E
+    B --> F
+    B --> G
+```
+
+**Explanation:**  
+- The EF Core DbSet for `Product` is enhanced with temporal support.
+- Depending on the query method invoked, EF Core applies the corresponding temporal filter to retrieve the desired version(s) of the data.
+
+## 6. Comparison: Temporal Query Methods
+| **Method**                | **Definition**                                                      | **Use Case**                                              |
+|---------------------------|----------------------------------------------------------------------|-----------------------------------------------------------|
+| **TemporalAsOf**          | Returns the state of data at a specific point in time.               | Point-in-time analysis, e.g., snapshot as of a given date. |
+| **TemporalAll**           | Retrieves all versions (current and historical) of the data.         | Full audit trail and complete history analysis.         |
+| **TemporalBetween**       | Retrieves records active at any moment between two dates.            | Analyzing data that was active during a period.           |
+| **TemporalFromTo**        | Similar to TemporalBetween; uses specific boundaries for the interval.| Period-based queries with defined start and end times.     |
+| **TemporalContainedIn**   | Retrieves records whose entire validity period is within a given interval.| Continuous validity queries, ensuring full containment.   |
+
+## 7. Conclusion
+Temporal query methods in EF Core empower you to perform sophisticated historical data analysis without manual intervention. By configuring your tables as temporal tables and using methods like `TemporalAsOf`, `TemporalAll`, `TemporalBetween`, `TemporalFromTo`, and `TemporalContainedIn`, you can easily retrieve snapshots of your data, audit changes over time, and support point-in-time recovery.
+
+## 8. Resources and References
+- [Microsoft Docs: Temporal Tables in SQL Server](https://docs.microsoft.com/en-us/sql/relational-databases/tables/temporal-tables?view=sql-server-ver15)
+- [Microsoft Docs: EF Core Temporal Tables](https://learn.microsoft.com/en-us/sql/relational-databases/tables/temporal-tables?view=sql-server-ver16)
+
+---
