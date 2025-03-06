@@ -11093,3 +11093,148 @@ In .NET development, managing concurrency is critical when multiple threads or t
 - [Microsoft Docs - Threading in .NET](https://learn.microsoft.com/en-us/dotnet/standard/threading/)
 
 ---
+# Global Query Filters in .NET Development
+Global query filters (also known as query filters) in Entity Framework Core (EF Core) let you define a condition that is automatically applied to all queries for a given entity type. This feature is invaluable for enforcing business rules consistently—for example, implementing soft deletes, multi-tenancy, or access restrictions—without having to repeat filtering logic in every query.
+## 1. Overview
+### What Are Global Query Filters?
+Global query filters are LINQ predicates that are defined at the model level (typically within the `OnModelCreating` method of your DbContext). Once configured, EF Core automatically appends the filter condition to every query that retrieves the entity. This means that you can enforce rules like "only retrieve active records" without modifying each query manually.
+#### Key Use Cases:
+- **Soft Deletion:** Automatically exclude rows marked as deleted.
+- **Multi-Tenancy:** Restrict data to the current tenant using a tenant identifier.
+- **Security/Access Control:** Ensure users only see data they are allowed to view.
+- **Archiving:** Hide records that have been archived.
+
+## 2. Characteristics
+The following table summarizes the key characteristics of global query filters:
+| **Characteristic**          | **Description**                                                                                                  |
+|-----------------------------|------------------------------------------------------------------------------------------------------------------|
+| **Global Application**      | The filter is applied automatically to all queries for the specified entity type.                               |
+| **Declarative Configuration**| Defined centrally in the `OnModelCreating` method using the Fluent API, keeping filtering logic in one place.     |
+| **Automatic Inclusion**     | No need to add manual `WHERE` clauses to every query—the filter is merged automatically by EF Core.              |
+| **Dynamic Filtering**       | Filters can reference instance properties (e.g., current tenant ID) to apply context-sensitive conditions.         |
+| **Override Capability**     | Filters can be bypassed for individual queries using methods like `.IgnoreQueryFilters()`.                         |
+
+## 3. Configuring Global Query Filters in EF Core
+Global query filters are set up in the `OnModelCreating` method of your DbContext. Below are detailed examples for common scenarios.
+### 3.1. Example: Soft Delete Filter
+Suppose you have a `Product` entity with a Boolean property `IsDeleted` indicating whether a record is soft deleted. You can configure a global filter to exclude these records by default.
+#### Entity Definition
+```csharp
+public class Product
+{
+    public int ProductId { get; set; }
+    public string Name { get; set; }
+    public decimal Price { get; set; }
+    public bool IsDeleted { get; set; } // Soft-delete flag
+}
+```
+
+#### DbContext Configuration
+```csharp
+public class ApplicationDbContext : DbContext
+{
+    public DbSet<Product> Products { get; set; }
+    
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        // Apply a global query filter to exclude soft-deleted products.
+        modelBuilder.Entity<Product>().HasQueryFilter(p => !p.IsDeleted);
+        
+        base.OnModelCreating(modelBuilder);
+    }
+}
+```
+
+**Explanation:**  
+Every query on the `Products` DbSet will automatically include the condition `WHERE IsDeleted = false`, ensuring that soft-deleted products are excluded from results.
+
+### 3.2. Example: Multi-Tenancy Filter
+In a multi-tenant application, you want to restrict data to the current tenant. This is typically achieved by including a `TenantId` property in your entity and configuring a global filter.
+#### Entity Definition
+```csharp
+public class Product
+{
+    public int ProductId { get; set; }
+    public string Name { get; set; }
+    public decimal Price { get; set; }
+    public int TenantId { get; set; } // Tenant identifier
+}
+```
+
+#### DbContext Configuration
+```csharp
+public class ApplicationDbContext : DbContext
+{
+    // This property is set per request (e.g., via dependency injection).
+    public int CurrentTenantId { get; set; }
+    
+    public DbSet<Product> Products { get; set; }
+    
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        // Apply a global filter for multi-tenancy: Only include products belonging to the current tenant.
+        modelBuilder.Entity<Product>().HasQueryFilter(p => p.TenantId == CurrentTenantId);
+        
+        base.OnModelCreating(modelBuilder);
+    }
+}
+```
+
+**Explanation:**  
+Before running any queries, ensure that the `CurrentTenantId` property is set appropriately. The filter then automatically restricts all queries to only return products matching the current tenant.
+
+### 3.3. Overriding Global Query Filters
+Sometimes, you might want to bypass the global query filter (for instance, for administrative tasks). Use the `.IgnoreQueryFilters()` method to override the filter on a specific query.
+#### Example: Ignoring Global Filters
+```csharp
+var allProducts = await context.Products
+    .IgnoreQueryFilters()
+    .ToListAsync();
+```
+
+**Explanation:**  
+The `IgnoreQueryFilters()` method removes the global filter for that query, returning all products regardless of their `IsDeleted` status or `TenantId`.
+
+## 4. Diagram: Global Query Filter Workflow
+
+```mermaid
+flowchart TD
+    A[Define Entity: Product]
+    B[Configure Global Filter in OnModelCreating]
+    C[EF Core Automatically Applies Filter to All Queries]
+    D[Query: context.Products.ToListAsync()]
+    E[Results: Only Non-Filtered Products Returned]
+    F[Override: .IgnoreQueryFilters() for Full Data]
+    
+    A --> B
+    B --> C
+    C --> D
+    D --> E
+    D -- If overridden --> F
+```
+
+**Explanation:**  
+- **A:** You have an entity such as `Product`.
+- **B:** In your DbContext's `OnModelCreating`, you configure a global query filter.
+- **C:** EF Core automatically appends the filter to every query on the entity.
+- **D:** When you run a query, only the filtered data is returned.
+- **F:** Using `.IgnoreQueryFilters()` overrides the filter to retrieve all records.
+
+## 5. Comparison: Global Query Filters vs. Per-Query Filtering
+The following table compares the use of global query filters with applying filtering conditions manually in each query.
+| **Aspect**                   | **Global Query Filter**                                  | **Per-Query Filter (LINQ .Where)**                         |
+|------------------------------|---------------------------------------------------------|------------------------------------------------------------|
+| **Scope**                    | Automatically applied to all queries for an entity      | Must be explicitly added in each query                     |
+| **Consistency**              | Ensures uniform behavior across the entire application   | Risk of inconsistent application if not used consistently  |
+| **Maintenance**              | Centralized configuration in `OnModelCreating`           | Can lead to repetitive code if applied in many queries      |
+| **Override**                 | Can be bypassed using `.IgnoreQueryFilters()`             | No global filtering mechanism to override                   |
+| **Use Case**                 | Ideal for soft deletes, multi-tenancy, and access control | Suitable for one-off conditions or temporary filtering        |
+
+## 6. Conclusion
+Global query filters in EF Core allow you to enforce consistent business rules across your entire data model by automatically applying filtering logic to every query for a given entity type. They are particularly useful for implementing features such as soft deletes, multi-tenancy, and data access restrictions without the need to repeat filtering logic in every query. By configuring these filters centrally in the `OnModelCreating` method and using methods like `.IgnoreQueryFilters()` to override them when necessary, you can create a clean, maintainable, and secure data access layer in your .NET applications.
+
+## 7. Resources and References
+- [Microsoft Docs: Global Query Filters](https://docs.microsoft.com/en-us/ef/core/querying/filters)
+- [Microsoft Docs: Multi-Tenancy in EF Core](https://learn.microsoft.com/en-us/ef/core/miscellaneous/multitenancy)
+
+---
