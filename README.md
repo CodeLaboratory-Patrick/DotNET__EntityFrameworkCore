@@ -11238,3 +11238,138 @@ Global query filters in EF Core allow you to enforce consistent business rules a
 - [Microsoft Docs: Multi-Tenancy in EF Core](https://learn.microsoft.com/en-us/ef/core/miscellaneous/multitenancy)
 
 ---
+# Database Connection Retry and Timeout Policies in .NET Development
+When developing robust .NET applications that interact with remote or cloud-based databases, transient connection issues and long-running operations can lead to failures. Connection retry and timeout policies help mitigate these issues by automatically retrying failed operations and by setting limits on how long the application waits for a response. This chapter explains what these policies are, their key characteristics, and how to implement them effectively using Entity Framework Core (EF Core) and ADO.NET.
+## 1. Overview
+### What Are Connection Retry and Timeout Policies?
+- **Connection Retry Policies:** 
+  These strategies automatically reattempt a database operation if it fails due to transient errors such as network glitches, timeouts, or temporary service interruptions. The goal is to improve resilience by allowing the system to recover without manual intervention.
+- **Timeout Policies:**  
+  Timeout policies define the maximum amount of time the application will wait for a database command to complete before aborting the operation. This prevents operations from hanging indefinitely and helps manage system resources under heavy load.
+### Why Are They Important?
+- **Resilience:**  
+  They ensure that temporary failures do not result in poor user experiences or data inconsistencies.
+- **Performance:**  
+  Setting timeouts prevents operations from running indefinitely, thus protecting system resources.
+- **Operational Continuity:**  
+  Automatic retries enable the application to recover from transient faults, which is particularly important in distributed or cloud environments.
+
+## 2. Characteristics
+The following table summarizes the key characteristics of connection retry and timeout policies:
+| **Characteristic**              | **Connection Retry Policies**                                           | **Timeout Policies**                                               |
+|---------------------------------|-------------------------------------------------------------------------|--------------------------------------------------------------------|
+| **Purpose**                     | Automatically reattempt operations that fail due to transient errors.  | Limit how long an operation can run before timing out.             |
+| **Implementation**              | Typically implemented via execution strategies or retry logic libraries.| Configured at the command or connection level (e.g., EF Core settings).  |
+| **Configuration Parameters**    | Maximum retry count, delay between retries, and jitter for randomness.  | Command timeout value (seconds or milliseconds).                   |
+| **Behavior on Failure**         | Retries the operation; throws an exception if max retries are exceeded. | Throws a timeout exception if the command does not complete in time.  |
+| **Applicability**               | Useful in high-latency or unreliable network environments.              | Useful for long-running queries or when the database is under heavy load. |
+
+## 3. Implementing Retry and Timeout Policies in EF Core
+### 3.1. Connection Retry Policies
+EF Core supports connection resiliency by using execution strategies. For example, when using SQL Server, you can configure EF Core to automatically retry failed operations due to transient errors.
+#### Configuring a SQL Server Retry Policy
+```csharp
+services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseSqlServer(
+        Configuration.GetConnectionString("DefaultConnection"),
+        sqlServerOptions =>
+        {
+            // Configure the retry policy: maximum 5 retries, with a maximum delay of 10 seconds between retries.
+            sqlServerOptions.EnableRetryOnFailure(
+                maxRetryCount: 5,
+                maxRetryDelay: TimeSpan.FromSeconds(10),
+                errorNumbersToAdd: null);
+        }));
+```
+
+**Explanation:**  
+This configuration instructs EF Core to automatically retry any database operation that fails due to transient errors, up to 5 times with delays up to 10 seconds between retries.
+
+### 3.2. Timeout Policies
+Timeout policies define how long EF Core should wait for a command to complete before throwing a timeout exception.
+#### Setting a Command Timeout
+```csharp
+using (var context = new ApplicationDbContext())
+{
+    // Set the command timeout to 180 seconds.
+    context.Database.SetCommandTimeout(180);
+
+    // Execute a long-running operation.
+    var products = await context.Products.ToListAsync();
+    Console.WriteLine($"Retrieved {products.Count} products.");
+}
+```
+
+**Explanation:**  
+In this example, the command timeout is set to 180 seconds. If a database command takes longer than 180 seconds to complete, EF Core will throw a timeout exception, preventing the application from hanging indefinitely.
+
+## 4. Advanced Retry with Polly
+For scenarios that require more advanced retry logic (such as exponential backoff or circuit breakers), you can use third-party libraries like Polly.
+#### Example: Using Polly for Retry and Timeout
+```csharp
+using Polly;
+using System.Data.SqlClient;
+
+// Define a retry policy with exponential backoff
+var retryPolicy = Policy
+    .Handle<SqlException>()
+    .Or<TimeoutException>()
+    .WaitAndRetry(3, attempt => TimeSpan.FromSeconds(Math.Pow(2, attempt)));
+
+// Execute the EF Core operation under the retry policy
+retryPolicy.Execute(() =>
+{
+    // Execute a database operation
+    context.SaveChanges();
+});
+```
+
+**Explanation:**  
+This Polly policy will retry the operation up to 3 times, waiting an exponentially increasing delay between attempts. It catches both SQL exceptions and timeout exceptions.
+
+## 5. Diagram: Retry and Timeout Policy Workflow
+
+```mermaid
+flowchart TD
+    A[Start Database Operation]
+    B[Attempt Command Execution]
+    C{Operation Succeeds?}
+    D[Return Result]
+    E[Transient Failure Detected]
+    F[Retry Operation (with Delay)]
+    G{Max Retries Exceeded?}
+    H[Throw Exception (Retry Failure)]
+    I[Operation Exceeds Timeout]
+    J[Throw Timeout Exception]
+
+    A --> B
+    B -- Success --> D
+    B -- Failure (Transient) --> E
+    E --> F
+    F --> C
+    C -- Failure and max retries reached --> G
+    G --> H
+    B -- Failure (Timeout) --> I
+    I --> J
+```
+
+**Explanation:**  
+- The operation starts (A) and the database command is attempted (B).
+- If the operation succeeds, the result is returned (D).
+- If a transient failure occurs, the operation is retried with a delay (E → F). If maximum retries are reached, an exception is thrown (G → H).
+- If the command exceeds the timeout period, a timeout exception is thrown (I → J).
+
+## 6. Comparison Table: Key Retry and Timeout Settings
+| **Setting**            | **Description**                                             | **Example Value**                |
+|------------------------|-------------------------------------------------------------|----------------------------------|
+| **maxRetryCount**      | Maximum number of retry attempts                            | 5                                |
+| **maxRetryDelay**      | Maximum delay between retries                               | TimeSpan.FromSeconds(10)         |
+| **CommandTimeout**     | Maximum time to wait for a command to execute               | 180 seconds                      |
+| **ConnectionTimeout**  | Maximum time to wait for establishing a DB connection       | "Connection Timeout=30" in connection string |
+
+## 7. Resources and References
+- [Microsoft Docs: EF Core Connection Resiliency](https://docs.microsoft.com/en-us/ef/core/miscellaneous/connection-resiliency)
+- [Microsoft Docs: DatabaseFacade.SetCommandTimeout Method](https://learn.microsoft.com/en-us/dotnet/api/microsoft.entityframeworkcore.relationaldatabasefacadeextensions.setcommandtimeout?view=efcore-9.0)
+- [Microsoft Docs: EnableRetryOnFailure Method](https://learn.microsoft.com/en-us/dotnet/api/microsoft.entityframeworkcore.infrastructure.sqlserverdbcontextoptionsbuilder.enableretryonfailure?view=efcore-9.0)
+
+---
