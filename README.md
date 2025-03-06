@@ -11373,3 +11373,136 @@ flowchart TD
 - [Microsoft Docs: EnableRetryOnFailure Method](https://learn.microsoft.com/en-us/dotnet/api/microsoft.entityframeworkcore.infrastructure.sqlserverdbcontextoptionsbuilder.enableretryonfailure?view=efcore-9.0)
 
 ---
+# SQLite Options in EF Core: CommandTimeout, UseQuerySplittingBehavior, and More
+When using Entity Framework Core (EF Core) with SQLite as the database provider, you have the ability to fine-tune database interactions through provider-specific settings. These settings—referred to as SQLite options—allow you to control aspects such as command execution timeouts and query behavior. In this chapter, we cover key SQLite options including `CommandTimeout` and `UseQuerySplittingBehavior`, explain their characteristics, and provide detailed examples of how to use them in your .NET applications.
+
+## 1. Overview
+SQLite options in EF Core enable you to control how the framework interacts with the SQLite database. They are configured via the options builder when setting up the DbContext connection. Two of the most commonly used options are:
+- **CommandTimeout:**  
+  Specifies the maximum duration (in seconds) that EF Core will wait for a database command to complete before throwing a timeout exception. This is useful for preventing long-running queries from hanging indefinitely.
+- **UseQuerySplittingBehavior:**  
+  Determines whether EF Core should split queries that include multiple collection navigations into multiple SQL queries or combine them into a single query with joins. Splitting queries can help reduce data duplication (cartesian explosion) that might occur in single large queries with multiple joins.
+
+## 2. Key SQLite Options and Their Characteristics
+The following table summarizes some key SQLite options available in EF Core:
+| **Option**                           | **Description**                                                        | **Usage**                                                     |
+|--------------------------------------|------------------------------------------------------------------------|---------------------------------------------------------------|
+| **CommandTimeout**                   | Sets the maximum time (in seconds) EF Core waits for a command to execute before timing out. | Useful for long-running queries or operations with heavy load. |
+| **UseQuerySplittingBehavior**        | Configures whether EF Core uses a single query or splits queries for related collections. | Helps to reduce row duplication in multi-include queries.      |
+### Characteristics
+- **CommandTimeout:**  
+  - **Time Limit:** Controls how long a command can run.  
+  - **Performance Tuning:** Prevents long operations from hanging the system.  
+  - **Default Behavior:** If not set, the default timeout of the SQLite provider is used.
+- **UseQuerySplittingBehavior:**  
+  - **SingleQuery vs. SplitQuery:**  
+    - **SingleQuery (Default):** EF Core combines related data using joins, which can lead to data duplication.  
+    - **SplitQuery:** EF Core splits the query into multiple SQL queries to load related collections separately, reducing duplication but increasing round trips to the database.
+  - **Performance Trade-offs:**  
+    - SingleQuery is typically faster in simple scenarios but may result in large result sets.  
+    - SplitQuery prevents the “Cartesian explosion” in complex queries.
+
+## 3. Implementing SQLite Options in EF Core
+### 3.1. Configuring CommandTimeout
+To set the command timeout, you configure it when setting up your DbContext in the DI container.
+#### Example: Setting a Command Timeout
+```csharp
+services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseSqlite(
+        Configuration.GetConnectionString("DefaultConnection"),
+        sqliteOptions =>
+        {
+            // Set the command timeout to 180 seconds.
+            sqliteOptions.CommandTimeout(180);
+        }));
+```
+
+**Explanation:**  
+This configuration tells EF Core to wait up to 180 seconds for any database command to complete before timing out. This setting is particularly useful when executing complex or long-running queries.
+
+### 3.2. Configuring UseQuerySplittingBehavior
+You can configure the query splitting behavior using the `UseQuerySplittingBehavior` method. This determines whether EF Core executes a single joined query or splits the query into multiple parts when eager loading related collections.
+#### Example: Using SplitQuery Mode
+```csharp
+services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseSqlite(
+        Configuration.GetConnectionString("DefaultConnection"),
+        sqliteOptions =>
+        {
+            // Use split queries for eager loading to reduce row duplication.
+            sqliteOptions.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
+        }));
+```
+
+**Explanation:**  
+Setting `UseQuerySplittingBehavior` to `SplitQuery` instructs EF Core to execute separate SQL queries for each collection navigation included in a query. This is especially helpful when joining multiple collections could lead to a large, redundant result set.
+
+### 3.3. Combining Both Options
+It is common to configure both `CommandTimeout` and `UseQuerySplittingBehavior` in your DbContext configuration to fine-tune performance and behavior.
+#### Combined Example
+```csharp
+services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseSqlite(
+        Configuration.GetConnectionString("DefaultConnection"),
+        sqliteOptions =>
+        {
+            // Set a command timeout of 180 seconds.
+            sqliteOptions.CommandTimeout(180);
+            // Use split queries for complex eager loads.
+            sqliteOptions.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
+        }));
+```
+
+**Explanation:**  
+This combined configuration ensures that your database commands will not hang indefinitely (by enforcing a 180-second timeout) and that complex queries with multiple includes are split into separate queries to avoid excessive data duplication.
+
+## 4. Diagram: SQLite Options in EF Core
+
+```mermaid
+flowchart TD
+    A[Configure DbContext with UseSqlite]
+    B[Set CommandTimeout (e.g., 180 seconds)]
+    C[Set UseQuerySplittingBehavior to SplitQuery]
+    D[EF Core Builds SQL Queries Based on Options]
+    E[Query Execution]
+    F[SingleQuery Mode: One large query with joins]
+    G[SplitQuery Mode: Multiple queries for each related collection]
+
+    A --> B
+    A --> C
+    B --> D
+    C --> D
+    D --> E
+    E -- if SingleQuery --> F
+    E -- if SplitQuery --> G
+```
+
+**Explanation:**  
+- **A:** The DbContext is configured with `UseSqlite`.
+- **B & C:** Global options such as `CommandTimeout` and `UseQuerySplittingBehavior` are applied.
+- **D:** EF Core generates SQL queries that reflect these settings.
+- **E:** During query execution, EF Core uses either a single query with joins or multiple split queries based on the configuration.
+
+## 5. Additional Considerations
+- **Provider-Specific Behavior:**  
+  Some options may behave differently or have additional settings based on the database provider. Always refer to the latest EF Core and SQLite provider documentation for up-to-date information.
+- **Performance Tuning:**  
+  Setting an appropriate command timeout is a balancing act; too high may allow long-running queries to consume resources, while too low might cause premature timeouts. Similarly, choose between SingleQuery and SplitQuery based on your specific data and query complexity.
+- **Testing:**  
+  Thoroughly test your application under load to ensure that your retry and timeout settings are optimized for your environment.
+
+## 6. Comparison Table: Key SQLite Options
+| **Option**                           | **Description**                                                        | **Typical Use Case**                                              |
+|--------------------------------------|------------------------------------------------------------------------|-------------------------------------------------------------------|
+| **CommandTimeout**                   | Maximum time (in seconds) EF Core waits for a command to execute.       | Long-running queries, heavy operations, preventing indefinite waits. |
+| **UseQuerySplittingBehavior**        | Determines whether to use a single query or split into multiple queries for related collections. | Avoiding data duplication in complex eager loads; optimizing query performance. |
+
+## 7. Conclusion
+SQLite options in EF Core allow you to tailor database interactions to your application's needs. By configuring options like **CommandTimeout** and **UseQuerySplittingBehavior**, you can ensure that your application handles long-running operations gracefully and efficiently retrieves data, even in complex query scenarios. These settings help improve performance, ensure reliability, and maintain a robust user experience.
+
+## 8. Resources and References
+- [Microsoft Docs: EF Core and SQLite](https://docs.microsoft.com/en-us/ef/core/providers/sqlite/)
+- [Microsoft Docs: CommandTimeout Method](https://learn.microsoft.com/en-us/dotnet/api/system.data.sqlclient.sqlcommand.commandtimeout?view=net-9.0-pp)
+- [Microsoft Docs: UseQuerySplittingBehavior](https://docs.microsoft.com/en-us/ef/core/querying/single-split-queries)
+
+---
