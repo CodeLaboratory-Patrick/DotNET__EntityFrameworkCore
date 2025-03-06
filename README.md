@@ -10716,4 +10716,260 @@ Database transaction support in .NET, especially when using EF Core, is crucial 
 - [System.Transactions Namespace](https://docs.microsoft.com/en-us/dotnet/api/system.transactions)
 
 ---
+# Transaction Options in .NET Development
+Database transactions are fundamental for ensuring that a series of operations either all succeed or all fail. This guarantees data integrity, consistency, and reliability by adhering to the ACID principles (Atomicity, Consistency, Isolation, Durability). In .NET development—whether using Entity Framework Core (EF Core) or ADO.NET—managing transactions is critical, especially in multi-step or high-concurrency scenarios. This chapter covers the transaction options available in .NET, including both implicit and explicit transactions in EF Core, the use of TransactionScope, savepoints, and distributed transactions.
+
+## 1. Overview of Transactions
+### What Is a Database Transaction?
+A **database transaction** is a sequence of operations performed as a single logical unit of work. Transactions guarantee that:
+- **Atomicity:** All operations within the transaction are executed successfully, or none are.
+- **Consistency:** The database transitions from one consistent state to another.
+- **Isolation:** Concurrent transactions do not affect each other’s intermediate states.
+- **Durability:** Once committed, changes persist even in the event of system failure.
+
+### Why Use Transactions?
+Transactions are used to:
+- **Ensure Data Integrity:** Prevent partial updates from corrupting the data.
+- **Improve Error Handling:** Automatically roll back changes if an error occurs.
+- **Manage Concurrency:** Control how multiple simultaneous operations affect the data.
+- **Enforce Business Rules:** Ensure that related changes are applied together.
+
+## 2. Transaction Options in .NET
+.NET provides multiple ways to work with transactions. The primary options include:
+1. **Implicit Transactions:**  
+   EF Core automatically wraps each call to `SaveChanges()` or `SaveChangesAsync()` in a transaction.
+2. **Explicit Transactions:**  
+   You can manually manage transactions using `BeginTransaction()`, `Commit()`, and `Rollback()` methods.
+3. **TransactionScope:**  
+   An ambient transaction mechanism provided by the System.Transactions namespace that can span multiple operations and even multiple resource managers.
+4. **Low-Level ADO.NET Transactions:**  
+   Directly manage transactions using `IDbTransaction` for scenarios where you require fine-grained control.
+5. **Advanced Features:**  
+   - **Savepoints:** Create intermediate rollback points within a transaction.
+   - **Distributed Transactions:** Coordinate transactions across multiple databases or resource managers.
+
+## 3. Using Transactions in EF Core
+### 3.1. Implicit Transactions
+By default, when you call `SaveChanges()` or `SaveChangesAsync()`, EF Core wraps the operation in an implicit transaction. This approach is sufficient for many simple operations.
+#### Example: Implicit Transaction
+```csharp
+using var context = new ApplicationDbContext();
+
+var product = new Product { Name = "Laptop", Price = 1200m };
+context.Products.Add(product);
+context.SaveChanges(); // Implicit transaction; if SaveChanges fails, changes are rolled back.
+```
+
+**Explanation:**  
+The implicit transaction automatically ensures that the add operation is either fully committed or rolled back if an error occurs.
+
+### 3.2. Explicit Transaction Management
+For complex operations involving multiple steps or multiple calls to `SaveChanges()`, you can explicitly manage transactions.
+#### Synchronous Explicit Transaction Example
+```csharp
+using (var context = new ApplicationDbContext())
+{
+    using (var transaction = context.Database.BeginTransaction())
+    {
+        try
+        {
+            // Perform several operations
+            context.Products.Add(new Product { Name = "Explicit Product", Price = 75 });
+            context.Customers.Add(new Customer { Name = "John Doe" });
+            
+            // Save changes for all operations
+            context.SaveChanges();
+            
+            // Commit the transaction if successful
+            transaction.Commit();
+        }
+        catch (Exception ex)
+        {
+            // Roll back the transaction on failure
+            transaction.Rollback();
+            Console.WriteLine($"Transaction failed: {ex.Message}");
+        }
+    }
+}
+```
+
+#### Asynchronous Explicit Transaction Example
+```csharp
+using (var context = new ApplicationDbContext())
+{
+    using (var transaction = await context.Database.BeginTransactionAsync())
+    {
+        try
+        {
+            context.Products.Add(new Product { Name = "Async Product", Price = 100 });
+            context.Customers.Add(new Customer { Name = "Jane Doe" });
+            
+            await context.SaveChangesAsync();
+            
+            // Commit the transaction asynchronously
+            await transaction.CommitAsync();
+        }
+        catch (Exception ex)
+        {
+            // Roll back the transaction asynchronously on failure
+            await transaction.RollbackAsync();
+            Console.WriteLine($"Transaction failed: {ex.Message}");
+        }
+    }
+}
+```
+
+**Explanation:**  
+In explicit transactions, you manually start a transaction, perform multiple operations, and then commit or roll back the transaction depending on whether all operations succeed.
+
+### 3.3. Combining Transactions with Execution Strategies
+To handle transient errors (e.g., in cloud environments), you can combine explicit transactions with EF Core’s execution strategies.
+```csharp
+var strategy = context.Database.CreateExecutionStrategy();
+
+await strategy.ExecuteAsync(async () =>
+{
+    using (var transaction = await context.Database.BeginTransactionAsync())
+    {
+        try
+        {
+            context.Products.Add(new Product { Name = "Resilient Product", Price = 150 });
+            await context.SaveChangesAsync();
+            await transaction.CommitAsync();
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
+    }
+});
+```
+
+**Explanation:**  
+This pattern uses an execution strategy to automatically retry the entire block if a transient error occurs, enhancing the robustness of your transaction handling.
+
+## 4. Using TransactionScope
+`TransactionScope` provides an ambient transaction model that automatically manages commit and rollback when the scope is disposed. It can span multiple DbContext instances or even different resource managers.
+#### Example Using TransactionScope
+```csharp
+using System.Transactions;
+
+using (var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+{
+    try
+    {
+        using (var context = new ApplicationDbContext())
+        {
+            context.Products.Add(new Product { Name = "Product C", Price = 100 });
+            await context.SaveChangesAsync();
+        }
+        // Mark the transaction as complete.
+        scope.Complete();
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"TransactionScope failed: {ex.Message}");
+        // If scope.Complete() is not called, the transaction is automatically rolled back.
+    }
+}
+```
+
+**Explanation:**  
+If `Complete()` is called, all operations within the scope are committed; otherwise, they are rolled back automatically.
+
+## 5. ADO.NET Low-Level Transactions
+For scenarios where you require even finer control over transactions, you can use low-level ADO.NET transactions.
+#### Example Using IDbTransaction
+```csharp
+using var connection = new SqlConnection("your-connection-string");
+await connection.OpenAsync();
+
+using var transaction = connection.BeginTransaction();
+
+try
+{
+    var command = connection.CreateCommand();
+    command.Transaction = transaction;
+    command.CommandText = "INSERT INTO Products (Name, Price) VALUES ('Product D', 200)";
+    await command.ExecuteNonQueryAsync();
+
+    // Commit the transaction
+    transaction.Commit();
+}
+catch (Exception)
+{
+    // Roll back the transaction on error
+    transaction.Rollback();
+    throw;
+}
+finally
+{
+    connection.Close();
+}
+```
+
+**Explanation:**  
+This example demonstrates manually controlling a transaction using ADO.NET's `IDbTransaction` interface. This approach is useful when you are not using EF Core or need direct SQL control.
+
+## 6. Additional Transaction Features
+### Savepoints
+Savepoints allow you to create intermediate checkpoints within a transaction. If an error occurs after a savepoint, you can roll back to that point without aborting the entire transaction.
+
+```sql
+SAVE TRANSACTION MySavepoint;
+-- Execute some operations
+ROLLBACK TRANSACTION MySavepoint;
+```
+
+### Distributed Transactions
+When your operations span multiple databases or external resources, you might need distributed transactions. Use `TransactionScope` or a distributed transaction coordinator (like MSDTC) to manage such scenarios.
+
+## 7. Diagram: Transaction Options and Workflow
+
+```mermaid
+flowchart TD
+    A[Start Transaction]
+    B[Perform Database Operations]
+    C[Call SaveChanges() or Execute Commands]
+    D{Success?}
+    E[Commit Transaction]
+    F[Rollback Transaction]
+    G[TransactionScope for Ambient Transactions]
+    H[Distributed Transaction for Multi-Resource Operations]
+    
+    A --> B
+    B --> C
+    C --> D
+    D -- Yes --> E
+    D -- No --> F
+    subgraph Additional Options
+        G
+        H
+    end
+```
+
+**Explanation:**  
+- **A to F:** Illustrates the basic flow for explicit transaction management using BeginTransaction, SaveChanges, Commit, and Rollback.
+- **G:** Represents using TransactionScope for ambient transactions.
+- **H:** Represents using distributed transactions for operations spanning multiple resources.
+
+## 8. Comparison Table: Transaction Options
+| **Option**                           | **Description**                                                                                                 | **When to Use**                                             |
+|--------------------------------------|-----------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------|
+| **Implicit Transactions**            | Each `SaveChanges()` is automatically wrapped in a transaction.                                                | Simple, single-operation scenarios.                        |
+| **Explicit Transactions**            | Manually start and manage transactions with `BeginTransaction()`, `Commit()`, and `Rollback()`.                   | Multi-step operations requiring full control.              |
+| **TransactionScope**                 | An ambient transaction model that spans multiple operations or resources.                                       | When coordinating multiple DbContexts or external resources. |
+| **ADO.NET Transactions**             | Low-level, manual transaction management using `IDbTransaction`.                                                 | When direct SQL control is required or EF Core is not used.   |
+| **Savepoints**                       | Intermediate checkpoints within a transaction allowing partial rollbacks.                                        | Complex transactions where partial failure recovery is needed.|
+| **Distributed Transactions**         | Transactions that span multiple databases or external systems, managed by a distributed transaction coordinator.   | Multi-database or multi-resource operations.                |
+
+## 9. Resources and References
+- [Microsoft Docs: EF Core Transactions](https://docs.microsoft.com/en-us/ef/core/saving/transactions)
+- [Microsoft Docs: DatabaseFacade.BeginTransactionAsync Method](https://learn.microsoft.com/en-us/dotnet/api/microsoft.entityframeworkcore.infrastructure.databasefacade.begintransactionasync?view=efcore-9.0)
+- [Microsoft Docs: DatabaseFacade.BeginTransaction Method](https://learn.microsoft.com/en-us/dotnet/api/microsoft.entityframeworkcore.infrastructure.databasefacade.begintransaction?view=efcore-9.0)
+- [Microsoft Docs: TransactionScope Class](https://docs.microsoft.com/en-us/dotnet/api/system.transactions.transactionscope)
+- [System.Transactions Namespace](https://docs.microsoft.com/en-us/dotnet/api/system.transactions)
+
+---
 
