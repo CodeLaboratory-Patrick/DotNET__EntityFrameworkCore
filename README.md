@@ -1336,14 +1336,17 @@ This executes the `Down()` method, reverting the schema changes.
 ##  Migration Workflow Diagram
 
 ```mermaid
-flowchart TD
-    A[Modify Domain Models] --> B[Generate Migration (dotnet ef migrations add)]
-    B --> C[Review Generated Migration Code]
-    C --> D[Apply Migration (dotnet ef database update)]
-    D --> E[Updated Database Schema]
-    E --> F[Revert Changes?]
-    F -- Yes --> G[Execute Down() Method]
-    G --> H[Reverted to Previous Schema]
+stateDiagram-v2
+    [*] --> Planning: Start Migration
+    Planning --> Assessment: Analyze current system
+    Assessment --> PreMigration: Define strategy & prepare resources
+    PreMigration --> Backup: Create backups & rollback plans
+    Backup --> Migration: Execute migration tasks
+    Migration --> Testing: Verify data integrity
+    Testing --> Validation: Confirm system performance
+    Validation --> Deployment: Finalize and deploy
+    Deployment --> PostMigration: Monitor & optimize
+    PostMigration --> [*]: End Migration
 ```
 
 ## 🏁 Conclusion
