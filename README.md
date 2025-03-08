@@ -519,14 +519,24 @@ dotnet ef database update PreviousMigrationName
 - 📌 Keep **database backups** before running new migrations.
 - 📌 Use **transactional migrations** to prevent partial updates in case of errors.
 
-## 🔄 Migration Workflow Diagram
+## 🔄 Migration Workflow Diagram (Sequence Diagram)
 
-flowchart TD
-    A["Define/Modify Domain Models"] --> B["Create Migration (dotnet ef migrations add)"]
-    B --> C["Review Generated Migration Code"]
-    C --> D["Apply Migration (dotnet ef database update)"]
-    D --> E["Database Schema Updated"]
-    E --> F["Run Application"]
+```mermaid
+sequenceDiagram
+    participant OldSystem as 기존 시스템
+    participant MigrationTool as 마이그레이션 도구
+    participant NewSystem as 신규 시스템
+    participant QA as QA 팀
+    participant User as 사용자
+
+    User->>OldSystem: 데이터 사용
+    OldSystem-->>MigrationTool: 데이터 내보내기(Export)
+    MigrationTool->>MigrationTool: 데이터 변환(Transformation)
+    MigrationTool-->>NewSystem: 데이터 가져오기(Import)
+    NewSystem->>QA: 마이그레이션 검증 요청
+    QA->>NewSystem: 데이터 검증 및 승인
+    NewSystem-->>User: 마이그레이션 완료 알림
+    User->>NewSystem: 신규 시스템 사용 시작
 
 ## 🏁 Conclusion
 Database migrations in .NET development simplify schema changes, allowing applications to evolve without manual database modifications. They enhance version control, ensure consistency across environments, and streamline database updates.
