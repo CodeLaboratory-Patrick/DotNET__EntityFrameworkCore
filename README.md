@@ -521,14 +521,12 @@ dotnet ef database update PreviousMigrationName
 
 ## 🔄 Migration Workflow Diagram
 
-```mermaid
 flowchart TD
-    A[Define/Modify Domain Models] --> B[Create Migration (dotnet ef migrations add)]
-    B --> C[Review Generated Migration Code]
-    C --> D[Apply Migration (dotnet ef database update)]
-    D --> E[Database Schema Updated]
-    E --> F[Run Application]
-```
+    A["Define/Modify Domain Models"] --> B["Create Migration (dotnet ef migrations add)"]
+    B --> C["Review Generated Migration Code"]
+    C --> D["Apply Migration (dotnet ef database update)"]
+    D --> E["Database Schema Updated"]
+    E --> F["Run Application"]
 
 ## 🏁 Conclusion
 Database migrations in .NET development simplify schema changes, allowing applications to evolve without manual database modifications. They enhance version control, ensure consistency across environments, and streamline database updates.
