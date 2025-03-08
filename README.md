@@ -537,6 +537,7 @@ sequenceDiagram
     QA->>NewSystem: 데이터 검증 및 승인
     NewSystem-->>User: 마이그레이션 완료 알림
     User->>NewSystem: 신규 시스템 사용 시작
+```
 
 ## 🏁 Conclusion
 Database migrations in .NET development simplify schema changes, allowing applications to evolve without manual database modifications. They enhance version control, ensure consistency across environments, and streamline database updates.
