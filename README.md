@@ -250,13 +250,42 @@ This generates a publishable binary inside the `publish` directory, ready for de
 ## 📊 .NET CLI Workflow Diagram
 
 ```mermaid
-flowchart TD
-    A[Install .NET SDK] --> B[Create Project (dotnet new)]
-    B --> C[Restore Dependencies (dotnet restore)]
-    C --> D[Build Project (dotnet build)]
-    D --> E[Run Application (dotnet run)]
-    E --> F[Test Application (dotnet test)]
-    F --> G[Publish Application (dotnet publish)]
+sequenceDiagram
+    participant Dev as Developer
+    participant CLI as .NET CLI
+    participant OS as Operating System
+    participant Repo as NuGet Repository
+    participant Build as Build Engine
+
+    Dev->>CLI: dotnet new console
+    CLI->>OS: Create project structure
+    OS-->>CLI: Project files generated
+    CLI->>Dev: Project initialized
+
+    Dev->>CLI: dotnet restore
+    CLI->>Repo: Retrieve packages
+    Repo-->>CLI: Return package assets
+    CLI->>Dev: Dependencies restored
+
+    Dev->>CLI: dotnet build
+    CLI->>Build: Compile source code
+    Build-->>CLI: Build artifacts
+    CLI->>Dev: Build successful
+
+    Dev->>CLI: dotnet run
+    CLI->>OS: Launch application
+    OS-->>CLI: Application output
+    CLI->>Dev: Display runtime output
+
+    Dev->>CLI: dotnet test
+    CLI->>Build: Execute tests
+    Build-->>CLI: Test results
+    CLI->>Dev: Show test summary
+
+    Dev->>CLI: dotnet publish
+    CLI->>Build: Package for deployment
+    Build-->>CLI: Published output
+    CLI->>Dev: Application published
 ```
 
 ## 🏁 Conclusion
@@ -523,20 +552,20 @@ dotnet ef database update PreviousMigrationName
 
 ```mermaid
 sequenceDiagram
-    participant OldSystem as 기존 시스템
-    participant MigrationTool as 마이그레이션 도구
-    participant NewSystem as 신규 시스템
-    participant QA as QA 팀
-    participant User as 사용자
+    participant OldSystem as Old System
+    participant MigrationTool as Migration Tool
+    participant NewSystem as New System
+    participant QA as QA Team
+    participant User as User
 
-    User->>OldSystem: 데이터 사용
-    OldSystem-->>MigrationTool: 데이터 내보내기(Export)
-    MigrationTool->>MigrationTool: 데이터 변환(Transformation)
-    MigrationTool-->>NewSystem: 데이터 가져오기(Import)
-    NewSystem->>QA: 마이그레이션 검증 요청
-    QA->>NewSystem: 데이터 검증 및 승인
-    NewSystem-->>User: 마이그레이션 완료 알림
-    User->>NewSystem: 신규 시스템 사용 시작
+    User->>OldSystem: Use data
+    OldSystem-->>MigrationTool: Export data
+    MigrationTool->>MigrationTool: Transform data
+    MigrationTool-->>NewSystem: Import data
+    NewSystem->>QA: Request migration validation
+    QA->>NewSystem: Validate and approve data
+    NewSystem-->>User: Notify migration completion
+    User->>NewSystem: Start using new system
 ```
 
 ## 🏁 Conclusion
@@ -644,24 +673,24 @@ This method is useful for dynamic seeding without modifying migrations.
 
 ```mermaid
 sequenceDiagram
-    participant Developer as 개발자
-    participant SeedScript as 시드 스크립트
-    participant Database as 데이터베이스
-    participant App as 애플리케이션
-    participant QA as QA 팀
+    participant Developer as Developer
+    participant SeedScript as Seed Script
+    participant Database as Database
+    participant App as Application
+    participant QA as QA Team
 
-    Developer->>SeedScript: 초기 데이터 작성
-    SeedScript->>Database: 데이터 삽입 (Insert)
-    Database-->>SeedScript: 삽입 결과 반환 (성공/실패)
-    SeedScript-->>Developer: 데이터 삽입 결과 알림
-    Developer->>App: 데이터 로딩 확인
-    App->>Database: 데이터 조회 (Query)
-    Database-->>App: 조회 데이터 반환
-    App-->>Developer: 데이터 확인 완료
-    Developer->>QA: 시딩 데이터 검증 요청
-    QA->>App: 데이터 검증 및 테스트
-    App-->>QA: 테스트 결과 반환
-    QA-->>Developer: 데이터 검증 결과 보고
+    Developer->>SeedScript: Write initial data
+    SeedScript->>Database: Insert data (Insert)
+    Database-->>SeedScript: Return insertion result (Success/Failure)
+    SeedScript-->>Developer: Notify insertion result
+    Developer->>App: Verify data loading
+    App->>Database: Query data (Query)
+    Database-->>App: Return queried data
+    App-->>Developer: Confirm data retrieval
+    Developer->>QA: Request seeded data validation
+    QA->>App: Validate and test data
+    App-->>QA: Return test result
+    QA-->>Developer: Report data validation result
 ```
 
 ## 🏁 Conclusion
@@ -993,12 +1022,35 @@ using (var context = new ApplicationDbContext())
 ## 📊 Database Context Workflow Diagram
 
 ```mermaid
-flowchart LR
-    A[Application Code] --> B[Domain Models (Entities)]
-    B --> C[Database Context (DbContext)]
-    C --> D[LINQ Queries/Operations]
-    D --> E[Database (SQL Server, SQLite, etc.)]
+sequenceDiagram
+    participant App as Application
+    participant DbCtx as Database Context
+    participant Conn as Connection Manager
+    participant DB as Database
+    participant Logger as Logger/Metrics
+
+    App->>DbCtx: Instantiate Context
+    DbCtx->>Conn: Establish Connection
+    Conn-->>DbCtx: Connection Established
+    DbCtx->>DB: Execute Query/Command
+    DB-->>DbCtx: Return Results
+    DbCtx->>Logger: Log Operation
+    App->>DbCtx: Modify Data
+    App->>DbCtx: SaveChanges
+    DbCtx->>DB: Commit Changes
+    DB-->>DbCtx: Acknowledge Commit
+    DbCtx->>Logger: Log Commit
+    App->>DbCtx: Dispose Context
+    DbCtx->>Conn: Close Connection
+    Conn-->>DbCtx: Connection Closed
 ```
+### 📌Explanation:
+- Instantiation: The application starts by creating a new instance of the Database Context.
+- Connection Establishment: The context asks the Connection Manager to open a connection to the Database. Once established, the connection is ready for operations.
+- Operations Execution: The Database Context sends commands or queries to the Database, which processes these requests and returns results.
+- Logging: Each operation, including query execution and data modifications, is logged by the Logger/Metrics component.
+- Data Modification and Commit: When the application modifies data and invokes SaveChanges, the context sends the changes to the Database for commitment. The Database then acknowledges the commit.
+- Disposal: After operations are complete, the application disposes of the Database Context, prompting the Connection Manager to close the open connection, ensuring resource cleanup.
 
 ## 🏁 Conclusion
 The **Database Context (`DbContext`)** is a fundamental part of **Entity Framework Core**, acting as the gateway between the .NET application and the database. It provides **querying, data manipulation, and transaction management** while ensuring efficient database operations.
@@ -1101,12 +1153,48 @@ To ensure optimal performance and security, follow these best practices:
 ## 📊 .NET Database Support Architecture
 
 ```mermaid
-flowchart TD
-    A[.NET Application] --> B[Data Access Layer]
-    B --> C[ADO.NET / ORM Frameworks]
-    C --> D[Database Providers (SQL Server, SQLite, etc.)]
-    D --> E[Underlying Database Engine]
+classDiagram
+    class DotNetApplication {
+      +Run()
+    }
+
+    class DataAccessLayer {
+      +QueryData()
+      +UpdateData()
+    }
+
+    class EFCore {
+      +DbContext()
+      +Migrations()
+    }
+
+    class DatabaseProvider {
+      +Connect()
+      +ExecuteQuery()
+    }
+
+    class ConnectionPooling {
+      +ManageConnections()
+    }
+
+    class CachingLayer {
+      +CacheData()
+      +InvalidateCache()
+    }
+
+    DotNetApplication --> DataAccessLayer : uses
+    DataAccessLayer --> EFCore : leverages
+    EFCore --> DatabaseProvider : connects to
+    EFCore --> ConnectionPooling : utilizes
+    DataAccessLayer --> CachingLayer : optionally integrates
 ```
+### 📌Explanation:
+- DotNetApplication: Represents the main .NET application that initiates database operations.
+- DataAccessLayer: Acts as the intermediary between the application and the database, handling queries and updates.
+- EFCore: The ORM that abstracts database operations via the DbContext, also managing migrations.
+- DatabaseProvider: Encapsulates specific database technologies (e.g., SQL Server, PostgreSQL) that EF Core connects to.
+- ConnectionPooling: Manages the reuse and lifecycle of database connections to optimize performance.
+- CachingLayer: Optionally stores frequently accessed data to reduce database load and improve response times.
 
 ## 🏁 Conclusion
 Database support in .NET is robust and versatile, enabling developers to work with both **relational** and **NoSQL** databases seamlessly. Understanding different database access methods—**ADO.NET** for raw control, **EF Core** for abstraction, and **Dapper** for optimized queries—helps in choosing the right tool for the job.
