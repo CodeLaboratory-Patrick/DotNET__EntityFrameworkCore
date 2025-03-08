@@ -640,15 +640,28 @@ This method is useful for dynamic seeding without modifying migrations.
 | **Flexible Data Updates?** | Requires migration updates | Can be changed dynamically |
 | **Best For** | Static default data | Dynamic or user-configurable data |
 
-## 📊 Data Seeding Workflow Diagram
+## 📊 Data Seeding Workflow Diagram (Sequence Diagram)
 
 ```mermaid
-flowchart TD
-    A[Define Entity Models] --> B[Configure DbContext with HasData]
-    B --> C[Add Migration (dotnet ef migrations add)]
-    C --> D[Update Database (dotnet ef database update)]
-    D --> E[Database is Created/Updated with Seed Data]
-    E --> F[Application Runs with Baseline Data]
+sequenceDiagram
+    participant Developer as 개발자
+    participant SeedScript as 시드 스크립트
+    participant Database as 데이터베이스
+    participant App as 애플리케이션
+    participant QA as QA 팀
+
+    Developer->>SeedScript: 초기 데이터 작성
+    SeedScript->>Database: 데이터 삽입 (Insert)
+    Database-->>SeedScript: 삽입 결과 반환 (성공/실패)
+    SeedScript-->>Developer: 데이터 삽입 결과 알림
+    Developer->>App: 데이터 로딩 확인
+    App->>Database: 데이터 조회 (Query)
+    Database-->>App: 조회 데이터 반환
+    App-->>Developer: 데이터 확인 완료
+    Developer->>QA: 시딩 데이터 검증 요청
+    QA->>App: 데이터 검증 및 테스트
+    App-->>QA: 테스트 결과 반환
+    QA-->>Developer: 데이터 검증 결과 보고
 ```
 
 ## 🏁 Conclusion
