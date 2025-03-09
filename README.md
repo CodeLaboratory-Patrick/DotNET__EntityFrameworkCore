@@ -10626,27 +10626,25 @@ public class ProductsController : Controller
 If the model does not meet the validation rules, `ModelState.IsValid` will be false, and the controller can return the view with error messages for user correction.
 
 ## 4. Diagram: Data Validation Flow with Data Annotations
-
 ```mermaid
-flowchart TD
-    A[User Submits Form Data]
-    B[ASP.NET Core Model Binding]
-    C[Validation via Data Annotations]
-    D{Is Model Valid?}
-    E[Proceed to Save Data]
-    F[Return Error Messages to User]
-    
-    A --> B
-    B --> C
-    C --> D
-    D -- Yes --> E
-    D -- No --> F
+sequenceDiagram
+    participant Dev as Developer
+    participant MB as Model Binder
+    participant VA as Validator (Data Annotations)
+    participant Ctrl as Controller
+
+    Dev->>MB: Submit data (e.g., form submission)
+    MB->>VA: Validate model using Data Annotations
+    VA-->>MB: Return validation results (success/errors)
+    MB-->>Ctrl: Provide validated model with errors (if any)
+    Ctrl-->>Dev: Return response (display errors or process data)
 ```
 
 **Explanation:**  
-- **A to B:** Data is submitted by the user and bound to a model.
-- **C:** Data Annotations validate the input automatically.
-- **D:** If the model is valid, processing continues; otherwise, error messages are returned to the user.
+- Data Submission: The process begins when the developer (or end-user) submits data via a form or API call.
+- Model Binding: The Model Binder in ASP.NET Core receives the data and attempts to bind it to the model.
+- Validation with Data Annotations: The Validator checks the model against its Data Annotation attributes (such as [Required], [StringLength], etc.) and returns either a success indicator or error messages if validation fails.
+- Processing the Result: The Model Binder passes the validated model (with or without errors) to the Controller, which then returns an appropriate response—either displaying validation errors to the user or processing the valid data further.
 
 ## 5. Comparison of Common Data Annotations
 | **Attribute**             | **Purpose**                                           | **Example**                                        |
@@ -10913,28 +10911,37 @@ await strategy.ExecuteAsync(async () =>
 This example demonstrates how to use an execution strategy that automatically retries the entire transaction if a transient error occurs. This approach enhances the resilience of your database operations.
 
 ## 4. Diagram: Transaction Workflow in EF Core
-
 ```mermaid
-flowchart TD
-    A[Begin Transaction]
-    B[Perform Multiple Operations]
-    C[Call SaveChanges()/SaveChangesAsync()]
-    D{Operations Succeed?}
-    E[Commit Transaction]
-    F[Rollback Transaction]
-    
-    A --> B
-    B --> C
-    C --> D
-    D -- Yes --> E
-    D -- No --> F
+sequenceDiagram
+    participant Dev as Developer
+    participant DbCtx as EF Core DbContext
+    participant TX as Transaction
+    participant DB as Database
+
+    Dev->>DbCtx: Begin Transaction
+    DbCtx->>TX: Create Transaction Object
+    TX-->>Dev: Transaction Started
+    Dev->>DbCtx: Perform CRUD Operations
+    Dev->>DbCtx: Call SaveChanges()
+    DbCtx->>DB: Execute SQL Commands within Transaction
+    DB-->>DbCtx: Return Operation Results
+    alt Successful Operations
+        Dev->>TX: Commit Transaction
+        TX->>DB: Commit Changes
+        DB-->>TX: Confirm Commit
+        TX-->>Dev: Transaction Committed
+    else Exception Occurred
+        Dev->>TX: Rollback Transaction
+        TX->>DB: Revert Changes
+        DB-->>TX: Confirm Rollback
+        TX-->>Dev: Transaction Rolled Back
+    end
 ```
 
-**Explanation:**  
-- **A:** A transaction is explicitly started.
-- **B:** Multiple database operations (inserts, updates, deletes) are performed.
-- **C:** Changes are saved to the database.
-- **D:** The outcome is checked; if successful, the transaction is committed (E); if not, the transaction is rolled back (F).
+**Explanation:**
+- Transaction Initiation: The process starts when the developer calls to begin a transaction via the DbContext. EF Core creates a transaction object which signals the start of a transactional scope.
+CRUD Operations and SaveChanges(): Within the transaction, the developer performs one or more CRUD operations. A call to SaveChanges() executes the corresponding SQL commands on the database within the context of the active transaction.
+- Commit or Rollback: If all operations succeed, the transaction is committed, ensuring that all changes are permanently applied to the database. If an error occurs during any of the operations, the transaction is rolled back to maintain data integrity, reverting all changes made during the transaction.
 
 ## 5. Comparison: Implicit vs. Explicit Transactions
 | **Aspect**             | **Implicit Transactions**                            | **Explicit Transactions**                                |
@@ -11167,31 +11174,36 @@ When your operations span multiple databases or external resources, you might ne
 ## 7. Diagram: Transaction Options and Workflow
 
 ```mermaid
-flowchart TD
-    A[Start Transaction]
-    B[Perform Database Operations]
-    C[Call SaveChanges() or Execute Commands]
-    D{Success?}
-    E[Commit Transaction]
-    F[Rollback Transaction]
-    G[TransactionScope for Ambient Transactions]
-    H[Distributed Transaction for Multi-Resource Operations]
-    
-    A --> B
-    B --> C
-    C --> D
-    D -- Yes --> E
-    D -- No --> F
-    subgraph Additional Options
-        G
-        H
+sequenceDiagram
+    participant Dev as Developer
+    participant DbCtx as DbContext
+    participant TX as Transaction Manager
+    participant DB as Database
+
+    Dev->>DbCtx: BeginTransaction(options e.g., Isolation Level)
+    DbCtx->>TX: Create transaction with options
+    TX-->>DbCtx: Transaction started with configured options
+    Dev->>DbCtx: Execute CRUD operations within transaction
+    DbCtx->>DB: Send SQL commands under transaction context
+    DB-->>DbCtx: Return operation results
+    alt Successful operations
+        Dev->>TX: Commit Transaction
+        TX->>DB: Commit changes to database
+        DB-->>TX: Confirm commit
+        TX-->>Dev: Transaction committed successfully
+    else Encounter error
+        Dev->>TX: Rollback Transaction
+        TX->>DB: Revert changes
+        DB-->>TX: Confirm rollback
+        TX-->>Dev: Transaction rolled back
     end
 ```
 
 **Explanation:**  
-- **A to F:** Illustrates the basic flow for explicit transaction management using BeginTransaction, SaveChanges, Commit, and Rollback.
-- **G:** Represents using TransactionScope for ambient transactions.
-- **H:** Represents using distributed transactions for operations spanning multiple resources.
+- Transaction Initiation: The developer initiates a transaction by calling BeginTransaction() on the DbContext while specifying options, such as the isolation level or timeout settings.
+- Transaction Creation: The DbContext delegates the creation of a transaction to the Transaction Manager, which configures the transaction based on the provided options and establishes a transactional context.
+- Executing Operations: Within the transactional scope, the developer performs CRUD operations. The DbContext sends the corresponding SQL commands to the database under the active transaction.
+- Commit or Rollback: If all operations succeed, the transaction is committed by calling Commit(), ensuring that all changes are permanently applied. If an error occurs, the transaction is rolled back, reverting all changes made during the transaction to maintain data integrity.
 
 ## 8. Comparison Table: Transaction Options
 | **Option**                           | **Description**                                                                                                 | **When to Use**                                             |
@@ -11302,26 +11314,41 @@ In this example, up to three tasks can access the critical section concurrently.
 | **Asynchronous Support** | Not inherently asynchronous.                     | Supports asynchronous operations with `WaitAsync()`.   |
 
 ## 5. Diagram: Lock Objects and Semaphore Usage
-
+**Lock Object Usage**
 ```mermaid
-flowchart TD
-    A[Start Critical Section]
-    B[Lock Object: Single Thread Access]
-    C[SemaphoreSlim: Limited Concurrent Access]
-    D[Execute Critical Section]
-    E[Release Lock / Semaphore]
+sequenceDiagram
+    participant T1 as Thread 1
+    participant T2 as Thread 2
+    participant Lock as Lock Object (Monitor)
+    participant Resource as Shared Resource
 
-    A --> B
-    A --> C
-    B --> D
-    C --> D
-    D --> E
+    T1->>Lock: Attempt to enter critical section
+    Lock-->>T1: Lock acquired
+    T1->>Resource: Access shared resource exclusively
+    T1->>Lock: Exit critical section (release lock)
+    Lock-->>T1: Lock released
 ```
 
-**Explanation:**  
-- **Lock Object:** Ensures that only one thread can execute the critical section at any given time.
-- **SemaphoreSlim:** Allows a fixed number of threads (as defined by its count) to execute concurrently.
-- **Release:** After execution, the thread releases the lock or semaphore, allowing other waiting threads to proceed.
+**Semaphore Usage**
+```mermaid
+sequenceDiagram
+    participant T1 as Thread 1
+    participant T2 as Thread 2
+    participant Sem as Semaphore
+    participant Resource as Shared Resource
+
+    T1->>Sem: Request semaphore slot
+    Sem-->>T1: Grant slot (if available)
+    T1->>Resource: Access shared resource (limited access)
+    T1->>Sem: Release semaphore slot
+    Sem-->>T1: Slot released
+
+    T2->>Sem: Request semaphore slot
+    Sem-->>T2: Grant slot (if available)
+    T2->>Resource: Access shared resource (if slot granted)
+    T2->>Sem: Release semaphore slot
+    Sem-->>T2: Slot released
+```
 
 ## 7. Conclusion
 In .NET development, managing concurrency is critical when multiple threads or tasks access shared resources. **Lock objects** (via the `lock` statement) provide a simple way to ensure exclusive access to a critical section, while **semaphores** (and `SemaphoreSlim`) offer more flexible, count-based control for managing concurrent access to limited resources. By understanding and applying these synchronization primitives appropriately, you can prevent race conditions, ensure data consistency, and build robust multi-threaded applications.
@@ -11437,27 +11464,25 @@ The `IgnoreQueryFilters()` method removes the global filter for that query, retu
 ## 4. Diagram: Global Query Filter Workflow
 
 ```mermaid
-flowchart TD
-    A[Define Entity: Product]
-    B[Configure Global Filter in OnModelCreating]
-    C[EF Core Automatically Applies Filter to All Queries]
-    D[Query: context.Products.ToListAsync()]
-    E[Results: Only Non-Filtered Products Returned]
-    F[Override: .IgnoreQueryFilters() for Full Data]
-    
-    A --> B
-    B --> C
-    C --> D
-    D --> E
-    D -- If overridden --> F
+sequenceDiagram
+    participant Dev as Developer
+    participant DbCtx as DbContext/EF Core
+    participant Filter as Global Query Filter
+    participant DB as Database
+
+    Dev->>DbCtx: Query for entities (e.g., Customers)
+    DbCtx->>Filter: Apply Global Query Filters (e.g., soft delete, tenant isolation)
+    Filter-->>DbCtx: Augment query with filter conditions
+    DbCtx->>DB: Execute SQL query with applied filters
+    DB-->>DbCtx: Return filtered result set
+    DbCtx-->>Dev: Provide filtered data
 ```
 
 **Explanation:**  
-- **A:** You have an entity such as `Product`.
-- **B:** In your DbContext's `OnModelCreating`, you configure a global query filter.
-- **C:** EF Core automatically appends the filter to every query on the entity.
-- **D:** When you run a query, only the filtered data is returned.
-- **F:** Using `.IgnoreQueryFilters()` overrides the filter to retrieve all records.
+- Query Initiation: The workflow starts when the developer issues a query for entities through the DbContext.
+- Filter Application: Before executing the query, the DbContext automatically applies global query filters (configured in the model using methods like HasQueryFilter()) to ensure that only relevant data (for example, non-deleted or tenant-specific records) is retrieved.
+- Query Execution: The modified query, now containing the filter conditions, is sent to the database.
+- Data Retrieval: The database executes the filtered query and returns the resulting dataset, which is then passed back to the developer.
 
 ## 5. Comparison: Global Query Filters vs. Per-Query Filtering
 The following table compares the use of global query filters with applying filtering conditions manually in each query.
@@ -11567,36 +11592,34 @@ retryPolicy.Execute(() =>
 This Polly policy will retry the operation up to 3 times, waiting an exponentially increasing delay between attempts. It catches both SQL exceptions and timeout exceptions.
 
 ## 5. Diagram: Retry and Timeout Policy Workflow
-
 ```mermaid
-flowchart TD
-    A[Start Database Operation]
-    B[Attempt Command Execution]
-    C{Operation Succeeds?}
-    D[Return Result]
-    E[Transient Failure Detected]
-    F[Retry Operation (with Delay)]
-    G{Max Retries Exceeded?}
-    H[Throw Exception (Retry Failure)]
-    I[Operation Exceeds Timeout]
-    J[Throw Timeout Exception]
+sequenceDiagram
+    participant Dev as Developer
+    participant Policy as Retry/Timeout Policy
+    participant Service as Remote Service
 
-    A --> B
-    B -- Success --> D
-    B -- Failure (Transient) --> E
-    E --> F
-    F --> C
-    C -- Failure and max retries reached --> G
-    G --> H
-    B -- Failure (Timeout) --> I
-    I --> J
+    Dev->>Policy: Initiate operation call
+    loop Retry Attempts (max retries)
+        Policy->>Service: Execute operation
+        alt Operation Succeeds
+            Service-->>Policy: Return success response
+            Policy-->>Dev: Return success result
+            break
+        else Operation Fails or Times Out
+            Service-->>Policy: Return error/timeout
+            Policy->>Policy: Wait for retry delay
+        end
+    end
+    alt Maximum retries exceeded
+        Policy-->>Dev: Return failure result
+    end
 ```
 
 **Explanation:**  
-- The operation starts (A) and the database command is attempted (B).
-- If the operation succeeds, the result is returned (D).
-- If a transient failure occurs, the operation is retried with a delay (E → F). If maximum retries are reached, an exception is thrown (G → H).
-- If the command exceeds the timeout period, a timeout exception is thrown (I → J).
+- Operation Initiation: The workflow begins when the Developer initiates an operation call through the Retry/Timeout Policy.
+- Retry Loop: The policy attempts to execute the operation on the Remote Service.
+- If the operation succeeds, the service returns a success response, and the policy immediately returns this success result to the Developer, breaking out of the loop. If the operation fails or times out, the policy waits for a specified delay before retrying the operation.
+- Maximum Retry Handling: If the maximum number of retry attempts is exceeded without a successful response, the policy returns a failure result to the Developer.
 
 ## 6. Comparison Table: Key Retry and Timeout Settings
 | **Setting**            | **Description**                                             | **Example Value**                |
@@ -11696,31 +11719,31 @@ services.AddDbContext<ApplicationDbContext>(options =>
 This combined configuration ensures that your database commands will not hang indefinitely (by enforcing a 180-second timeout) and that complex queries with multiple includes are split into separate queries to avoid excessive data duplication.
 
 ## 4. Diagram: SQLite Options in EF Core
-
 ```mermaid
-flowchart TD
-    A[Configure DbContext with UseSqlite]
-    B[Set CommandTimeout (e.g., 180 seconds)]
-    C[Set UseQuerySplittingBehavior to SplitQuery]
-    D[EF Core Builds SQL Queries Based on Options]
-    E[Query Execution]
-    F[SingleQuery Mode: One large query with joins]
-    G[SplitQuery Mode: Multiple queries for each related collection]
+sequenceDiagram
+    participant Dev as Developer
+    participant DbCtx as DbContext
+    participant Provider as SQLite Provider
+    participant DB as SQLite Database
 
-    A --> B
-    A --> C
-    B --> D
-    C --> D
-    D --> E
-    E -- if SingleQuery --> F
-    E -- if SplitQuery --> G
+    Dev->>DbCtx: Configure DbContext with SQLite options (UseSqlite, connection string, etc.)
+    DbCtx->>Provider: Pass configuration options (e.g., EnableRetryOnFailure, caching settings)
+    Provider->>DB: Establish connection using specified options
+    DB-->>Provider: Confirm connection established
+    Provider-->>DbCtx: Return configured connection
+    Dev->>DbCtx: Execute SQL commands (CRUD, migrations, etc.)
+    DbCtx->>Provider: Translate commands to SQLite-compatible SQL
+    Provider->>DB: Run operations with applied options
+    DB-->>Provider: Return query results or affected rows
+    Provider-->>DbCtx: Pass results back to Developer
 ```
 
 **Explanation:**  
-- **A:** The DbContext is configured with `UseSqlite`.
-- **B & C:** Global options such as `CommandTimeout` and `UseQuerySplittingBehavior` are applied.
-- **D:** EF Core generates SQL queries that reflect these settings.
-- **E:** During query execution, EF Core uses either a single query with joins or multiple split queries based on the configuration.
+- Configuration: The workflow begins when the Developer configures the DbContext with SQLite-specific options using methods such as UseSqlite(). This configuration can include settings like the connection string and additional options like EnableRetryOnFailure or caching strategies.
+- Provider Setup: The DbContext passes these configuration options to the SQLite Provider. The provider uses these options to establish a connection with the SQLite database.
+- Connection Establishment: Once the connection is successfully established with the specified options, the SQLite Provider returns the configured connection to the DbContext.
+- Operation Execution: When the Developer executes SQL commands (such as CRUD operations or migrations), the DbContext translates these commands into SQLite-compatible SQL, utilizing the options configured earlier. The provider then runs these operations against the SQLite database.
+- Result Handling: The results from the database operations are returned back through the provider to the DbContext and finally delivered to the Developer.
 
 ## 5. Additional Considerations
 - **Provider-Specific Behavior:**  
