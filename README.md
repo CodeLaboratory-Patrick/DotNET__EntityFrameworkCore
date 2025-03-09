@@ -8085,7 +8085,6 @@ classDiagram
       +string Name
       +string Email
     }
-    note right of User: Shadow properties (e.g., LastLoginDate) are configured via the Fluent API and are not declared in the class.
 ```
 **Explanation:** 
 - In this diagram, the User entity still explicitly declares properties such as Id, Name, and Email. However, it also implies the existence of shadow properties (like LastLoginDate) that are not defined in the class. Instead, these shadow properties are configured through EF Core’s Fluent API and are maintained solely within the EF Core model, making them invisible in the class definition but available for tracking and query purposes.
@@ -8988,43 +8987,58 @@ public class CustomersController : ControllerBase // For Web API use ControllerB
 This sample demonstrates how the `ApplicationDbContext` is injected into a controller via constructor injection, enabling the controller to perform database operations using EF Core.
 
 ## 5. Diagram: ASP.NET Core Web API vs. MVC Architecture
-
+**ASP.NET Core Web API Architecture:**  
 ```mermaid
-flowchart TD
-    subgraph Web API
-        A1[HTTP Request]
-        A2[API Controller (ControllerBase)]
-        A3[Service/Business Logic]
-        A4[EF Core DbContext]
-        A5[Database Query]
-        A6[JSON Response]
-        A1 --> A2
-        A2 --> A3
-        A3 --> A4
-        A4 --> A5
-        A5 --> A6
-    end
+sequenceDiagram
+    participant Client as Client
+    participant ApiCtrl as API Controller
+    participant Service as Business Service
+    participant DbCtx as EF Core DbContext
+    participant DB as Database
 
-    subgraph MVC Web App
-        B1[HTTP Request]
-        B2[MVC Controller (Controller)]
-        B3[Service/Business Logic]
-        B4[EF Core DbContext]
-        B5[Database Query]
-        B6[Razor View Rendering]
-        B7[HTML Response]
-        B1 --> B2
-        B2 --> B3
-        B3 --> B4
-        B4 --> B5
-        B5 --> B6
-        B6 --> B7
-    end
+    Client->>ApiCtrl: HTTP Request (e.g., GET /api/products)
+    ApiCtrl->>Service: Process Request
+    Service->>DbCtx: Retrieve Data
+    DbCtx->>DB: Execute SQL Query
+    DB-->>DbCtx: Return Data
+    DbCtx-->>Service: Return Data
+    Service-->>ApiCtrl: Prepare JSON Response
+    ApiCtrl-->>Client: Send JSON Response
 ```
+**ASP.NET Core Web API Architecture - Explanation:**  
+- Client Request: The client sends an HTTP request to an API Controller.
+- Controller Processing: The API Controller forwards the request to a business service for processing.
+- Data Access: The service interacts with EF Core (via the DbContext) which executes a SQL query against the database.
+- Response Assembly: The retrieved data is passed back up the chain, and the API Controller returns the data as a JSON response to the client.
+- Focus: This architecture is focused on serving data in a machine-readable format (JSON/XML) without any server-side view rendering.
 
-**Explanation:**  
-- In the **Web API** architecture, an HTTP request is processed by an API controller, which uses EF Core to retrieve data and returns it as JSON.
-- In the **MVC** architecture, an HTTP request is processed by an MVC controller, data is retrieved using EF Core, and a Razor view renders the HTML output.
+**ASP.NET Core MVC Architecture:**  
+```mermaid
+sequenceDiagram
+    participant Browser as Browser
+    participant MvcCtrl as MVC Controller
+    participant Service as Business Service
+    participant DbCtx as EF Core DbContext
+    participant DB as Database
+    participant ViewEngine as Razor View Engine
+
+    Browser->>MvcCtrl: HTTP Request (e.g., GET /products)
+    MvcCtrl->>Service: Process Request
+    Service->>DbCtx: Retrieve Data
+    DbCtx->>DB: Execute SQL Query
+    DB-->>DbCtx: Return Data
+    DbCtx-->>Service: Return Data
+    Service-->>MvcCtrl: Return Data
+    MvcCtrl->>ViewEngine: Pass Data to View
+    ViewEngine-->>MvcCtrl: Render HTML
+    MvcCtrl-->>Browser: Send HTML Response
+```
+**ASP.NET Core MVC Architecture - Explanation:**  
+- Client Request: The browser sends an HTTP request to an MVC Controller.
+- Controller and Service: The MVC Controller delegates the processing to a business service, which retrieves data from the database via EF Core.
+- View Rendering: The data is then passed to the Razor View Engine, which renders the data into an HTML view.
+- Final Response: The rendered HTML is sent back to the browser as the HTTP response.
+- Focus: This architecture emphasizes server-side view rendering, providing an interactive web page to the user.
 
 ## 6. Conclusion
 Both **ASP.NET Core Web API** and **ASP.NET Core MVC (Web App)** are built on the ASP.NET Core platform, sharing common features such as dependency injection and middleware. However, they serve different purposes:
