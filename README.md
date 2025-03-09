@@ -8065,7 +8065,7 @@ Console.WriteLine($"The shadow CustomerId is: {customerId}");
 ```
 
 ## 4. Diagram: Explicit vs. Shadow Properties
-
+**Explicit Properties**
 ```mermaid
 classDiagram
     class User {
@@ -8073,28 +8073,22 @@ classDiagram
       +string Name
       +string Email
     }
-    note right of User: Explicit Properties:\n- Id, Name, Email\n\nShadow Properties:\n- e.g., LastLoginDate (configured via Fluent API, not declared in the class)
 ```
+**Explanation:** 
+- This diagram shows a User entity where all properties—Id, Name, and Email—are explicitly defined in the class. These properties form the public contract of the entity and are directly accessible through instances of the User class.
 
-### Explanation: 
-- Explicit Properties: The User class contains explicit properties (such as Id, Name, and Email) that are directly defined in the code. These properties are visible and accessible through the entity.
-- Shadow Properties: Shadow properties (for example, a property like LastLoginDate) are not defined in the User class. Instead, they are configured via the EF Core Fluent API and exist solely in the EF Core model. EF Core tracks these properties behind the scenes, even though they are not part of the entity’s public contract.
-
-
-A text-based diagram for clarity:
-
+**Shadow Properties**
+```mermaid
+classDiagram
+    class User {
+      +int Id
+      +string Name
+      +string Email
+    }
+    note right of User: Shadow properties (e.g., LastLoginDate) are configured via the Fluent API and are not declared in the class.
 ```
-[Explicit Navigation Properties]
-   Order.cs contains:
-       public int CustomerId { get; set; }
-       public Customer Customer { get; set; }
-   -> Directly accessible and strongly typed.
-
-[Shadow Properties]
-   Order.cs does NOT contain CustomerId.
-   EF Core creates a shadow property "CustomerId" based on Fluent API.
-   -> Accessed via context.Entry(order).Property("CustomerId")
-```
+**Explanation:** 
+- In this diagram, the User entity still explicitly declares properties such as Id, Name, and Email. However, it also implies the existence of shadow properties (like LastLoginDate) that are not defined in the class. Instead, these shadow properties are configured through EF Core’s Fluent API and are maintained solely within the EF Core model, making them invisible in the class definition but available for tracking and query purposes.
 
 ## 5. Comparative Table: Explicit vs. Shadow Properties
 | Aspect                      | Explicit Navigation / FK         | Shadow Property                          |
