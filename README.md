@@ -9343,28 +9343,27 @@ public class ApplicationDbContext : DbContext
 ## 4. Diagram: Overriding SaveChanges Workflow
 
 ```mermaid
-flowchart TD
-    A[Call SaveChanges/SaveChangesAsync]
-    B[Iterate over ChangeTracker Entries]
-    C[Apply Pre-Save Logic (Audit, Validation)]
-    D[Optional Logging/Modifications]
-    E[Call base.SaveChanges()/SaveChangesAsync()]
-    F[Persist Changes to Database]
-    G[Return Number of Affected Rows]
-    
-    A --> B
-    B --> C
-    C --> D
-    D --> E
-    E --> F
-    F --> G
+sequenceDiagram
+    participant Dev as Developer
+    participant Ctx as CustomDbContext
+    participant CT as Change Tracker
+    participant DB as Database
+
+    Dev->>Ctx: Call SaveChanges()
+    Ctx->>CT: Invoke DetectChanges() for entity state evaluation
+    CT-->>Ctx: Return list of modified entities
+    Ctx->>Ctx: Execute custom pre-save logic (e.g., audit, validation)
+    Ctx->>DB: Call base.SaveChanges() to persist changes
+    DB-->>Ctx: Return affected rows count
+    Ctx-->>Dev: Return final SaveChanges() result
 ```
 
 **Explanation:**  
-- The process starts when `SaveChanges()` or `SaveChangesAsync()` is called.
-- The method iterates over all tracked entities to apply custom pre-save logic.
-- Optional logging or data modifications can occur before invoking the base method.
-- Finally, changes are persisted to the database and the method returns the number of affected rows.
+- Custom SaveChanges() Invocation: The developer calls SaveChanges() on a custom DbContext where SaveChanges has been overridden.
+- Change Detection: The overridden method first calls DetectChanges() on the Change Tracker to evaluate the state of all tracked entities.
+- Custom Logic Execution: After retrieving the modified entities, the custom SaveChanges() method performs additional logic such as auditing, validation, or logging before proceeding with the database commit.
+- Database Interaction: The method then calls the base implementation (base.SaveChanges()), which translates the changes into SQL commands that are executed against the database.
+- Result Return: Finally, the database returns the number of affected rows, and the custom SaveChanges() method passes this result back to the developer.
 
 ## 5. Use Cases for Overriding SaveChanges
 | **Use Case**       | **Description**                                                                                              |
@@ -9686,28 +9685,36 @@ await strategy.ExecuteAsync(async () =>
 ## 3. Diagram: Transaction Workflow in EF Core
 
 ```mermaid
-flowchart TD
-    A[Begin Transaction]
-    B[Perform Operations (Add, Update, Delete)]
-    C[Call SaveChanges()/SaveChangesAsync()]
-    D{Operations Succeed?}
-    E[Commit Transaction]
-    F[Rollback Transaction]
-    
-    A --> B
-    B --> C
-    C --> D
-    D -- Yes --> E
-    D -- No --> F
+sequenceDiagram
+    participant Dev as Developer
+    participant DbCtx as EF Core DbContext
+    participant TX as Transaction
+    participant DB as Database
+
+    Dev->>DbCtx: Begin Transaction
+    DbCtx->>TX: Create Transaction Object
+    TX-->>Dev: Transaction Started
+    Dev->>DbCtx: Perform CRUD Operations
+    Dev->>DbCtx: Call SaveChanges()
+    DbCtx->>DB: Execute SQL Commands within Transaction
+    DB-->>DbCtx: Return Operation Results
+    alt Successful Operations
+        Dev->>TX: Commit Transaction
+        TX->>DB: Commit Changes
+        DB-->>TX: Confirm Commit
+        TX-->>Dev: Transaction Committed
+    else Exception Occurred
+        Dev->>TX: Rollback Transaction
+        TX->>DB: Revert Changes
+        DB-->>TX: Confirm Rollback
+        TX-->>Dev: Transaction Rolled Back
+    end
 ```
 
 **Explanation:**
-- **A:** Start a transaction explicitly.
-- **B:** Execute multiple database operations.
-- **C:** Persist changes using `SaveChanges()` or `SaveChangesAsync()`.
-- **D:** Check if all operations were successful.
-- **E:** If yes, commit the transaction.
-- **F:** If any operation fails, roll back the transaction.
+- Transaction Initiation: The process starts when the developer calls to begin a transaction via the DbContext. EF Core creates a transaction object which signals the start of a transactional scope.
+CRUD Operations and SaveChanges(): Within the transaction, the developer performs one or more CRUD operations. A call to SaveChanges() executes the corresponding SQL commands on the database within the context of the active transaction.
+- Commit or Rollback: If all operations succeed, the transaction is committed, ensuring that all changes are permanently applied to the database. If an error occurs during any of the operations, the transaction is rolled back to maintain data integrity, reverting all changes made during the transaction.
 
 ## 4. Isolation Levels
 Isolation levels determine how a transaction is isolated from the effects of other transactions. Common isolation levels include:
@@ -9832,30 +9839,31 @@ services.AddDbContext<ApplicationDbContext>(options =>
 ## 4. Diagram: Connection Resiliency Workflow
 
 ```mermaid
-flowchart TD
-    A[Start Database Operation]
-    B[Attempt Operation (e.g., SaveChanges)]
-    C{Operation Succeeds?}
-    D[Return Result]
-    E[Operation Fails (Transient Error)]
-    F[Retry Operation (with Delay)]
-    G{Max Retries Reached?}
-    H[Throw Exception]
-    
-    A --> B
-    B -- Success --> D
-    B -- Failure --> E
-    E --> F
-    F --> C
-    C -- Failure and max retries reached --> G
-    G --> H
+sequenceDiagram
+    participant Dev as Developer
+    participant DbCtx as EF Core DbContext
+    participant CR as Connection Resiliency Handler
+    participant DB as Database
+
+    Dev->>DbCtx: Execute operation (e.g., query or command)
+    DbCtx->>DB: Open connection & send SQL command
+    alt Connection Successful
+        DB-->>DbCtx: Return results
+        DbCtx-->>Dev: Provide result to Developer
+    else Transient Fault Occurs
+        DB-->>DbCtx: Return error (transient fault)
+        DbCtx->>CR: Trigger connection resiliency logic
+        CR->>DbCtx: Wait & retry operation
+        DbCtx->>DB: Re-open connection & re-send SQL command
+        DB-->>DbCtx: Return results after retry
+        DbCtx-->>Dev: Provide final result to Developer
+    end
 ```
 
 **Explanation:**  
-- The operation is attempted (B).
-- If it succeeds, the result is returned (D).
-- If a transient error occurs, the operation is retried after a delay (F).
-- If the maximum number of retries is reached without success, an exception is thrown (H).
+- Initial Execution: The developer initiates a database operation using EF Core. The DbContext opens a connection and sends a SQL command to the database.
+- Successful Path: If the connection is successful, the database returns the results directly to the DbContext, which then passes them to the developer.
+- Transient Fault Handling: If a transient fault (such as a temporary network issue) occurs, the database returns an error. EF Core then triggers the connection resiliency logic.
 
 ## 5. Additional Patterns and Considerations
 ### Advanced Resiliency Patterns
@@ -9988,28 +9996,26 @@ This query returns all products, including those that would normally be excluded
 ## 4. Diagram: Global Query Filter Workflow
 
 ```mermaid
-flowchart TD
-    A[Define Entity: Product]
-    B[Add Property: IsDeleted (for soft delete) or TenantId (for multi-tenancy)]
-    C[Configure Global Query Filter in OnModelCreating]
-    D[EF Core Automatically Applies Filter to All Queries on Product]
-    E[Query: context.Products.ToListAsync()]
-    F[Results: Only products matching the filter condition]
-    G[Bypass Filter using IgnoreQueryFilters() if needed]
+sequenceDiagram
+    participant Dev as Developer
+    participant DbCtx as DbContext/EF Core
+    participant Filter as Global Query Filter
+    participant DB as Database
 
-    A --> B
-    B --> C
-    C --> D
-    D --> E
-    E --> F
-    E -- If .IgnoreQueryFilters() used --> G
+    Dev->>DbCtx: Query for entities (e.g., Customers)
+    DbCtx->>Filter: Apply Global Query Filters (e.g., soft delete, tenant isolation)
+    Filter-->>DbCtx: Augment query with filter conditions
+    DbCtx->>DB: Execute SQL query with applied filters
+    DB-->>DbCtx: Return filtered result set
+    DbCtx-->>Dev: Provide filtered data
 ```
 
 **Explanation:**  
-- **Steps A-B:** Define the entity and add the relevant property.
-- **Step C:** Configure the global filter in the `OnModelCreating` method.
-- **Steps D-F:** All queries automatically include the filter, returning only the desired records.
-- **Step G:** Using `IgnoreQueryFilters()` overrides the global filter, returning all records.
+- Query Initiation: The workflow starts when the developer issues a query for entities through the DbContext.
+- Filter Application: Before executing the query, the DbContext automatically applies global query filters (configured in the model using methods like HasQueryFilter()) to ensure that only relevant data (for example, non-deleted or tenant-specific records) is retrieved.
+- Query Execution: The modified query, now containing the filter conditions, is sent to the database.
+- Data Retrieval: The database executes the filtered query and returns the resulting dataset, which is then passed back to the developer.
+
 
 ## 5. Comparison: Global Query Filter vs. Per-Query Filtering
 The table below compares global query filters with manually adding a `WHERE` clause in each query:
@@ -10268,30 +10274,36 @@ This SQL snippet demonstrates how to lock a row for update, preventing other use
 ## 4. Diagram: Concurrency Handling Workflow in EF Core
 
 ```mermaid
-flowchart TD
-    A[User 1 loads Product entity]
-    B[User 2 loads the same Product entity]
-    C[User 1 updates the Product and calls SaveChanges()]
-    D[Database updates the row and changes RowVersion]
-    E[User 2 attempts to update with old RowVersion]
-    F[EF Core detects the mismatch]
-    G[DbUpdateConcurrencyException is thrown]
-    H[Application handles the conflict (reloads/merges changes)]
-    
-    A --> C
-    B --> E
-    C --> D
-    D --> E
-    E --> F
-    F --> G
-    G --> H
+sequenceDiagram
+    participant Dev as Developer
+    participant DbCtx as EF Core DbContext
+    participant DB as Database
+    participant Resolver as Concurrency Resolver
+
+    Dev->>DbCtx: Modify entity & call SaveChanges()
+    DbCtx->>DB: Execute UPDATE command
+    alt Concurrency Conflict Detected
+        DB-->>DbCtx: Return ConcurrencyException
+        DbCtx-->>Dev: Propagate ConcurrencyException
+        Dev->>Resolver: Catch exception & initiate conflict resolution
+        Resolver->>DbCtx: Reload entity values (refresh from DB)
+        Resolver->>Dev: Merge changes or prompt user for resolution
+        Dev->>DbCtx: Call SaveChanges() again with resolved values
+        DbCtx->>DB: Execute updated UPDATE command
+        DB-->>DbCtx: Return success confirmation
+        DbCtx-->>Dev: Confirm update success
+    else No Conflict
+        DB-->>DbCtx: Return success response
+        DbCtx-->>Dev: Confirm update success
+    end
 ```
 
 **Explanation:**  
-- Two users load the same product.
-- User 1 saves changes first, updating the `RowVersion`.
-- User 2 then attempts to save changes with an outdated `RowVersion`, triggering a concurrency exception.
-- The application handles the exception by reloading the current values or merging changes.
+- Initial Operation: The developer modifies an entity and calls SaveChanges() on the DbContext. EF Core sends an UPDATE command to the database.
+- Conflict Detection: If a concurrency conflict is detected (i.e., another process has modified the same data), the database returns a concurrency exception to EF Core.
+- Exception Propagation: EF Core propagates the ConcurrencyException to the developer’s code.
+- Conflict Resolution: The developer (or a designated concurrency resolver component) catches the exception and initiates a resolution process, such as reloading the entity’s current values from the database and merging the changes (either automatically or with user input).
+- Retry Operation: After resolving the conflict, the developer calls SaveChanges() again. The updated operation is sent to the database, and if successful, the update is confirmed.
 
 ## 6. Comparison Table: Optimistic vs. Pessimistic Concurrency
 | **Aspect**               | **Optimistic Concurrency**                              | **Pessimistic Concurrency**                              |
@@ -10447,28 +10459,25 @@ var productsContained = await context.Products
 ## 5. Diagram: Temporal Query Workflow
 
 ```mermaid
-flowchart TD
-    A[Temporal Table Configured in SQL Server]
-    B[EF Core DbSet<Product> with Temporal Support]
-    
-    subgraph Temporal Query Methods
-        C[TemporalAsOf(pointInTime)]
-        D[TemporalAll()]
-        E[TemporalBetween(start, end)]
-        F[TemporalFromTo(start, end)]
-        G[TemporalContainedIn(start, end)]
-    end
-    
-    B --> C
-    B --> D
-    B --> E
-    B --> F
-    B --> G
+sequenceDiagram
+    participant Dev as Developer
+    participant DbCtx as EF Core DbContext
+    participant EF as EF Core Engine
+    participant DB as Database
+
+    Dev->>DbCtx: Execute temporal query (e.g., .TemporalAsOf("2023-01-01"))
+    DbCtx->>EF: Interpret query with temporal condition
+    EF->>DB: Generate SQL with temporal clause (FOR SYSTEM_TIME AS OF)
+    DB-->>EF: Return historical data set
+    EF-->>DbCtx: Map data to entity models
+    DbCtx-->>Dev: Provide temporal query results
 ```
 
 **Explanation:**  
-- The EF Core DbSet for `Product` is enhanced with temporal support.
-- Depending on the query method invoked, EF Core applies the corresponding temporal filter to retrieve the desired version(s) of the data.
+- Temporal Query Execution: The developer initiates a query using EF Core’s temporal querying capabilities (such as .TemporalAsOf()), specifying the desired point in time.
+- Query Translation: The DbContext passes the query to the EF Core engine, which interprets the temporal condition and translates the query into a SQL statement that includes the appropriate temporal clause (e.g., FOR SYSTEM_TIME AS OF).
+- Database Processing: The database executes the generated SQL query against a temporal table, retrieving the historical data as of the specified date.
+- Mapping and Return: EF Core maps the returned historical data to entity models, and the DbContext provides the final results back to the developer.
 
 ## 6. Comparison: Temporal Query Methods
 | **Method**                | **Definition**                                                      | **Use Case**                                              |
@@ -10734,30 +10743,26 @@ The above configuration sets a specific maximum length of 200 for the `Name` pro
 ## 4. Diagram: Pre-Convention Model Configuration Workflow
 
 ```mermaid
-flowchart TD
-    A[Define Entity Classes]
-    B[DbContext Overrides ConfigureConventions]
-    C[Set Global Convention for Strings: MaxLength(100)]
-    D[Set Global Convention for Decimals: Precision(16,2)]
-    E[EF Core Builds Final Model with Global Conventions]
-    F[Explicit Configurations (if any) override global settings]
-    G[Final Database Schema with Consistent Settings]
-    
-    A --> B
-    B --> C
-    B --> D
-    C & D --> E
-    E --> F
-    F --> G
+sequenceDiagram
+    participant Dev as Developer
+    participant MBuilder as ModelBuilder
+    participant PreConfig as Pre-Convention Configurator
+    participant Conventions as EF Core Conventions
+    participant Model as Final Model
+
+    Dev->>MBuilder: Override OnModelCreating()
+    MBuilder->>PreConfig: Apply custom pre-convention configurations
+    PreConfig-->>MBuilder: Update model metadata (e.g., naming, keys)
+    MBuilder->>Conventions: Execute EF Core default conventions
+    Conventions-->>MBuilder: Enrich model with convention-based rules
+    MBuilder-->>Dev: Finalize model for EF Core operations
 ```
 
 **Explanation:**  
-- **A:** Start with your domain model classes.
-- **B:** In the DbContext, override `ConfigureConventions` to apply global rules.
-- **C & D:** Global rules are defined for specific types.
-- **E:** EF Core builds the final model with these conventions.
-- **F:** Any explicit configuration (e.g., via Fluent API) can override the global defaults.
-- **G:** The final database schema is created with consistent configurations across entities.
+- OnModelCreating Override: The process starts when the developer overrides the OnModelCreating() method in the DbContext to customize the model configuration.
+- Pre-Convention Configuration: Within OnModelCreating(), custom configurations (such as naming conventions, primary keys, or relationship mappings) are applied before EF Core’s default conventions run. This step ensures that specific settings are in place early on.
+- Default Conventions: After the pre-convention configurations, EF Core applies its default conventions to further enrich and finalize the model metadata.
+- Final Model: The resulting model, combining both custom pre-convention settings and default convention rules, is finalized and ready for use in EF Core operations.
 
 ## 5. Comparison: Configuration Approaches
 | **Approach**                 | **Description**                                                       | **Example**                                              |
