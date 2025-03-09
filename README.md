@@ -1315,19 +1315,29 @@ Each migration consists of three key files:
 ## 📌 Migrations Workflow Diagram
 
 ```mermaid
-flowchart TD
-    A[Modify Domain Models] --> B[Generate Migration (dotnet ef migrations add)]
-    B --> C[Review Generated Migration Code]
-    C --> D[Apply Migration (dotnet ef database update)]
-    D --> E[Updated Database Schema]
+sequenceDiagram
+    participant Admin as Administrator
+    participant Migrator as Migration System
+    participant Backup as Backup Module
+    participant Data as Data Store
+    participant QA as QA Team
+
+    Admin->>Migrator: Initiate Migration Process
+    Migrator->>Backup: Execute Data Backup
+    Backup-->>Migrator: Confirm Backup Completion
+    Migrator->>Data: Migrate Data
+    Data-->>Migrator: Confirm Data Transfer
+    Migrator->>QA: Trigger Post-Migration Testing
+    QA-->>Migrator: Provide Test Results & Approval
+    Migrator->>Admin: Notify Migration Completion
 ```
 
-## 🌍 Best Practices for Migrations
-- **Commit Migrations** – Always commit migration files to version control.
-- **Review Generated Code** – Check migration files for correctness before applying them.
-- **Use Descriptive Names** – Name migrations clearly (e.g., `AddCustomerEmail`).
-- **Automate in CI/CD** – Run migrations automatically before deployment.
-- **Backup Database** – Always backup before running migrations.
+### 📌 Explanation:	
+- Initiation: The administrator starts the migration process.
+- Backup: The migration system calls on the backup module to create a secure backup before any changes.
+- Data Migration: Once the backup is confirmed, data is migrated from the old system to the new data store.
+- Testing: After the data migration, the system triggers post-migration tests by involving the QA team to validate the success of the migration.
+- Completion: Finally, the system notifies the administrator that the migration has been successfully completed.
 
 ---
 # 🚀 Understanding Up and Down Methods in Database Migrations in .NET Development
@@ -1528,21 +1538,21 @@ foreach (var item in query)
 3. **Mix Both** when necessary, but maintain consistency within a project.
 
 ## 📜 LINQ Workflow Diagram
-```mermaid
-flowchart TD
-    A[Data Source (Collection, DB, XML)]
-    B[Standard LINQ Syntax]
-    C[Method LINQ Syntax]
-    D[Execution & Compilation]
-    E[Optimized Query Execution]
 
-    A --> B
-    A --> C
-    B --> D
-    C --> D
-    D --> E
+```mermaid
+sequenceDiagram
+    participant Dev as Developer
+    participant Query as LINQ Query (Expression Tree)
+    participant Provider as LINQ Provider
+    participant Data as Data Source
+
+    Dev->>Query: Write LINQ query (query/method syntax)
+    Query->>Provider: Parse and build expression tree
+    Provider->>Data: Translate expression tree to target query (e.g., SQL)
+    Data-->>Provider: Execute query and return results
+    Provider-->>Query: Materialize results (deferred execution)
+    Query-->>Dev: Return result collection
 ```
-> Both **Standard Query Syntax** and **Method Syntax** are compiled into the same execution pipeline.
 
 ## 🏁 Conclusion
 Both **Standard Query Syntax** and **Method Syntax** are valuable tools in LINQ. While **Standard Query Syntax** is more readable for complex queries, **Method Syntax** is more fluent and widely used for simpler operations. Mastering both approaches allows developers to write efficient, maintainable, and flexible data queries.
@@ -1553,7 +1563,6 @@ By following best practices, developers can enhance readability, maintainability
 
 ---
 # 🚀 Understanding Synchronous and Asynchronous Programming in .NET Development
-
 ## 📌 Introduction
 In .NET development, **synchronous** and **asynchronous** programming models determine how code executes and manages resources. Understanding the differences, advantages, and trade-offs of each approach is critical to building efficient, responsive applications.
 
@@ -1633,15 +1642,19 @@ public async Task ReadFileAsynchronous()
 ## 📜 Diagram: Synchronous vs Asynchronous Execution
 
 ```mermaid
-flowchart TD
-    A[Synchronous Execution Start] --> B[Operation Execution (Blocking)]
-    B --> C[Operation Completion]
-    C --> D[Next Operation]
+sequenceDiagram
+    participant Caller as Caller
+    participant Sync as Synchronous Method
+    participant Async as Asynchronous Method
 
-    E[Asynchronous Execution Start] --> F[Initiate Operation (Non-Blocking)]
-    F --> G[Operation Continues in Background]
-    G --> H[Operation Completion]
-    H --> I[Resumes Awaiting Code]
+    alt Synchronous Execution
+        Caller->>Sync: Invoke Method
+        Sync-->>Caller: Return Result
+    else Asynchronous Execution
+        Caller->>Async: Invoke Method
+        Note over Caller,Async: Caller continues processing
+        Async-->>Caller: Callback with Result
+    end
 ```
 
 ### Explanation:
@@ -1657,7 +1670,6 @@ Choosing the right approach depends on the nature of the task and the performanc
 
 ---
 # 🚀 Comparing LINQ Syntax and SQL Syntax in .NET Development
-
 ## 📌 Introduction
 In .NET development, data operations are a central part of building applications. Two common ways to interact with data are:
 - **LINQ (Language Integrated Query)**: A query language built into C# for querying various data sources (objects, databases, XML, etc.).
@@ -2076,18 +2088,21 @@ using (var context = new ApplicationDbContext())
 ## 🔄 Diagram: Synchronous vs. Asynchronous Flow
 
 ```mermaid
-flowchart TD
-    A[Start Query Execution] --> B[Call ToList()]
-    B --> C[Block Calling Thread]
-    C --> D[Query Executes and Returns List]
-    D --> E[Resume Execution]
+sequenceDiagram
+    participant Client as Client
+    participant SyncOp as Synchronous Operation
+    participant AsyncOp as Asynchronous Operation
 
-    F[Start Query Execution] --> G[Call ToListAsync()]
-    G --> H[Return Task and Free Calling Thread]
-    H --> I[Await Completion]
-    I --> J[Query Executes and Returns List]
-    J --> K[Resume Awaiting Code]
+    Client->>SyncOp: Invoke Sync Operation
+    SyncOp-->>Client: Return Response
+
+    Client->>AsyncOp: Invoke Async Operation
+    Note over Client,AsyncOp: Client continues with other tasks
+    AsyncOp-->>Client: Return Response via Callback
 ```
+
+- Synchronous Flow: The client invokes the synchronous operation and waits until the operation completes, receiving the response before moving on.
+- Asynchronous Flow: The client invokes the asynchronous operation and continues processing other tasks without waiting. The asynchronous operation later returns a response via a callback mechanism.
 
 ## ✅ When to Use Each
 1. **Use `ToList()` When**  
@@ -3397,13 +3412,21 @@ using (var context = new ApplicationDbContext())
 ## ⚙️ Diagram: Tracking vs. No Tracking
 
 ```mermaid
-flowchart TD
-    A[Start Query] --> B[Execute Query in DbContext]
-    B --> C[Entities Retrieved]
-    C --> D[Tracking Query] --> E[Entities Tracked in Change Tracker]
-    C --> F[No Tracking Query] --> G[Entities Not Tracked]
-    E --> H[Modify Entities & Call SaveChanges()]
-    G --> I[Entities remain unchanged, no updates made]
+sequenceDiagram
+    participant App as Application
+    participant DbCtx as DbContext
+    participant Data as Data Source
+    participant Tracker as Change Tracker
+
+    App->>DbCtx: Execute Query
+    DbCtx->>Data: Fetch Data
+    Data-->>DbCtx: Return Data
+    alt Tracking Enabled
+        DbCtx->>Tracker: Attach Entities
+        Tracker-->>App: Return Tracked Entities
+    else No Tracking
+        DbCtx-->>App: Return Untracked Entities
+    end
 ```
 
 - **Tracking Query:** Entities are **monitored**, and changes are **saved** to the database.
@@ -3492,15 +3515,28 @@ Console.WriteLine($"Sum of list = {sum}");
 ## 📜 Diagram: Execution Flow
 
 ```mermaid
-flowchart TD
-    A[Define IQueryable Query]
-    B[Build Expression Tree (Deferred)]
-    C[Materialize Query (e.g., ToList())]
-    D[Resulting List<T> in Memory]
+sequenceDiagram
+    participant Dev as Developer
+    participant Query as Query Expression
+    participant Provider as Query Provider
+    participant DataSource as Data Source
 
-    A --> B
-    B --> C
-    C --> D
+    alt Deferred Execution (IQueryable)
+        Dev->>Query: Build IQueryable query
+        Query->>Provider: Construct expression tree (Deferred)
+        Note right of Provider: Query is not executed until enumeration
+        Dev->>Query: Enumerate query (e.g., foreach)
+        Query->>Provider: Execute query
+        Provider->>DataSource: Retrieve data
+        DataSource-->>Provider: Return results
+        Provider-->>Dev: Provide IQueryable results
+    else Immediate Execution (List)
+        Dev->>Query: Build query
+        Dev->>Provider: Call ToList() to materialize query
+        Provider->>DataSource: Execute query immediately
+        DataSource-->>Provider: Return results
+        Provider-->>Dev: Provide List of data
+    end
 ```
 
 - **IQueryable<T>** enables **deferred execution**, allowing query **optimization**.
@@ -3524,100 +3560,6 @@ flowchart TD
 - [Microsoft Docs: IQueryable Interface](https://docs.microsoft.com/en-us/dotnet/api/system.linq.iqueryable)
 - [Microsoft Docs: LINQ in C#](https://docs.microsoft.com/en-us/dotnet/csharp/linq/)
 - [Entity Framework Core Documentation](https://docs.microsoft.com/en-us/ef/core/)
-
----
-# 🚀 Understanding IQueryable vs. List in .NET Development
-## 📌 Introduction
-In .NET, `IQueryable<T>` and `List<T>` serve different purposes when working with collections and data. **IQueryable** is designed for **deferred execution** and **remote querying**, while **List** is an in-memory collection used for **immediate** or **eager** data operations. Understanding the differences is crucial for **performance optimization**, **scalable architecture**, and **efficient data handling** in .NET applications.
-
-## 🔍 What is IQueryable?
-### ✅ **Definition:**
-`IQueryable<T>` is an interface that enables the construction of LINQ queries that can be executed against different data sources, such as **databases, APIs, or other query providers**.
-### 🏗️ **Key Features:**
-- **Deferred Execution**: Queries are **not executed immediately**, but only when the data is needed.
-- **Remote Querying**: Often used by **Entity Framework Core (EF Core)** to translate LINQ into **SQL queries**.
-- **Composable**: Multiple LINQ operations can be chained before execution.
-- **Optimized Execution**: The database executes only the required operations, reducing memory usage and improving performance.
-
-### 🏗️ **Example: Using IQueryable in EF Core**
-```csharp
-using var context = new ApplicationDbContext();
-
-// IQueryable query - not yet executed
-IQueryable<Product> queryableProducts = context.Products
-    .Where(p => p.Price > 100)
-    .OrderByDescending(p => p.Rating);
-
-// Execution happens here
-var productList = await queryableProducts.ToListAsync();
-Console.WriteLine($"Total Products: {productList.Count}");
-```
-
-#### 📝 **Explanation**
-- The query is **deferred** until `.ToListAsync()` is called.
-- EF Core **translates** the LINQ expression into **SQL** before execution.
-
-## 📌 What is List<T>?
-### ✅ **Definition:**
-`List<T>` is a concrete **in-memory** collection that holds elements in memory and allows **immediate** data operations.
-### 🏗️ **Key Features:**
-- **Immediate Execution**: Operations are performed as soon as they are called.
-- **In-Memory Collection**: The data is **already loaded** into memory.
-- **Fast Iteration**: Once materialized, iterating through a list is **efficient**.
-- **Best for Small Data Sets**: Useful for working with final results.
-
-### 🏗️ **Example: Using List<T>**
-```csharp
-var numbers = new List<int> { 1, 2, 3, 4, 5 };
-
-// No deferred execution
-int sum = numbers.Sum();
-Console.WriteLine($"Sum of list = {sum}");
-```
-
-#### 📝 **Explanation**
-- `numbers` is **already in memory**, so there is **no deferred execution**.
-- Operations like `.Sum()` happen **immediately**.
-
-## 📊 Comparison: IQueryable vs. List<T>
-| **Feature**            | **IQueryable<T>**                                        | **List<T>**                                      |
-|------------------------|---------------------------------------------------------|--------------------------------------------------|
-| **Execution**         | Deferred until materialized (`.ToList()`, `.First()`)  | Immediate Execution                             |
-| **Data Source**       | Remote (DB, API, etc.)                                  | In-memory Collection                            |
-| **Query Optimization** | Translates into SQL or optimized query                 | Operations happen on already fetched data       |
-| **Performance**       | More efficient for filtering, sorting, paging           | Fast iteration but requires all data to be loaded first |
-| **When to Use?**      | Querying large datasets, using EF Core                  | Manipulating already loaded data, small datasets |
-
-## 📜 Diagram: Execution Flow
-
-```mermaid
-flowchart TD
-    A[Define IQueryable Query]
-    B[Build Expression Tree (Deferred)]
-    C[Materialize Query (e.g., ToList())]
-    D[Resulting List<T> in Memory]
-
-    A --> B
-    B --> C
-    C --> D
-```
-
-- **IQueryable<T>** enables **deferred execution**, allowing query **optimization**.
-- **List<T>** is an **already materialized collection**, ready for **in-memory operations**.
-
-## 📦 When to Use Which?
-| **Scenario**                 | **Recommended Choice** |
-|------------------------------|------------------------|
-| Querying a database          | `IQueryable<T>`        |
-| Filtering and sorting before execution | `IQueryable<T>` |
-| Working with an in-memory collection | `List<T>`        |
-| Performing local manipulations | `List<T>`        |
-| Avoiding multiple round-trips | `IQueryable<T>` |
-
-## 🎯 Conclusion
-- **IQueryable<T>** is ideal for **database queries**, **remote data access**, and **deferred execution**.
-- **List<T>** is best for **in-memory operations**, **quick data manipulations**, and **finalized data sets**.
-- **Choosing the right approach ensures optimal performance, reduces memory usage, and keeps code maintainable.** 🚀
 
 ---
 # 🚀 Understanding Entity States in .NET Development
@@ -3818,24 +3760,25 @@ using (var context = new ApplicationDbContext())
 ## 📊 SaveChanges() and DetectChanges() Workflow
 
 ```mermaid
-flowchart TD
-    A[Start with a DbContext]
-    B[Entity Operations (Add, Update, Delete)]
-    C[Call SaveChanges()]
-    D[Automatically calls DetectChanges()]
-    E[Change Tracker Updates Entity States]
-    F[Generate SQL Commands based on States]
-    G[Execute SQL Commands within a Transaction]
-    H[Return number of rows affected]
-    
-    A --> B
-    B --> C
-    C --> D
-    D --> E
-    E --> F
-    F --> G
-    G --> H
+sequenceDiagram
+    participant Dev as Developer
+    participant DbCtx as DbContext
+    participant CT as Change Tracker
+    participant DB as Database
+
+    Dev->>DbCtx: SaveChanges()
+    DbCtx->>CT: DetectChanges()
+    CT-->>DbCtx: Return modified entities
+    DbCtx->>DB: Commit changes (Insert/Update/Delete)
+    DB-->>DbCtx: Acknowledge changes
+    DbCtx->>Dev: Return result (records affected)
 ```
+### 📌 Explanation:
+- SaveChanges() Call: The developer invokes SaveChanges() on the DbContext to persist changes.
+- DetectChanges() Invocation: Before committing, the DbContext calls DetectChanges() on the Change Tracker, which scans the tracked entities to identify any modifications.
+- Change Detection: The Change Tracker returns a list of modified entities (e.g., new, updated, or deleted records).
+- Database Commit: The DbContext then commits these changes by performing the appropriate database operations (Insert, Update, or Delete).
+- Acknowledgment and Result: Once the database processes the operations and acknowledges the changes, the DbContext returns the result (typically the number of records affected) to the developer.
 
 ## 🚀 Best Practices for Efficient Usage
 ### ✅ Optimize Performance
@@ -3949,20 +3892,28 @@ public async Task AddProductAsync()
 ## 📌 Diagram: Add() vs. AddAsync() Workflow
 
 ```mermaid
-flowchart TD
-    A[Start]
-    B[Create Entity Instance]
-    C[Call Add() / AddAsync()]
-    D[Entity Marked as 'Added' in DbContext]
-    E[Call SaveChanges() / SaveChangesAsync()]
-    F[Entity Inserted into Database]
-    
-    A --> B
-    B --> C
-    C --> D
-    D --> E
-    E --> F
+sequenceDiagram
+    participant Developer as Developer
+    participant DbContext as DbContext
+    participant Tracker as Change Tracker
+
+    alt Synchronous Add()
+        Developer->>DbContext: Call Add(entity)
+        DbContext->>Tracker: Attach entity synchronously
+        Tracker-->>DbContext: Confirm attachment
+        DbContext-->>Developer: Return entity entry immediately
+    else Asynchronous AddAsync()
+        Developer->>DbContext: Call AddAsync(entity)
+        Note right of Developer: Continues with other tasks
+        DbContext->>Tracker: Attach entity asynchronously
+        Tracker-->>DbContext: Confirm attachment
+        DbContext-->>Developer: Return Task with entity entry
+    end
 ```
+
+### 📌 Explanation:
+- Synchronous Add(): When a developer calls the synchronous Add() method, the entity is immediately attached to the DbContext through the Change Tracker. The operation completes in a blocking manner, and the entity entry is returned instantly.
+- Asynchronous AddAsync(): When the developer opts for AddAsync(), the entity attachment occurs asynchronously. This non-blocking call allows the developer to continue with other tasks while the operation processes in the background. Ultimately, a Task is returned that, once awaited, provides the attached entity entry.
 
 - **Explanation:**
   - **A to B:** Create a new entity.
@@ -4067,20 +4018,24 @@ using (var context = new ApplicationDbContext())
 ## 📊 Diagram: Insert Operations Workflow
 
 ```mermaid
-flowchart TD
-    A[Start] --> B[Prepare Data]
-    B --> C[Choose Insertion Method]
-    C --> D1[Single Insert]
-    C --> D2[Loop Insert]
-    C --> D3[Batch Insert]
-    C --> D4[Bulk Insert]
-    D1 --> E[Add Entity to DbContext]
-    D2 --> E
-    D3 --> E
-    D4 --> E
-    E --> F[Call SaveChanges() or BulkInsertAsync()]
-    F --> G[Data Persisted to Database]
+sequenceDiagram
+    participant Dev as Developer
+    participant DbCtx as DbContext/ORM
+    participant Tracker as Change Tracker
+    participant DB as Database
+
+    Dev->>DbCtx: Call Insert(entity)
+    DbCtx->>Tracker: Attach entity to change tracker
+    Tracker-->>DbCtx: Confirm entity attached
+    DbCtx->>DB: Execute SQL INSERT command
+    DB-->>DbCtx: Return insertion result
+    DbCtx-->>Dev: Return confirmation/inserted entity
 ```
+### 📌 Explanation:
+- Initiation: The process starts when the Developer calls the Insert operation on the DbContext (or ORM).
+- Entity Attachment: The DbContext then attaches the entity to the Change Tracker to monitor its state.
+- Command Execution: After the entity is attached, the DbContext executes an SQL INSERT command against the Database.
+- Result Handling: The Database returns the result of the insert operation (such as a success indicator or the inserted entity with a generated key), which is then passed back to the Developer.
 
 ## 🏁 Conclusion
 Choosing the right insert strategy depends on the **dataset size, performance requirements, and application architecture**. While **single inserts** are great for **isolated** transactions, **batch inserts** and **bulk operations** significantly improve performance for **large-scale** data processing. By applying best practices, you can ensure **efficient**, **scalable**, and **optimized** insert operations in .NET applications. 🚀
@@ -4180,31 +4135,33 @@ using (var context = new ApplicationDbContext())
 ## 4. Diagram: Update Operation Flow
 
 ```mermaid
-flowchart TD
-    A[Retrieve Entity from Database]
-    B[Is Entity Tracked?]
-    C[Yes: Entity is Tracked]
-    D[Modify Entity Properties]
-    E[Call SaveChanges()]
-    F[EF Core Detects Changes & Executes UPDATE]
-    G[No: Entity is Not Tracked (AsNoTracking)]
-    H[Modify Entity Properties]
-    I[Attach Entity to Context]
-    J[Mark Entity as Modified]
-    K[Call SaveChanges()]
-    L[EF Core Executes UPDATE Based on Manual State]
+sequenceDiagram
+    participant Dev as Developer
+    participant DbCtx as DbContext
+    participant CT as Change Tracker
+    participant DB as Database
+    participant Entity as Entity
 
-    A --> B
-    B -- Yes --> C
-    C --> D
-    D --> E
-    E --> F
-    B -- No --> G
-    G --> H
-    H --> I
-    I --> J
-    J --> K
-    K --> L
+    Dev->>DbCtx: Retrieve Entity from Database
+    DbCtx-->>Dev: Return Entity
+
+    alt Entity is Tracked
+        Dev->>Entity: Modify Properties
+        Dev->>DbCtx: Call SaveChanges()
+        DbCtx->>CT: Detect Changes
+        CT-->>DbCtx: Return detected modifications
+        DbCtx->>DB: Execute UPDATE (Tracked)
+        DB-->>DbCtx: Confirm Update
+        DbCtx-->>Dev: Return Update Result
+    else Entity is Not Tracked
+        Dev->>Entity: Modify Properties
+        Dev->>DbCtx: Attach Entity to Context
+        Dev->>DbCtx: Mark Entity as Modified
+        Dev->>DbCtx: Call SaveChanges()
+        DbCtx->>DB: Execute UPDATE (Manual State)
+        DB-->>DbCtx: Confirm Update
+        DbCtx-->>Dev: Return Update Result
+    end
 ```
 
 - **Explanation:**  
@@ -4345,24 +4302,37 @@ public async Task BulkDeleteOldProductsAsync()
 ## 4. Diagram: Delete Operations Workflow
 
 ```mermaid
-flowchart TD
-    A[Start: Retrieve Entity/Entities]
-    B[Decision: Single vs. Bulk Delete]
-    C[Single Delete]
-    D[Bulk Delete (RemoveRange / BulkExtensions)]
-    E[Option: Soft Delete (Mark as Deleted)]
-    F[Call SaveChanges() or BulkDeleteAsync()]
-    G[Entity(ies) Deleted from Database or Marked as Deleted]
+sequenceDiagram
+    participant Dev as Developer
+    participant Repo as Repository/ORM
+    participant DB as Database
 
-    A --> B
-    B -- Single --> C
-    B -- Bulk --> D
-    B -- Soft Delete --> E
-    C --> F
-    D --> F
-    E --> F
-    F --> G
+    Dev->>Repo: Retrieve Entity/Entities
+    alt Single Delete
+        Dev->>Repo: Call Delete(entity)
+        Repo->>Repo: Mark entity for deletion
+        Dev->>Repo: Call SaveChanges()
+        Repo->>DB: Execute DELETE command
+        DB-->>Repo: Return deletion confirmation
+    else Bulk Delete
+        Dev->>Repo: Call BulkDelete (or RemoveRange)
+        Repo->>DB: Execute Bulk DELETE command or BulkDeleteAsync()
+        DB-->>Repo: Return bulk deletion confirmation
+    else Soft Delete
+        Dev->>Repo: Set entity's IsDeleted flag (mark as deleted)
+        Dev->>Repo: Call SaveChanges() or BulkDeleteAsync()
+        Repo->>DB: Execute UPDATE command to mark as deleted
+        DB-->>Repo: Return update confirmation
+    end
+    Repo-->>Dev: Return final deletion result
 ```
+### 📌 Explanation:
+- Entity Retrieval: The process begins with the developer retrieving the entity or entities from the repository.
+- Decision Path: An alternative path is taken based on the deletion strategy:
+- Single Delete: The developer calls a delete method for a single entity. The repository marks the entity for deletion, and after calling SaveChanges(), it sends a DELETE command to the database, which confirms the deletion.
+- Bulk Delete: For multiple entities, the developer opts for a bulk delete operation (using methods such as RemoveRange or BulkDeleteAsync()). The repository then executes a bulk deletion command, and the database returns a confirmation.
+- Soft Delete: When a soft delete is preferred, the developer updates an entity flag (e.g., setting an IsDeleted property) and calls SaveChanges() or a bulk asynchronous delete method. The repository issues an UPDATE command to mark the entity as deleted rather than removing it, and the database confirms the update.
+- Final Confirmation: In all cases, the repository returns the final deletion result to the developer.
 
 ## 6. Resources and References
 - [Microsoft Docs: EF Core Delete Operations](https://docs.microsoft.com/en-us/ef/core/saving/basic)
@@ -4573,40 +4543,37 @@ public async Task<int> DeleteDiscontinuedProductsAsync(ApplicationDbContext cont
 ## 4. Workflow Diagram
 
 ```mermaid
-flowchart TD
-    A[Start]
-    B[Retrieve Entities]
-    C[Mark for Deletion using Remove()/RemoveRange()]
-    D[Call SaveChanges()]
-    E[Entities Deleted from Database]
+sequenceDiagram
+    participant Dev as Developer
+    participant DbCtx as DbContext/EF Core
+    participant DB as Database
 
-    A --> B
-    B --> C
-    C --> D
-    D --> E
-
-    F[Start]
-    G[Define IQueryable with Delete Criteria]
-    H[Call ExecuteDelete()/ExecuteDeleteAsync()]
-    I[EF Core Translates Query to SQL DELETE]
-    J[Bulk Delete Executed in Database]
-    
-    F --> G
-    G --> H
-    H --> I
-    I --> J
+    alt Traditional Delete Operation
+        Dev->>DbCtx: Retrieve Entities
+        Dev->>DbCtx: Mark for Deletion (Remove/RemoveRange)
+        Dev->>DbCtx: Call SaveChanges()
+        DbCtx->>DB: Generate DELETE commands per entity
+        DB-->>DbCtx: Confirm deletion for each entity
+        DbCtx-->>Dev: Return deletion result
+    else ExecuteDelete Operation
+        Dev->>DbCtx: Define IQueryable with delete criteria
+        Dev->>DbCtx: Call ExecuteDelete()/ExecuteDeleteAsync()
+        DbCtx->>DB: Translate query to SQL DELETE (Bulk Delete)
+        DB-->>DbCtx: Execute bulk delete in database
+        DbCtx-->>Dev: Return bulk deletion result
+    end
 ```
 
-## 5. Best Practices & Considerations
-### ✅ When to Use **Traditional Delete** (`Remove()` / `RemoveRange()`)
-- When you need **business logic** to be executed before deletion.
-- When **cascade deletes** need to be managed automatically by EF Core.
-- When deleting **a small number of entities** where performance is not a concern.
-### ✅ When to Use **ExecuteDelete**
-- When **deleting a large number of records** efficiently.
-- When **entities do not need to be loaded** into memory.
-- When **change tracking and business logic execution** are **not required**.
-- When **bulk delete operations** need to be performed within a single **SQL statement**.
+### 📌 Explanation:
+- Traditional Delete Operation:
+- The developer retrieves the entities from the database.
+- The entities are marked for deletion using methods such as Remove() or RemoveRange().
+- The developer then calls SaveChanges(), causing the DbContext to generate individual DELETE commands for each entity.
+- The database confirms each deletion, and the final result is returned to the developer.
+- ExecuteDelete Operation:
+- The developer defines an IQueryable with specific delete criteria.
+- By calling ExecuteDelete() or its asynchronous counterpart, the DbContext translates the criteria into a single SQL DELETE statement that performs a bulk deletion.
+- The database executes the bulk delete, and the result is returned to the developer.
 
 ## 6. Resources and References
 - [Microsoft Docs: ExecuteDeleteAsync Method](https://learn.microsoft.com/de-de/ef/core/saving/execute-insert-update-delete)
@@ -4715,17 +4682,28 @@ This command deletes the last migration file **without affecting the database**.
 ## ⚙️ Diagram: Migration Lifecycle
 
 ```mermaid
-flowchart TD
-    A[Modify Entity Models or DbContext] -->|dotnet ef migrations add| B[Generate Migration Files]
-    B -->|dotnet ef database update| C[Apply Changes to Database]
-    C --> D[__EFMigrationsHistory Table Updated]
-    D -->|Rollback (if needed)| E[dotnet ef database update PreviousMigration]
+stateDiagram-v2
+    [*] --> Planning: Initiate Migration
+    Planning --> Assessment: Evaluate Current Environment
+    Assessment --> Backup: Create Backups & Rollback Plan
+    Backup --> PreMigration: Prepare Resources & Schedule
+    PreMigration --> Migration: Execute Data/System Migration
+    Migration --> Testing: Validate Migration Success
+    Testing --> Deployment: Deploy New System
+    Deployment --> Monitoring: Monitor Performance & Stability
+    Monitoring --> Completed: Migration Completed Successfully
 ```
 
-- **A → B**: Developer modifies entity models and creates a migration.
-- **B → C**: Migration is applied to the database.
-- **C → D**: The applied migration is recorded in `__EFMigrationsHistory`.
-- **D → E**: If necessary, migrations can be rolled back to a previous version.
+### 📌 Explanation:
+- Planning: The migration process begins with defining objectives, scope, and a strategy.
+- Assessment: The current environment is evaluated to identify requirements and potential challenges.
+- Backup: Critical data and configurations are backed up to ensure a fallback option in case of issues.
+- PreMigration: Necessary preparations are made, including resource allocation and scheduling.
+- Migration: The actual migration is executed—this may involve data transfer or system reconfiguration.
+- Testing: Post-migration tests are performed to validate that everything functions as expected.
+- Deployment: The new system is deployed, making it available for use.
+- Monitoring: Continuous monitoring ensures performance, stability, and immediate detection of any issues.
+- Completed: The process concludes when the migration is confirmed to be successful.
 
 ## 🏁 Conclusion
 EF Core migrations are a **powerful, structured** way to manage schema changes in .NET applications. They allow for:
@@ -4800,20 +4778,26 @@ public class ApplicationDbContext : DbContext
 ## ⚙️ Diagram: Configuration Workflow
 
 ```mermaid
-flowchart TD
-    A[Define Domain Model] --> B[Create Configuration Class]
-    B --> C[Implement IEntityTypeConfiguration<T>]
-    C --> D[Override OnModelCreating in DbContext]
-    D --> E[Call ApplyConfigurationsFromAssembly()]
-    E --> F[EF Core Scans and Applies Configurations]
+sequenceDiagram
+    participant Dev as Developer
+    participant DM as Domain Model
+    participant Conf as Configuration Class
+    participant Ctx as DbContext
+    participant EF as EF Core
+
+    Dev->>DM: Define Domain Model
+    Dev->>Conf: Create Configuration Class
+    Conf->>EF: Implement IEntityTypeConfiguration<T>
+    Dev->>Ctx: Override OnModelCreating()
+    Ctx->>EF: Call ApplyConfigurationsFromAssembly()
+    EF-->>Ctx: Scan & Apply Configurations
 ```
 
-- **Explanation:**
-  1. The entity model (`Product`) is defined.
-  2. A configuration class (`ProductConfiguration`) is created.
-  3. The class implements `IEntityTypeConfiguration<T>`.
-  4. `ApplyConfigurationsFromAssembly()` is used in `DbContext` to automatically apply configurations.
-  5. EF Core scans and applies all configurations.
+### 📌 Explanation:
+- Define Domain Model: The process begins with the developer defining the domain model, which represents the entities in the application.
+- Create Configuration Class: Next, the developer creates a configuration class that implements the IEntityTypeConfiguration interface to configure entity properties, relationships, and constraints.
+- Override OnModelCreating in DbContext: Within the DbContext, the OnModelCreating method is overridden to include the custom configurations.
+- Call ApplyConfigurationsFromAssembly(): The DbContext calls the ApplyConfigurationsFromAssembly() method, which instructs EF Core to scan the specified assembly for all configuration classes and apply them automatically. 
 
 ## 📊 Comparison Table: Manual vs. Automated Configuration
 | Approach                                  | Manual Configuration                          | Automated Configuration                        |
@@ -5020,22 +5004,30 @@ public class MigrationService
 ## 🎯 4. Diagram: Migration Rollback Workflow
 
 ```mermaid
-flowchart TD
-    A[Start with Current Database Schema]
-    B[__EFMigrationsHistory Table Lists Applied Migrations]
-    C[Specify Target Migration (e.g., UpdateProductPrice)]
-    D[EF Core Determines Migrations to Revert]
-    E[Execute Down() Methods for Migrations After Target]
-    F[Database Schema Reverts to Target State]
-    G[__EFMigrationsHistory Table Updated]
+sequenceDiagram
+    participant Admin as Administrator
+    participant Migrator as Migration Tool
+    participant DB as Database
+    participant Backup as Backup System
 
-    A --> B
-    B --> C
-    C --> D
-    D --> E
-    E --> F
-    F --> G
+    Admin->>Migrator: Initiate Rollback Request (target migration)
+    Migrator->>DB: Retrieve Migration History
+    DB-->>Migrator: Return current migration details
+    Migrator->>Migrator: Determine rollback target version
+    Migrator->>Backup: Retrieve latest backup (if available)
+    Backup-->>Migrator: Provide backup data
+    Migrator->>DB: Execute rollback script (reverse migration)
+    DB-->>Migrator: Confirm rollback execution
+    Migrator->>Admin: Notify Rollback Completed Successfully
 ```
+
+### 📌 Explanation:
+- Initiation: The administrator begins the rollback process by sending a rollback request specifying the target migration version.
+- Migration History Retrieval: The migration tool queries the database to retrieve the current migration history and determine the state that needs to be reverted.
+- Determination: Based on the migration history, the tool identifies the appropriate target version for rollback.
+- Backup Retrieval: If available, the system retrieves a backup from the backup system to ensure data integrity during the rollback.
+- Rollback Execution: The migration tool then executes a rollback script (often a reverse migration) to revert the database schema and data to the desired state.
+- Confirmation: The database confirms that the rollback has been applied, and the migration tool notifies the administrator of the successful rollback.
 
 ## 🛠️ 5. Considerations & Best Practices
 | **Scenario**                   | **Potential Outcome & Solution**                    |
@@ -5315,23 +5307,38 @@ app.Run();
 ## 4️⃣ Runtime Migration Workflow Diagram
 
 ```mermaid
-flowchart TD
-    A[Application Startup]
-    B[Create DbContext Instance]
-    C[Check for Pending Migrations]
-    D{Pending Migrations?}
-    E[Apply Migrations using Migrate()]
-    F[Update __EFMigrationsHistory Table]
-    G[Proceed with Application Execution]
+sequenceDiagram
+    participant App as Application
+    participant MM as Migration Manager
+    participant DB as Database
+    participant Logger as Logger
+    participant Backup as Backup System
 
-    A --> B
-    B --> C
-    C --> D
-    D -- Yes --> E
-    D -- No --> G
-    E --> F
-    F --> G
+    App->>MM: Start Application & Check for Migrations
+    MM->>DB: Retrieve Migration History
+    DB-->>MM: Return Migration Status
+    MM->>MM: Determine Pending Migrations
+    alt Pending Migrations Exist
+        MM->>Backup: Initiate Backup (Optional)
+        Backup-->>MM: Backup Completed
+        MM->>DB: Execute Migration Script(s)
+        DB-->>MM: Return Migration Result
+        MM->>Logger: Log Migration Outcome
+        MM->>App: Return Success & Continue Startup
+    else No Pending Migrations
+        MM->>Logger: Log "No Migrations Found"
+        MM->>App: Continue Startup
+    end
 ```
+
+### 📌 Explanation:
+- Application Startup: The application starts and checks if any database migrations are pending.
+- Retrieve Migration History: The Migration Manager queries the database to get the current migration status.
+- Determine Pending Migrations: The Migration Manager assesses whether there are any migrations that need to be applied.
+- Optional Backup: If migrations are pending, an optional backup is initiated to safeguard data before applying changes.
+- Execute Migrations: The Migration Manager executes the necessary migration scripts against the database.
+- Logging: The outcome of the migration process is logged for auditing and troubleshooting purposes.
+- Completion: The Migration Manager notifies the application of the successful migration, or if no migrations were needed, the application continues its startup process.
 
 ## 5️⃣ Considerations for Production Use
 1. **Data Backup**: Always back up the database before applying migrations in production.
@@ -5448,30 +5455,49 @@ public class Startup
 ## 4️⃣ Diagram: EnsureCreated vs. MigrateAsync Workflow
 
 ```mermaid
-flowchart TD
-    A[Application Startup]
-    B[Initialize DbContext]
-    C{Database Exists?}
-    D[No: Create Database & Schema]
-    E[Yes: Do Nothing (EnsureCreated)]
-    F[Apply Migrations with MigrateAsync]
-    G[Update __EFMigrationsHistory]
-    H[Database Schema Updated]
+sequenceDiagram
+    participant App as Application
+    participant EF as EF Core
+    participant DB as Database
 
-    A --> B
-    B --> C
-    C -- No --> D
-    C -- Yes --> E
-    D --> H
-    E --> H
-    B --> F
-    F --> G
-    G --> H
+    alt EnsureCreated() Workflow
+        App->>EF: Call EnsureCreated()
+        EF->>DB: Check if database & schema exist
+        DB-->>EF: Return status (exists/not exists)
+        alt Database does not exist
+            EF->>DB: Create database and schema
+            DB-->>EF: Confirm creation
+        else Database exists
+            EF-->>App: Database already exists
+        end
+        EF-->>App: Return EnsureCreated() result
+    else MigrateAsync() Workflow
+        App->>EF: Call MigrateAsync()
+        EF->>DB: Retrieve migration history
+        DB-->>EF: Return applied migrations
+        EF->>DB: Compare with available migrations
+        alt Pending migrations exist
+            EF->>DB: Execute migration scripts
+            DB-->>EF: Confirm migration execution
+        else No pending migrations
+            EF-->>App: Database is up-to-date
+        end
+        EF-->>App: Return migration outcome
+    end
 ```
 
-- **Explanation:**
-  - **EnsureCreated:** Checks if the database exists; if not, it creates it directly from the model.
-  - **MigrateAsync:** Applies pending migrations and updates the schema history.
+### 📌Explanation:
+#### EnsureCreated() Workflow:
+- The application calls EnsureCreated(), prompting EF Core to check if the database and its schema exist.
+- If the database does not exist, EF Core creates it along with the required schema.
+- If the database already exists, EF Core simply returns a status indicating readiness.
+- This approach is generally used in development or testing scenarios where full migration support is not required.
+#### MigrateAsync() Workflow:
+- The application calls MigrateAsync(), which retrieves the current migration history from the database.
+- EF Core then compares this history with the available migrations in the application.
+- If there are pending migrations, EF Core executes the corresponding migration scripts to update the database schema.
+- If no migrations are pending, EF Core returns a status indicating that the database is already up-to-date.
+- This method is typically used in production scenarios where maintaining schema evolution is crucial. 
 
 ## 5️⃣ Summary
 | Feature                  | EnsureCreated() | MigrateAsync() |
@@ -6195,28 +6221,52 @@ protected override void OnModelCreating(ModelBuilder modelBuilder)
 ### Without Custom Join Entity
 
 ```mermaid
-flowchart TD
-    A[Student]
-    B[Course]
-    C[Join Table: StudentCourses]
-
-    A -- Enrolled In --> C
-    B -- Enrolled By --> C
+classDiagram
+    class Student {
+      +int Id
+      +string Name
+    }
+    class Course {
+      +int Id
+      +string Title
+    }
+    Student "0..*" -- "0..*" Course : EnrolledIn
 ```
+
+#### Explanation:
+- Student and Course: Two primary entities in the relationship.
+- Implicit Many-to-Many: The association is represented directly between the two classes via navigation properties.
 
 ### With Custom Join Entity
 
 ```mermaid
-flowchart TD
-    A[Student]
-    B[Course]
-    C[Enrollment (Join Entity)]
-    
-    A -- Has Many --> C
-    C -- Belongs To --> A
-    B -- Has Many --> C
-    C -- Belongs To --> B
+classDiagram
+    class Student {
+      +int Id
+      +string Name
+      +List~Enrollment~ Enrollments
+    }
+    class Course {
+      +int Id
+      +string Title
+      +List~Enrollment~ Enrollments
+    }
+    class Enrollment {
+      +int StudentId
+      +int CourseId
+      +DateTime EnrollmentDate
+      +string Grade
+    }
+    Student "1" -- "0..*" Enrollment : has
+    Course "1" -- "0..*" Enrollment : has
+    Enrollment "1" -- "1" Student : belongsTo
+    Enrollment "1" -- "1" Course : belongsTo
 ```
+
+#### Explanation:
+- Custom Join Entity (Enrollment): An explicit join entity called Enrollment is introduced to manage the relationship between Student and Course. This entity includes additional properties (like EnrollmentDate and Grade), which provide more context and control over the relationship.
+- Navigation Properties: Both Student and Course maintain a collection of Enrollment objects, representing their association with each other.
+- Explicit Relationships: The relationships between Student, Course, and Enrollment are clearly defined, with Enrollment serving as the bridge between the two.
 
 ## 5. Summary
 A many-to-many relationship in .NET development allows you to model associations where multiple entities on one side are related to multiple entities on the other side. This is implemented in EF Core either:
@@ -6972,23 +7022,31 @@ var customerData = await context.Customers
 
 ### 📊 Diagram
 ```mermaid
-flowchart TD
-    A[Customer Entity]
-    B[Order Entity]
-    C[OrderItem Entity]
-    
-    subgraph Single Query (Default)
-        A -->|Include| B
-        B -->|ThenInclude| C
-        D[One Large SQL Query]
-    end
-    
-    subgraph Split Query (Optimized)
-        A -->|Include| B
-        B -->|ThenInclude| C
-        E[Multiple SQL Queries]
+sequenceDiagram
+    participant App as Application
+    participant EF as EF Core
+    participant DB as Database
+
+    alt Default Query (Single Query)
+        App->>EF: Query Customers with Include(Orders.ThenInclude(OrderItems))
+        EF->>DB: Execute one large SQL query (with JOINs)
+        DB-->>EF: Return combined result set
+        EF->>App: Assemble and return data
+    else Split Query (Using AsSplitQuery())
+        App->>EF: Query Customers with Include(Orders.ThenInclude(OrderItems)).AsSplitQuery()
+        EF->>DB: Execute SQL query for Customers
+        DB-->>EF: Return Customer data
+        EF->>DB: Execute separate SQL query for Orders
+        DB-->>EF: Return Order data
+        EF->>DB: Execute separate SQL query for OrderItems
+        DB-->>EF: Return OrderItem data
+        EF->>App: Assemble and return aggregated data
     end
 ```
+
+### 📌 Explanation:
+- Default Query (Single Query): The application queries for Customers and eagerly loads related Orders and OrderItems using the standard Include/ThenInclude. EF Core translates this into one large SQL query using JOINs to retrieve all data in a single round-trip.
+- Split Query (Using AsSplitQuery()): When AsSplitQuery() is applied, EF Core executes multiple SQL queries: one for Customers, one for Orders, and one for OrderItems. These separate queries help to reduce the complexity and potential performance issues associated with a single, large SQL query, especially when dealing with complex relationships or large datasets.
 
 ## 📊 Comparison Table: `Include()`, `ThenInclude()`, and `AsSplitQuery()`
 | Method                | Purpose                                                         | Usage Scenario                                                 |
@@ -7044,18 +7102,24 @@ if (customer != null)
 
 ### 📊 Diagram: Explicit Loading Flow
 ```mermaid
-flowchart TD
-    A[Main Entity Query]
-    B[Main Entity Loaded Without Related Data]
-    C[Explicit Call: Entry(entity).Collection().LoadAsync()]
-    D[Separate Query Executes]
-    E[Related Data Loaded and Attached]
-    
-    A --> B
-    B --> C
-    C --> D
-    D --> E
+sequenceDiagram
+    participant Dev as Developer
+    participant DbCtx as DbContext/EF Core
+    participant DB as Database
+
+    Dev->>DbCtx: Query Primary Entity (e.g., Customer)
+    DbCtx-->>Dev: Return Customer (without Orders)
+    Dev->>DbCtx: Explicitly Load Navigation Property (Orders)
+    DbCtx->>DB: Execute SQL query for Orders
+    DB-->>DbCtx: Return Orders data
+    DbCtx-->>Dev: Attach Orders to Customer
 ```
+
+### 📌 Explanation:
+- Initial Query: The developer queries for a primary entity (such as a Customer) using the DbContext. Only the primary entity is retrieved, and related navigation properties (like Orders) remain unloaded.
+- Explicit Loading Request: When the related data is needed, the developer explicitly requests the loading of the navigation property (for example, using the .Entry().Collection().Load() method).
+- Separate Query Execution: EF Core then executes a separate SQL query against the database to retrieve the related data.
+- Data Attachment: Once the related data (Orders) is retrieved, EF Core attaches it to the primary entity, making it available for further use.
 
 ## 🏗️ Example 2: Explicit Loading for Single References
 ### ✅ Scenario: A `Customer` with a `Profile`
@@ -7179,20 +7243,25 @@ foreach (var order in customer.Orders)
 
 ### 📊 Diagram: Lazy Loading Flow
 ```mermaid
-flowchart TD
-    A[Query for Main Entity (Customer)]
-    B[Customer Entity Loaded (Orders not loaded)]
-    C[Access Navigation Property (customer.Orders)]
-    D[EF Core Intercepts Access]
-    E[Lazy Loading Proxy Issues Query for Orders]
-    F[Orders are Loaded and Attached to Customer]
-    
-    A --> B
-    B --> C
-    C --> D
-    D --> E
-    E --> F
+sequenceDiagram
+    participant Dev as Developer
+    participant Proxy as EF Core Lazy Loading Proxy
+    participant DB as Database
+
+    Dev->>Proxy: Query Primary Entity (e.g., Customer)
+    Proxy-->>Dev: Return Customer (navigation properties not loaded)
+    Dev->>Proxy: Access Navigation Property (e.g., Orders)
+    Proxy->>DB: Automatically trigger SQL query for Orders
+    DB-->>Proxy: Return Orders data
+    Proxy-->>Dev: Provide loaded Orders to Customer
 ```
+
+### 📌 Explanation:
+- Initial Query: The developer queries for a primary entity (such as a Customer) via the DbContext. At this point, navigation properties (like Orders) remain unloaded.
+- Lazy Loading Trigger: When the developer accesses a navigation property, the EF Core lazy loading proxy intercepts the access and automatically issues a SQL query to fetch the related data from the database.
+- Data Retrieval: The database executes the query and returns the related data (Orders) to the proxy.
+- Data Attachment: The lazy loading proxy then attaches the retrieved data to the primary entity, making the related data available seamlessly to the developer.
+
 
 ## 🌐 Comparison Table: Lazy vs. Eager vs. Explicit Loading
 | **Aspect**               | **Lazy Loading 🕰️**              | **Eager Loading 🚀**                   | **Explicit Loading 🎯**          |
@@ -7261,16 +7330,22 @@ public class Dog : Animal
 
 ### 📊 Diagram: Virtual Member Override Flow
 ```mermaid
-flowchart TD
-    A[Base Class: Animal]
-    B[Derived Class: Dog]
-    C[Method: Speak() in Animal (Virtual)]
-    D[Overridden Method: Speak() in Dog]
-    
-    A --> C
-    C --> B
-    B --> D
+sequenceDiagram
+    participant Caller as Caller
+    participant Base as BaseClass (Virtual Method)
+    participant Derived as DerivedClass (Override)
+
+    Caller->>Base: Call VirtualMethod()
+    Note right of Base: Base reference holds Derived instance
+    Base->>Derived: Dispatch to overridden method
+    Derived-->>Caller: Return result from override
 ```
+
+### 📌 Explanation:
+- Caller: Initiates the method call on an instance that is referenced by the base class.
+- BaseClass: Contains a virtual method which can be overridden by derived classes.
+- DerivedClass: Provides its own implementation by overriding the virtual method.
+- Flow: When the caller invokes the virtual method on the base class reference, the runtime dynamically dispatches the call to the overridden method in the derived class, which then executes and returns the result.
 
 - **Explanation:**
   - The base class `Animal` defines a **virtual** method `Speak()`, which can be overridden.
@@ -7530,26 +7605,33 @@ var results = await query.ToListAsync();
 
 ## 5. Visual Representations
 ### 5.1. Diagram: INNER JOIN vs. LEFT JOIN
-The following diagram (using Mermaid syntax) visually explains how INNER JOIN and LEFT JOIN work:
 
 ```mermaid
-flowchart TD
-    A[Customers Table]
-    B[Orders Table]
-    
-    subgraph INNER JOIN
-        A -->|Matching Rows Only| C[Only Customers with Orders]
-    end
-    
-    subgraph LEFT JOIN
-        A -->|All Rows| D[All Customers]
-        D -->|Matching Data or NULL| E[Orders Data (or NULL)]
+sequenceDiagram
+    participant QE as Query Engine
+    participant T1 as Table A (Left)
+    participant T2 as Table B (Right)
+
+    alt INNER JOIN
+        QE->>T1: Retrieve rows from Table A
+        QE->>T2: Retrieve rows from Table B matching Table A keys
+        T2-->>QE: Return only matching rows
+        QE-->>QE: Combine results (only rows with matches)
+    else LEFT JOIN
+        QE->>T1: Retrieve all rows from Table A
+        QE->>T2: Retrieve rows from Table B matching Table A keys
+        alt Matching rows exist
+            T2-->>QE: Return matching rows
+            QE-->>QE: Combine Table A rows with Table B data
+        else No match
+            QE-->>QE: Combine Table A row with NULLs for Table B columns
+        end
     end
 ```
 
-**Explanation:**
-- **INNER JOIN Diagram:** Only customers with matching orders (from the `Orders` table) are shown.
-- **LEFT JOIN Diagram:** All customers are shown, with corresponding order data if available; otherwise, order fields are `NULL`.
+### Explanation:
+- INNER JOIN: The query engine retrieves rows from the left table (Table A) and then retrieves only the matching rows from the right table (Table B). The final result consists solely of rows where a match exists in both tables.
+- LEFT JOIN: The query engine retrieves all rows from the left table (Table A) regardless of a match. It then attempts to retrieve matching rows from the right table (Table B). If a match exists, the data is combined; if not, the corresponding columns from Table B are filled with NULL values.
 
 ### 5.2. Table: When to Use Each Join
 Below is a concise table summarizing scenarios for using INNER JOIN versus LEFT JOIN:
@@ -7695,28 +7777,40 @@ foreach (var emp in employeeSummaries)
 - This provides similar functionality to `COALESCE` but is executed on the client side after the data has been retrieved.
 
 ## 4. Diagram: COALESCE Logic
-The following diagram explains the logical flow of the `COALESCE` function:
 
 ```mermaid
-flowchart TD
-    A[Expression 1]
-    B[Expression 2]
-    C[Expression 3]
-    D[COALESCE(Expression1, Expression2, Expression3)]
-    
-    A -- If not NULL --> D
-    A -- If NULL --> B
-    B -- If not NULL --> D
-    B -- If NULL --> C
-    C -- If not NULL --> D
-    C -- If NULL --> E[Result is NULL]
+sequenceDiagram
+    participant Caller as Application
+    participant Coalesce as COALESCE Function
+    participant Arg1 as First Expression
+    participant Arg2 as Second Expression
+    participant Arg3 as Third Expression
+
+    Caller->>Coalesce: Call COALESCE(Arg1, Arg2, Arg3)
+    Coalesce->>Arg1: Evaluate First Expression
+    Arg1-->>Coalesce: Return value (null?)
+    alt Value is not null
+        Coalesce-->>Caller: Return Arg1 value
+    else Value is null
+        Coalesce->>Arg2: Evaluate Second Expression
+        Arg2-->>Coalesce: Return value (null?)
+        alt Value is not null
+            Coalesce-->>Caller: Return Arg2 value
+        else Value is null
+            Coalesce->>Arg3: Evaluate Third Expression
+            Arg3-->>Coalesce: Return value
+            Coalesce-->>Caller: Return Arg3 value
+        end
+    end
 ```
 
-**Explanation:**  
-- **Step 1:** The function checks `Expression1`.  
-- **Step 2:** If `Expression1` is `NULL`, it moves to `Expression2`.  
-- **Step 3:** If `Expression2` is also `NULL`, it checks `Expression3`.  
-- **Step 4:** The first non-null value encountered is returned; if all expressions are `NULL`, the final result is `NULL`.
+#### Explanation:
+- Function Call: The application calls the COALESCE function with multiple expressions (Arg1, Arg2, Arg3).
+- Evaluation Sequence: The COALESCE function evaluates each expression in order. It first evaluates Arg1.
+- If Arg1 is not null, it immediately returns Arg1’s value.
+- If Arg1 is null, it proceeds to evaluate Arg2.
+- If Arg2 is not null, it returns Arg2’s value; otherwise, it evaluates Arg3.
+- Finally, if all previous expressions are null, it returns the value of Arg3.
 
 ## 5. Additional Comparison: COALESCE vs. ISNULL in T-SQL
 SQL Server also provides the `ISNULL` function, which is similar but has some differences. The table below compares the two:
@@ -7810,7 +7904,6 @@ protected override void OnModelCreating(ModelBuilder modelBuilder)
 ```
 
 ## 4. Diagrams Illustrating Delete Behaviors
-The following diagram illustrates the overall logic of delete behaviors in EF Core:
 
 ```mermaid
 flowchart TD
@@ -7972,23 +8065,21 @@ Console.WriteLine($"The shadow CustomerId is: {customerId}");
 ```
 
 ## 4. Diagram: Explicit vs. Shadow Properties
-The following diagram illustrates the difference between explicit navigation properties and shadow properties:
 
 ```mermaid
-flowchart TD
-    A[Order Entity]
-    B[Explicit Navigation Property]
-    C[Shadow Property]
-    
-    A -->|Contains| B[CustomerId (explicitly defined in code)]
-    A -->|May contain| C[CustomerId (exists only in EF Core model)]
+classDiagram
+    class User {
+      +int Id
+      +string Name
+      +string Email
+    }
+    note right of User: Explicit Properties:\n- Id, Name, Email\n\nShadow Properties:\n- e.g., LastLoginDate (configured via Fluent API, not declared in the class)
 ```
 
-**Explanation:**
-- **Explicit Navigation Property:**  
-  The property is defined in the entity class (e.g., `Order.Customer` and `Order.CustomerId`), making it visible and directly accessible in your code.
-- **Shadow Property:**  
-  The property is not defined in the entity class but is created and maintained by EF Core. It must be accessed via the change tracker or Fluent API configuration.
+### Explanation: 
+- Explicit Properties: The User class contains explicit properties (such as Id, Name, and Email) that are directly defined in the code. These properties are visible and accessible through the entity.
+- Shadow Properties: Shadow properties (for example, a property like LastLoginDate) are not defined in the User class. Instead, they are configured via the EF Core Fluent API and exist solely in the EF Core model. EF Core tracks these properties behind the scenes, even though they are not part of the entity’s public contract.
+
 
 A text-based diagram for clarity:
 
@@ -8100,34 +8191,27 @@ Console.WriteLine($"Rows updated: {rowsAffected}");
 This command uses an interpolated string to update the product prices. The use of interpolation automatically parameterizes the query, ensuring security.
 
 ## 4. Diagram: Raw SQL Execution Workflow in EF Core
-Below is a diagram that outlines the workflow when executing raw SQL in EF Core:
-
 ```mermaid
-flowchart TD
-    A[Write Raw SQL Statement]
-    B[Choose Appropriate EF Core Method]
-    C{Query or Non-Query?}
-    D[For Query: Use FromSqlRaw/FromSqlInterpolated()]
-    E[For Non-Query: Use ExecuteSqlRaw/ExecuteSqlInterpolated()]
-    F[EF Core Executes SQL Command]
-    G[Results Mapped to Entities (if query)]
-    H[Rows Affected Returned (if non-query)]
+sequenceDiagram
+    participant Dev as Developer
+    participant DbCtx as DbContext
+    participant Provider as Database Provider
+    participant DB as Database
 
-    A --> B
-    B --> C
-    C -- Query --> D
-    C -- Non-Query --> E
-    D --> F
-    E --> F
-    F --> G
-    F --> H
+    Dev->>DbCtx: Call ExecuteSqlRaw()/ExecuteSqlInterpolated() with raw SQL
+    DbCtx->>Provider: Construct SQL Command with provided raw SQL
+    Provider->>DB: Execute SQL Command against Database
+    DB-->>Provider: Return query results or affected rows
+    Provider-->>DbCtx: Forward execution result
+    DbCtx-->>Dev: Return final result to Developer
 ```
 
-**Explanation:**  
-- Start by writing your SQL statement and choosing the appropriate method.
-- Decide if the command is a query (returning data) or a non-query.
-- Use `FromSqlRaw` or `FromSqlInterpolated` for queries, and `ExecuteSqlRaw` or `ExecuteSqlInterpolated` for non-query commands.
-- EF Core then executes the command and either maps the results to entities or returns the number of rows affected.
+### Explanation:
+- Method Call: The workflow begins when the developer calls a raw SQL execution method (such as ExecuteSqlRaw() or ExecuteSqlInterpolated()) on the DbContext with the desired SQL command.
+- SQL Command Construction: The DbContext constructs a SQL command using the provided raw SQL and passes it to the underlying database provider.
+- Database Execution: The database provider sends the SQL command to the actual database for execution.
+- Result Retrieval: Once executed, the database returns either the query results or the number of affected rows back to the provider.
+- Result Propagation: The provider then passes the result back to the DbContext, which finally returns it to the developer.
 
 ---
 # Interacting with Stored Procedures, Views, and User-Defined Functions in EF Core
@@ -8176,23 +8260,23 @@ Console.WriteLine($"Rows affected: {rowsAffected}");
 ```
 
 ### 1.4. Diagram: Stored Procedures Workflow
-
 ```mermaid
-flowchart TD
-    A[Stored Procedure in Database]
-    B[EF Core: FromSqlRaw / ExecuteSqlRaw]
-    C[SQL Execution]
-    D[Results Returned (Entities or Rows Affected)]
-    
-    A --> B
-    B --> C
-    C --> D
+sequenceDiagram
+    participant Dev as Developer
+    participant DbCtx as DbContext/EF Core
+    participant DB as Database
+
+    Dev->>DbCtx: Call Stored Procedure Method (e.g., FromSqlRaw, ExecuteSqlRaw)
+    DbCtx->>DB: Send Stored Procedure Command
+    DB-->>DbCtx: Execute Procedure and Return Results
+    DbCtx-->>Dev: Provide Result Set or Output Parameters
 ```
 
-**Explanation:**  
-- The stored procedure is executed via EF Core methods.
-- The SQL command is sent to the database.
-- Depending on the command, either a result set is mapped to entities or the number of affected rows is returned.
+#### Explanation:
+- Method Invocation: The workflow begins when the developer calls a stored procedure method (such as FromSqlRaw() or ExecuteSqlRaw()) through the DbContext.
+- Command Dispatch: EF Core constructs the stored procedure command and sends it to the database.
+- Execution: The database executes the stored procedure, which may include complex business logic, data manipulations, or aggregations.
+- Result Retrieval: After execution, the database returns the result set or output parameters back to EF Core, which then passes these results to the developer.
 
 ## 2. Views (Keyless Entities)
 ### 2.1. Overview
@@ -8248,21 +8332,23 @@ foreach (var summary in summaries)
 ### 2.4. Diagram: Views (Keyless Entities) Workflow
 
 ```mermaid
-flowchart TD
-    A[Database View: CustomerSummaryView]
-    B[Model Configuration: HasNoKey(), ToView("CustomerSummaryView")]
-    C[Keyless Entity: CustomerSummary]
-    D[Query Returns Aggregated Data]
-    
-    A --> B
-    B --> C
-    C --> D
-```
+sequenceDiagram
+    participant Dev as Developer
+    participant DbCtx as DbContext/EF Core
+    participant DB as Database
+    participant Keyless as Keyless Entity (View)
 
+    Dev->>DbCtx: Query Keyless Entity (View)
+    DbCtx->>DB: Translate query to SQL targeting the view
+    DB-->>DbCtx: Return result set from the view
+    DbCtx->>Keyless: Map results to keyless entity
+    Keyless-->>Dev: Return mapped data
+```
 **Explanation:**  
-- The view is mapped to a keyless entity.
-- The entity is configured in the model using `HasNoKey()` and `.ToView()`.
-- Queries against this entity return read-only aggregated data.
+- Entity Mapping: A keyless entity is configured to map to a database view, often using the HasNoKey() method or the [Keyless] attribute in EF Core. This indicates that the entity is read-only and does not have a primary key.
+- Query Execution: The developer queries the keyless entity through the DbContext. EF Core translates this query into a SQL command targeting the underlying database view.
+- Data Retrieval: The database executes the SQL command and returns the result set from the view.
+- Mapping and Return: EF Core maps the returned data to the keyless entity and passes the data back to the developer.
 
 ## 3. User-Defined Functions (UDFs)
 ### 3.1. Overview
@@ -8524,32 +8610,58 @@ public class CustomersController : ControllerBase
 - The POST method creates a new customer and persists the changes to the database using `SaveChangesAsync()`.
 
 ### 3.3. Diagram: Integration of EF Core and ASP.NET Core
-
+**ASP.NET Core Web API Architecture:** 
 ```mermaid
-flowchart TD
-    A[HTTP Request]
-    B[ASP.NET Core Middleware Pipeline]
-    C[Controller Action Invoked]
-    D[EF Core DbContext (Injected)]
-    E[LINQ Query / Data Operations]
-    F[Database]
-    G[Data Mapped to Entities]
-    H[Controller Returns HTTP Response]
-    
-    A --> B
-    B --> C
-    C --> D
-    D --> E
-    E --> F
-    F --> G
-    G --> H
-```
+sequenceDiagram
+    participant Client as Client
+    participant ApiCtrl as API Controller
+    participant Service as Business Service
+    participant DbCtx as EF Core DbContext
+    participant DB as Database
 
+    Client->>ApiCtrl: HTTP Request (e.g., GET /api/products)
+    ApiCtrl->>Service: Process Request
+    Service->>DbCtx: Retrieve Data
+    DbCtx->>DB: Execute SQL Query
+    DB-->>DbCtx: Return Data
+    DbCtx-->>Service: Return Data
+    Service-->>ApiCtrl: Prepare JSON Response
+    ApiCtrl-->>Client: Send JSON Response
+```
 **Explanation:**  
-- An HTTP request enters the ASP.NET Core pipeline.
-- A controller action is triggered and uses the injected `DbContext` to execute data operations.
-- EF Core translates and executes queries against the database, mapping results back to entities.
-- The controller then returns an appropriate HTTP response.
+- Client Request: The client sends an HTTP request to an API Controller.
+- Controller Processing: The API Controller forwards the request to a business service for processing.
+- Data Access: The service interacts with EF Core (via the DbContext) which executes a SQL query against the database.
+- Response Assembly: The retrieved data is passed back up the chain, and the API Controller returns the data as a JSON response to the client.
+- Focus: This architecture is focused on serving data in a machine-readable format (JSON/XML) without any server-side view rendering.
+
+**ASP.NET Core MVC Architecture:** 
+```mermaid
+sequenceDiagram
+    participant Browser as Browser
+    participant MvcCtrl as MVC Controller
+    participant Service as Business Service
+    participant DbCtx as EF Core DbContext
+    participant DB as Database
+    participant ViewEngine as Razor View Engine
+
+    Browser->>MvcCtrl: HTTP Request (e.g., GET /products)
+    MvcCtrl->>Service: Process Request
+    Service->>DbCtx: Retrieve Data
+    DbCtx->>DB: Execute SQL Query
+    DB-->>DbCtx: Return Data
+    DbCtx-->>Service: Return Data
+    Service-->>MvcCtrl: Return Data
+    MvcCtrl->>ViewEngine: Pass Data to View
+    ViewEngine-->>MvcCtrl: Render HTML
+    MvcCtrl-->>Browser: Send HTML Response
+```
+**Explanation:**  
+- Client Request: The browser sends an HTTP request to an MVC Controller.
+- Controller and Service: The MVC Controller delegates the processing to a business service, which retrieves data from the database via EF Core.
+- View Rendering: The data is then passed to the Razor View Engine, which renders the data into an HTML view.
+- Final Response: The rendered HTML is sent back to the browser as the HTTP response.
+- Focus: This architecture emphasizes server-side view rendering, providing an interactive web page to the user.
 
 ## 4. Comparison Table: EF Core vs. ASP.NET Core
 | Aspect                   | EF Core                                             | ASP.NET Core                                     |
@@ -9067,28 +9179,29 @@ Here, the `IDbContextFactory<ApplicationDbContext>` is injected into the `Produc
 ## 3. Diagram: DbContext and DbContextFactory
 
 ```mermaid
-flowchart TD
-    A[Application Startup]
-    B[Configure Services in DI Container]
-    C[Register ApplicationDbContext (Scoped)]
-    D[Register DbContextFactory (AddDbContextFactory)]
-    E[HTTP Request or Background Task]
-    F[Controller/Service Receives Dependency]
-    G[DbContext Instance Created]
-    H[Database Operations Executed]
-    
-    A --> B
-    B --> C
-    B --> D
-    E --> F
-    F --> G
-    G --> H
+sequenceDiagram
+    participant Dev as Developer
+    participant Factory as DbContextFactory
+    participant DbCtx as DbContext
+    participant DB as Database
+
+    Dev->>Factory: Request DbContext instance
+    Factory->>DbCtx: Instantiate new DbContext
+    DbCtx->>DB: Open database connection
+    DB-->>DbCtx: Confirm connection established
+    DbCtx-->>Factory: Return initialized DbContext
+    Factory-->>Dev: Provide DbContext instance
+
+    Dev->>DbCtx: Execute CRUD operations
+    DbCtx->>DB: Execute SQL commands
+    DB-->>DbCtx: Return data or confirmation
+    DbCtx-->>Dev: Return operation results
 ```
 
 **Explanation:**  
-- At startup, services are configured in the DI container.  
-- The `ApplicationDbContext` is registered as a scoped service, while the `DbContextFactory` is registered to allow on-demand creation.  
-- When an HTTP request or background task requires a DbContext, the container injects either a context directly or a factory, which then creates a new context instance for database operations.
+- DbContextFactory Role: The developer requests a DbContext instance from the DbContextFactory. The factory is responsible for creating a new instance of DbContext, ensuring it is properly configured and connected to the database.
+- DbContext Initialization: Once instantiated, the DbContext opens a connection to the database. After the connection is successfully established, the DbContext instance is returned back to the factory and then provided to the developer.
+- Data Operations: The developer uses the provided DbContext to perform CRUD operations. These operations are translated into SQL commands that are executed against the database. The results or confirmation of these operations are then returned to the developer.
 
 ## 4. Comparison Table: DbContext vs. DbContextFactory
 | Aspect                     | DbContext                                              | DbContextFactory                                               |
