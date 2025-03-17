@@ -11580,3 +11580,176 @@ public class MyApiController : ControllerBase
 *   **충분한 테스트 및 검증**: 네트워크/서버 장애 시뮬레이션, 부하 테스트, 기능 검증, 성능 검증
 
 ---
+\#\# .NET 개발: Global Query Filters 완벽 분석
+.NET Entity Framework Core (EF Core) 에서 매우 유용한 기능인 **Global Query Filters (전역 쿼리 필터)** 에 대해 자세히 알아보겠습니다. 전역 쿼리 필터는 마치 **'자동으로 적용되는 쿼리 조건'** 과 같습니다. 특정 엔티티를 조회할 때마다 개발자가 명시적으로 `Where()` 절을 추가하지 않아도, EF Core 가 자동으로 지정된 조건을 모든 쿼리에 적용해 줍니다. 오늘은 이 기능이 무엇인지, 왜 사용해야 하는지, 어떻게 활용하는지 기초부터 꼼꼼하게 설명해 드릴게요\!
+### 1\. Global Query Filters 란 무엇일까요? (기초 다지기)
+**Global Query Filters (전역 쿼리 필터)** 는 EF Core 에서 제공하는 기능으로, **특정 엔티티 타입에 대한 모든 LINQ 쿼리에 자동으로 적용되는 `Where()` 절** 을 정의할 수 있도록 해줍니다. 이는 데이터베이스에서 데이터를 조회할 때마다 **반복적으로 특정 조건을 확인해야 하는 시나리오** 에서 매우 유용합니다. 마치 **'건물 출입 시 자동으로 신분증을 확인하는 시스템'** 과 같습니다. 모든 사람이 건물에 들어가려면 신분증을 제시해야 하는 것처럼, 특정 엔티티를 조회할 때마다 특정 조건을 만족해야만 결과를 얻을 수 있도록 강제하는 것입니다.
+**Global Query Filters 의 주요 목적:**
+* **데이터 일관성 유지**: 모든 쿼리에 동일한 필터링 로직을 적용하여 데이터 조회 결과의 일관성을 유지하고, 실수로 필터링 조건을 누락하는 것을 방지합니다.
+* **반복적인 코드 감소**: 여러 곳에서 동일한 필터링 조건을 반복적으로 작성할 필요가 없어 코드의 중복을 줄이고 유지보수성을 향상시킵니다.
+* **관심사 분리**: 데이터 조회 로직과 필터링 로직을 분리하여 코드의 가독성을 높이고, 엔티티 모델에 필터링 규칙을 명시적으로 정의할 수 있도록 합니다.
+
+**핵심 요약:**
+
+| 개념                       | 설명                                                                                                                               | 비유                                                                                                |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| **Global Query Filters** | 특정 엔티티 타입에 대한 모든 LINQ 쿼리에 자동으로 적용되는 `Where()` 절                                                                   | 건물 출입 시 자동으로 신분증을 확인하는 시스템, 자동으로 적용되는 쿼리 조건                                                               |
+| **주요 목적** | 데이터 일관성 유지, 반복적인 코드 감소, 관심사 분리                                                                                             | 모든 조회 결과에 동일한 규칙 적용, 코드 중복 방지, 필터링 로직을 모델에 명시                                                                   |
+
+### 2\. Global Query Filters 의 특징 (Characteristics)
+Global Query Filters 는 다음과 같은 특징을 가지고 있습니다.
+* **자동 적용 (Automatic Application)**: 가장 중요한 특징으로, 한 번 정의된 전역 쿼리 필터는 해당 엔티티 타입에 대한 **모든 쿼리에 자동으로 적용** 됩니다. 개발자가 별도의 `Where()` 절을 추가하지 않아도 됩니다.
+* **모델 수준 정의 (Model-Level Definition)**: 전역 쿼리 필터는 `DbContext` 클래스의 `OnModelCreating` 메서드 내에서 **모델 빌더 (ModelBuilder)** 를 사용하여 정의됩니다. 즉, 데이터베이스 스키마를 정의하는 과정에서 필터링 규칙을 함께 설정합니다.
+* **LINQ Predicate 사용 (LINQ Predicate)**: 전역 쿼리 필터는 표준 LINQ 의 `Where()` 절에서 사용하는 **Predicate (조건자)** 형태로 정의됩니다. 따라서 익숙한 LINQ 문법을 사용하여 필터링 조건을 설정할 수 있습니다.
+* **쿼리별 무시 가능 (Ignoring per Query)**: 특정 쿼리에서는 전역 쿼리 필터의 적용을 원하지 않을 수 있습니다. 이때는 `IgnoreQueryFilters()` 메서드를 사용하여 **특정 쿼리에 대해서만 전역 쿼리 필터를 무시** 할 수 있습니다.
+* **Navigation Property 접근 가능 (Accessing Navigation Properties)**: 전역 쿼리 필터 내에서 해당 엔티티와 관련된 **Navigation Property (탐색 속성)** 에 접근하여 필터링 조건을 설정할 수 있습니다. 이를 통해 연관된 엔티티의 속성을 기반으로 필터링이 가능합니다.
+* **파라미터 접근 제한 (Limited Parameter Access)**: 일반적으로 전역 쿼리 필터 내에서 **런타임 파라미터에 직접 접근하는 것은 제한적** 입니다. 하지만 **테넌트 ID** 와 같이 자주 사용되는 시나리오에서는 **DI (Dependency Injection)** 등을 활용하여 우회적으로 접근하는 방법을 사용하기도 합니다.
+* **다른 `Where()` 절보다 먼저 적용 (Applied Before Other `Where()` Clauses)**: 만약 쿼리에 명시적으로 `Where()` 절이 추가되어 있다면, 전역 쿼리 필터가 먼저 적용된 후 해당 `Where()` 절이 적용됩니다. 이는 필터링 순서에 따라 결과가 달라질 수 있음을 의미합니다.
+
+**Global Query Filters 특징 요약 (표):**
+| 특징                       | 설명                                                                                                                                                              |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **자동 적용** | 해당 엔티티 타입에 대한 모든 쿼리에 자동으로 `Where()` 절 적용                                                                                                      |
+| **모델 수준 정의** | `DbContext` 의 `OnModelCreating` 메서드에서 `ModelBuilder` 를 사용하여 정의                                                                                             |
+| **LINQ Predicate 사용** | 표준 LINQ `Where()` 절에서 사용하는 조건자 형태로 정의                                                                                                                  |
+| **쿼리별 무시 가능** | `IgnoreQueryFilters()` 메서드를 사용하여 특정 쿼리에 대해서만 전역 쿼리 필터 무시 가능                                                                                              |
+| **Navigation Property 접근** | 전역 쿼리 필터 내에서 Navigation Property 에 접근하여 필터링 조건 설정 가능                                                                                             |
+| **파라미터 접근 제한** | 일반적으로 런타임 파라미터에 직접 접근은 제한적이지만, DI 등을 활용하여 우회 가능                                                                                                 |
+| **적용 순서** | 명시적인 `Where()` 절보다 먼저 적용됨                                                                                                                             |
+
+### 3\. Global Query Filters 사용 방법 (How to Use)
+Global Query Filters 는 `DbContext` 클래스의 `OnModelCreating` 메서드에서 `ModelBuilder` 를 사용하여 정의합니다. 기본적인 사용 방법은 다음과 같습니다.
+```csharp
+using Microsoft.EntityFrameworkCore;
+
+public class YourDbContext : DbContext
+{
+    // ... (DbContext 설정 및 DbSet 정의) ...
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+
+        // 특정 엔티티 타입 (예: Blog) 에 대한 전역 쿼리 필터 정의
+        modelBuilder.Entity<Blog>()
+            .HasQueryFilter(b => !b.IsDeleted); // IsDeleted 속성이 false 인 Blog 만 조회
+    }
+}
+
+public class Blog
+{
+    public int BlogId { get; set; }
+    public string Title { get; set; }
+    public string Content { get; set; }
+    public bool IsDeleted { get; set; } // Soft Delete 를 위한 속성
+    // ... (기타 속성) ...
+}
+```
+
+위 예시에서는 `Blog` 엔티티에 대해 `IsDeleted` 속성이 `false` 인 데이터만 조회하도록 전역 쿼리 필터를 정의했습니다. 이제 `_context.Blogs.ToList()` 와 같은 코드를 실행하면, EF Core 는 자동으로 `WHERE IsDeleted = FALSE` 라는 조건을 SQL 쿼리에 추가하여 실행합니다.
+
+#### 3.1. Soft Delete 구현 예시
+**Soft Delete (소프트 삭제)** 는 데이터를 실제로 데이터베이스에서 삭제하는 대신, 삭제 여부를 나타내는 플래그 (예: `IsDeleted` 속성) 를 사용하여 논리적으로 삭제된 것처럼 처리하는 방식입니다. Global Query Filters 는 Soft Delete 기능을 구현하는 데 매우 효과적입니다.
+**엔티티 클래스:**
+```csharp
+public class Product
+{
+    public int ProductId { get; set; }
+    public string Name { get; set; }
+    public decimal Price { get; set; }
+    public bool IsDeleted { get; set; } = false; // 기본값으로 false 설정
+}
+```
+
+**DbContext 설정:**
+```csharp
+protected override void OnModelCreating(ModelBuilder modelBuilder)
+{
+    base.OnModelCreating(modelBuilder);
+
+    modelBuilder.Entity<Product>()
+        .HasQueryFilter(p => !p.IsDeleted); // IsDeleted 가 false 인 Product 만 조회
+}
+```
+
+이제 `_context.Products.ToList()` 를 호출하면, 데이터베이스에서 `IsDeleted` 값이 `false` 인 `Product` 데이터만 조회됩니다.
+
+**전역 쿼리 필터 무시:**
+만약 특정 상황에서 삭제된 데이터를 포함하여 모든 데이터를 조회해야 한다면, `IgnoreQueryFilters()` 메서드를 사용할 수 있습니다.
+```csharp
+var allProducts = _context.Products
+    .IgnoreQueryFilters() // 전역 쿼리 필터 무시
+    .ToList();
+```
+
+#### 3.2. Multi-Tenancy 구현 예시
+**Multi-Tenancy (멀티 테넌시)** 는 하나의 애플리케이션 인스턴스가 여러 고객 (테넌트) 의 데이터를 격리하여 서비스하는 아키텍처입니다. Global Query Filters 를 사용하여 각 테넌트의 데이터만 조회하도록 필터링할 수 있습니다.
+**엔티티 클래스:**
+```csharp
+public class Order
+{
+    public int OrderId { get; set; }
+    public string OrderNumber { get; set; }
+    public decimal TotalAmount { get; set; }
+    public int TenantId { get; set; } // 테넌트 ID
+}
+```
+
+**DbContext 설정:**
+```csharp
+protected override void OnModelCreating(ModelBuilder modelBuilder)
+{
+    base.OnModelCreating(modelBuilder);
+
+    // 현재 테넌트 ID 에 해당하는 Order 만 조회
+    modelBuilder.Entity<Order>()
+        .HasQueryFilter(o => o.TenantId == GetCurrentTenantId());
+}
+
+// 현재 테넌트 ID 를 가져오는 메서드 (실제 구현은 환경에 따라 다름)
+private int GetCurrentTenantId()
+{
+    // 예시: Configuration 에서 읽어오거나, HttpContext 에서 가져오거나, DI 를 통해 주입받는 방식 등
+    // 실제 애플리케이션에서는 현재 사용자의 테넌트 정보를 동적으로 가져오는 로직이 필요합니다.
+    return 1; // 현재 테넌트 ID 를 1로 가정
+}
+```
+
+위 예시에서는 `Order` 엔티티에 대해 `TenantId` 가 현재 테넌트 ID 와 일치하는 데이터만 조회하도록 전역 쿼리 필터를 정의했습니다. `GetCurrentTenantId()` 메서드는 현재 테넌트의 ID를 동적으로 가져오는 역할을 하며, 실제 구현은 애플리케이션의 멀티 테넌시 구현 방식에 따라 달라집니다. 일반적으로 `HttpContext`, Configuration, 또는 DI 를 통해 현재 테넌트 정보를 얻어옵니다.
+
+**주의:** 전역 쿼리 필터 내에서 직접적으로 런타임 파라미터에 접근하는 것은 제한적입니다. 위 예시처럼 `GetCurrentTenantId()` 메서드를 통해 현재 테넌트 ID를 가져오는 방식은 간단한 예시이며, 실제 멀티 테넌시 구현에서는 **Entity Framework Core Interceptors** 와 같은 고급 기능을 활용하거나, **DI (Dependency Injection)** 를 통해 현재 테넌트 정보를 주입받아 사용하는 것이 더 일반적입니다.
+
+#### 3.3. 특정 상태 값으로 필터링 예시
+특정 상태 값을 가진 엔티티만 조회해야 하는 경우에도 전역 쿼리 필터를 사용할 수 있습니다.
+**엔티티 클래스:**
+```csharp
+public class TaskItem
+{
+    public int TaskItemId { get; set; }
+    public string Title { get; set; }
+    public string Description { get; set; }
+    public string Status { get; set; } // "Todo", "InProgress", "Done" 등
+}
+```
+
+**DbContext 설정:**
+```csharp
+protected override void OnModelCreating(ModelBuilder modelBuilder)
+{
+    base.OnModelCreating(modelBuilder);
+
+    modelBuilder.Entity<TaskItem>()
+        .HasQueryFilter(t => t.Status != "Done"); // Status 가 "Done" 이 아닌 TaskItem 만 조회
+}
+```
+
+이제 `_context.TaskItems.ToList()` 를 호출하면, `Status` 값이 "Done" 이 아닌 `TaskItem` 데이터만 조회됩니다.
+
+### 4\. Global Query Filters 사용 시 주의사항
+* **성능 영향**: 전역 쿼리 필터는 모든 쿼리에 자동으로 적용되므로, 복잡하거나 성능에 영향을 미치는 필터를 잘못 적용하면 전체 애플리케이션의 성능이 저하될 수 있습니다. 필터 조건은 가능한 한 간단하고 효율적으로 작성해야 합니다.
+* **과도한 사용 지양**: 모든 필터링 조건을 전역 쿼리 필터로 처리하려고 하기보다는, 정말로 모든 쿼리에 공통적으로 적용되어야 하는 조건에 대해서만 사용하는 것이 좋습니다. 특정 상황에서만 필요한 필터링은 일반적인 `Where()` 절을 사용하는 것이 더 적절할 수 있습니다.
+* **디버깅 어려움**: 전역 쿼리 필터가 자동으로 적용되기 때문에, 특정 쿼리 결과가 예상과 다를 경우 필터가 적용되었는지 여부를 확인하는 데 어려움을 겪을 수 있습니다. 디버깅 시에는 전역 쿼리 필터의 존재를 염두에 두어야 합니다.
+* **관계형 데이터 필터링**: 전역 쿼리 필터는 주로 해당 엔티티 자체의 속성을 기반으로 필터링하는 데 사용됩니다. 복잡한 관계형 데이터 필터링의 경우, LINQ 의 `Include()` 와 함께 `Where()` 절을 사용하는 것이 더 유연하고 명시적일 수 있습니다.
+* **보안 고려**: 민감한 데이터에 대한 접근 제어를 위해 전역 쿼리 필터를 사용할 수 있지만, 보안상의 허점이 발생하지 않도록 주의해야 합니다. 예를 들어, 테넌트 ID 필터링을 구현할 때, 현재 사용자의 테넌트 정보를 정확하게 가져오고, 권한 없는 사용자가 다른 테넌트의 데이터에 접근하는 것을 방지해야 합니다.
+
+---
