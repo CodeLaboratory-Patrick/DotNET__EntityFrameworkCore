@@ -13300,3 +13300,207 @@ graph TD
 * **반복적인 구성 감소**: 여러 엔티티에서 동일한 데이터 타입에 대해 동일한 설정을 반복적으로 지정해야 하는 경우, Pre-Convention 구성을 통해 코드 중복을 줄일 수 있습니다.
 
 ---
+\#\# .NET 개발: 데이터베이스 트랜잭션 지원
+.NET 개발에서 데이터베이스의 **트랜잭션 (Transaction)** 을 지원하는 기능에 대해 자세히 알아보겠습니다. 데이터베이스 트랜잭션은 데이터의 무결성을 유지하는 데 매우 중요한 개념입니다. 마치 **'하나의 업무 단위를 묶어서 처리하는 묶음 포장'** 과 같습니다. 이 묶음 안의 모든 작업이 성공적으로 완료되거나, 중간에 하나라도 실패하면 전체 작업을 취소하여 데이터가 일관된 상태를 유지하도록 보장합니다.
+
+### 1\. 데이터베이스 트랜잭션이란 무엇일까요? (기초 다지기)
+**데이터베이스 트랜잭션 (Database Transaction)** 은 하나 이상의 데이터베이스 작업 (읽기, 쓰기, 수정, 삭제 등) 을 **하나의 논리적인 작업 단위 (Unit of Work)** 로 묶어서 처리하는 것을 의미합니다. 이 작업 단위는 **전부 성공하거나 (Commit)**, **전부 실패해야만 (Rollback)** 합니다. 중간에 일부 작업만 성공하고 나머지는 실패하는 상황은 발생하지 않도록 보장합니다.
+**간단한 비유:**
+은행에서 계좌 A에서 계좌 B로 돈을 이체하는 상황을 생각해 봅시다. 이 작업은 다음과 같은 두 단계로 이루어집니다.
+1.  계좌 A에서 이체할 금액을 차감합니다.
+2.  계좌 B에 이체할 금액을 증가시킵니다.
+만약 1번 작업은 성공했지만, 2번 작업이 실패한다면 계좌 A의 돈은 줄었지만 계좌 B는 받지 못하는 상황이 발생하여 데이터의 불일치가 발생합니다. 트랜잭션을 사용하면 이 두 작업을 하나의 논리적인 단위로 묶어서 처리합니다. 만약 2번 작업이 실패하면 1번 작업도 자동으로 취소되어 데이터는 원래의 일관된 상태로 돌아갑니다.
+**핵심 요약:**
+| 개념             | 설명                                                                                                                                                                                                                                                           | 비유                                                                                                                                                                                                                                                           |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **트랜잭션** | 하나 이상의 데이터베이스 작업을 하나의 논리적인 작업 단위로 묶어서 처리하는 것                                                                                                                                                                                                                         | 은행 계좌 이체 (돈 빼기 + 돈 넣기) 와 같이 여러 단계를 묶어 하나의 완전한 작업으로 처리하는 것                                                                                                                                                                                                                         |
+| **Commit (커밋)** | 트랜잭션 내의 모든 작업이 성공적으로 완료되었음을 확정하고, 변경 사항을 데이터베이스에 영구적으로 반영하는 것                                                                                                                                                                                            | 은행 이체가 성공적으로 완료되어 계좌 잔액이 실제로 변경되는 것                                                                                                                                                                                                                         |
+| **Rollback (롤백)** | 트랜잭션 처리 중 오류가 발생하거나 특정 조건이 만족되지 않았을 때, 트랜잭션 내에서 이루어진 모든 변경 사항을 취소하고 데이터베이스를 트랜잭션 시작 이전의 상태로 되돌리는 것                                                                                                                             | 은행 이체 중 오류가 발생하여 계좌 잔액 변경이 취소되고 원래 상태로 돌아가는 것                                                                                                                                                                                                                         |
+
+### 2\. 트랜잭션의 ACID 속성
+데이터베이스 트랜잭션은 데이터의 신뢰성을 보장하기 위해 다음과 같은 중요한 네 가지 속성 (ACID) 을 만족해야 합니다.
+* **원자성 (Atomicity)**: 트랜잭션 내의 모든 작업은 하나의 **원자적인 단위** 로 취급됩니다. 즉, 트랜잭션 내의 모든 작업이 전부 성공하거나, 전부 실패해야 합니다. 부분적으로만 성공하는 경우는 없습니다. (All or Nothing)
+* **일관성 (Consistency)**: 트랜잭션이 시작되기 전의 데이터베이스 상태가 **일관성** 을 유지하고 있었다면, 트랜잭션이 성공적으로 완료된 후에도 데이터베이스 상태는 **일관성** 을 유지해야 합니다. 트랜잭션은 정의된 규칙과 제약 조건을 위반하지 않도록 데이터를 변경해야 합니다.
+* **격리성 (Isolation)**: 여러 개의 트랜잭션이 동시에 실행될 때, 각 트랜잭션은 다른 트랜잭션의 영향을 받지 않고 **독립적으로** 실행되는 것처럼 보여야 합니다. 격리 수준을 조절하여 동시성 성능과 데이터 일관성 간의 균형을 맞출 수 있습니다.
+* **영속성 (Durability)**: 트랜잭션이 성공적으로 **커밋** 되면, 해당 변경 사항은 데이터베이스에 **영구적으로** 저장되어야 합니다. 시스템 오류나 장애가 발생하더라도 커밋된 데이터는 손실되지 않아야 합니다.
+
+**ACID 속성 요약 (표):**
+| 속성         | 설명                                                                                                                                                                                                                                                           |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **원자성** | 트랜잭션 내의 모든 작업은 하나의 단위로 처리되어 전부 성공하거나 전부 실패해야 함                                                                                                                                                                                                                          |
+| **일관성** | 트랜잭션은 데이터베이스를 일관된 상태에서 다른 일관된 상태로 변경해야 함                                                                                                                                                                                                                          |
+| **격리성** | 동시에 실행되는 여러 트랜잭션은 서로에게 영향을 주지 않고 독립적으로 실행되어야 함                                                                                                                                                                                                                          |
+| **영속성** | 커밋된 트랜잭션의 변경 사항은 영구적으로 데이터베이스에 저장되어야 함                                                                                                                                                                                                                          |
+
+### 3\. .NET 에서의 트랜잭션 지원
+.NET 에서는 다양한 방법으로 데이터베이스 트랜잭션을 지원합니다. 주로 ADO.NET 과 Entity Framework Core (EF Core) 를 통해 트랜잭션을 관리할 수 있습니다.
+#### 3.1. ADO.NET 을 이용한 트랜잭션 관리
+ADO.NET 은 데이터베이스와 직접 상호작용하기 위한 .NET 프레임워크의 핵심 기술입니다. ADO.NET 에서 트랜잭션은 `SqlConnection` 객체의 `BeginTransaction()` 메서드를 사용하여 시작하고, `SqlTransaction` 객체의 `Commit()` 또는 `Rollback()` 메서드를 사용하여 완료하거나 취소합니다.
+**예시 (C# - ADO.NET):**
+```csharp
+using System.Data.SqlClient;
+
+string connectionString = "YourConnectionString";
+
+using (SqlConnection connection = new SqlConnection(connectionString))
+{
+    connection.Open();
+
+    // 트랜잭션 시작
+    SqlTransaction transaction = connection.BeginTransaction();
+
+    try
+    {
+        // 첫 번째 SQL 명령어 실행
+        SqlCommand command1 = new SqlCommand("UPDATE Accounts SET Balance = Balance - @amount WHERE AccountId = @fromAccountId", connection, transaction);
+        command1.Parameters.AddWithValue("@amount", 100);
+        command1.Parameters.AddWithValue("@fromAccountId", 1);
+        command1.ExecuteNonQuery();
+
+        // 두 번째 SQL 명령어 실행
+        SqlCommand command2 = new SqlCommand("UPDATE Accounts SET Balance = Balance + @amount WHERE AccountId = @toAccountId", connection, transaction);
+        command2.Parameters.AddWithValue("@amount", 100);
+        command2.Parameters.AddWithValue("@toAccountId", 2);
+        command2.ExecuteNonQuery();
+
+        // 모든 작업이 성공하면 트랜잭션 커밋
+        transaction.Commit();
+        Console.WriteLine("트랜잭션이 성공적으로 커밋되었습니다.");
+    }
+    catch (Exception ex)
+    {
+        // 오류가 발생하면 트랜잭션 롤백
+        transaction.Rollback();
+        Console.WriteLine($"오류 발생: {ex.Message}. 트랜잭션이 롤백되었습니다.");
+    }
+}
+```
+
+#### 3.2. Entity Framework Core (EF Core) 를 이용한 트랜잭션 관리
+EF Core 는 ADO.NET 위에 구축된 ORM (Object-Relational Mapper) 으로, 데이터베이스 작업을 더 추상화된 방식으로 처리할 수 있도록 해줍니다. EF Core 에서 트랜잭션은 `DbContext` 객체의 `Database` 속성을 통해 관리할 수 있습니다.
+**명시적 트랜잭션 (Explicit Transaction):**
+ADO.NET 과 유사하게 `BeginTransaction()`, `CommitTransaction()`, `RollbackTransaction()` 메서드를 사용하여 명시적으로 트랜잭션을 시작하고 관리할 수 있습니다.
+**예시 (C# - EF Core 명시적 트랜잭션):**
+```csharp
+using (var context = new YourDbContext())
+{
+    using (var transaction = context.Database.BeginTransaction())
+    {
+        try
+        {
+            var fromAccount = context.Accounts.Find(1);
+            var toAccount = context.Accounts.Find(2);
+
+            if (fromAccount != null && toAccount != null && fromAccount.Balance >= 100)
+            {
+                fromAccount.Balance -= 100;
+                toAccount.Balance += 100;
+                context.SaveChanges(); // 첫 번째 변경 사항 저장 (아직 커밋되지 않음)
+
+                // 추가적인 데이터베이스 작업 수행 가능
+
+                transaction.Commit();
+                Console.WriteLine("트랜잭션이 성공적으로 커밋되었습니다.");
+            }
+            else
+            {
+                transaction.Rollback();
+                Console.WriteLine("잔액 부족 또는 계좌 없음. 트랜잭션이 롤백되었습니다.");
+            }
+        }
+        catch (Exception ex)
+        {
+            transaction.Rollback();
+            Console.WriteLine($"오류 발생: {ex.Message}. 트랜잭션이 롤백되었습니다.");
+        }
+    }
+}
+```
+
+**암시적 트랜잭션 (Implicit Transaction):**
+EF Core 의 `SaveChanges()` 메서드를 여러 번 호출하는 경우, 기본적으로 각 `SaveChanges()` 호출은 암시적인 단일 트랜잭션으로 처리됩니다. 하지만 여러 `SaveChanges()` 호출을 하나의 트랜잭션으로 묶고 싶다면 명시적 트랜잭션을 사용해야 합니다.
+**`TransactionScope` 를 이용한 트랜잭션:**
+`System.Transactions` 네임스페이스의 `TransactionScope` 클래스를 사용하면 여러 데이터베이스 연결 또는 다른 트랜잭션 리소스를 포함하는 분산 트랜잭션을 쉽게 관리할 수 있습니다. `TransactionScope` 는 트랜잭션의 시작과 완료를 자동으로 처리해 주므로 코드를 더 간결하게 만들 수 있습니다.
+**예시 (C# - EF Core `TransactionScope`):**
+```csharp
+using System.Transactions;
+
+using (var scope = new TransactionScope())
+{
+    try
+    {
+        using (var context1 = new YourDbContext())
+        {
+            var fromAccount = context1.Accounts.Find(1);
+            if (fromAccount != null && fromAccount.Balance >= 100)
+            {
+                fromAccount.Balance -= 100;
+                context1.SaveChanges();
+            }
+        }
+
+        using (var context2 = new AnotherDbContext()) // 다른 DbContext 또는 다른 데이터베이스
+        {
+            var toAccount = context2.Accounts.Find(2);
+            if (toAccount != null)
+            {
+                toAccount.Balance += 100;
+                context2.SaveChanges();
+            }
+        }
+
+        // scope.Complete() 가 호출되면 모든 작업이 성공한 것으로 간주하고 트랜잭션 커밋
+        scope.Complete();
+        Console.WriteLine("분산 트랜잭션이 성공적으로 커밋되었습니다.");
+    }
+    catch (Exception ex)
+    {
+        // 예외가 발생하면 트랜잭션은 자동으로 롤백됩니다.
+        Console.WriteLine($"오류 발생: {ex.Message}. 트랜잭션이 롤백되었습니다.");
+    }
+}
+```
+
+### 4\. 트랜잭션 격리 수준 (Transaction Isolation Levels)
+트랜잭션 격리 수준은 동시에 실행되는 트랜잭션들이 서로에게 얼마나 영향을 미칠 수 있는지를 정의합니다. 격리 수준이 높을수록 데이터의 일관성은 높아지지만, 동시성 성능은 낮아질 수 있습니다. 주요 격리 수준은 다음과 같습니다 (데이터베이스 시스템에 따라 지원하는 수준이 다를 수 있습니다).
+* **Read Uncommitted (커밋되지 않은 읽기)**: 가장 낮은 격리 수준으로, 다른 트랜잭션에서 아직 커밋되지 않은 변경 사항도 읽을 수 있습니다. Dirty Read, Non-Repeatable Read, Phantom Read 문제가 발생할 수 있습니다.
+* **Read Committed (커밋된 읽기)**: 대부분의 데이터베이스 시스템의 기본 격리 수준입니다. 다른 트랜잭션에서 커밋된 변경 사항만 읽을 수 있습니다. Dirty Read 문제는 발생하지 않지만, Non-Repeatable Read, Phantom Read 문제는 발생할 수 있습니다.
+* **Repeatable Read (반복 가능한 읽기)**: 트랜잭션 내에서 동일한 데이터를 여러 번 읽어도 항상 동일한 결과를 얻을 수 있습니다. Non-Repeatable Read 문제는 발생하지 않지만, Phantom Read 문제는 발생할 수 있습니다.
+* **Serializable (직렬화 가능)**: 가장 높은 격리 수준으로, 여러 트랜잭션이 동시에 실행되더라도 마치 순차적으로 하나씩 실행되는 것과 같은 결과를 보장합니다. 모든 동시성 문제가 발생하지 않지만, 동시성 성능은 가장 낮습니다.
+격리 수준은 트랜잭션을 시작할 때 명시적으로 설정할 수 있습니다.
+
+### 5\. 분산 트랜잭션 (Distributed Transactions)
+여러 개의 데이터베이스 또는 트랜잭션 리소스를 포함하는 작업을 하나의 트랜잭션으로 처리해야 하는 경우가 있습니다. 이를 **분산 트랜잭션** 이라고 합니다. 앞서 살펴본 `TransactionScope` 는 이러한 분산 트랜잭션을 관리하는 데 유용한 도구입니다. 분산 트랜잭션을 사용하려면 MSDTC (Microsoft Distributed Transaction Coordinator) 와 같은 트랜잭션 관리자의 지원이 필요할 수 있습니다.
+
+### 6\. 다이어그램
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant .NET Application
+    participant Database
+
+    Client->>.NET Application: 계좌 이체 요청 (A -> B, 100)
+    .NET Application->>Database: 트랜잭션 시작
+    Database-->>.NET Application: 트랜잭션 객체 반환
+
+    .NET Application->>Database: 계좌 A 잔액 감소 SQL 실행
+    Database-->>.NET Application: 실행 결과
+
+    .NET Application->>Database: 계좌 B 잔액 증가 SQL 실행
+    Database-->>.NET Application: 실행 결과
+
+    alt 모든 작업 성공
+        .NET Application->>Database: 트랜잭션 커밋
+        Database-->>.NET Application: 커밋 성공 응답
+        .NET Application-->>Client: 이체 성공 응답
+    else 작업 실패
+        .NET Application->>Database: 트랜잭션 롤백
+        Database-->>.NET Application: 롤백 성공 응답
+        .NET Application-->>Client: 이체 실패 응답
+    end
+```
+
+위 시퀀스 다이어그램은 계좌 이체 시 트랜잭션이 어떻게 처리되는지 간략하게 보여줍니다.
+
+---
