@@ -12783,3 +12783,382 @@ using (var context = new YourDbContext())
 ```
 
 ---
+\#\# .NET 개발: Data Annotations 를 활용한 데이터 유효성 검사
+.NET 개발에서 데이터를 검증하는 강력하고 편리한 방법인 **Data Annotations (데이터 어노테이션)** 에 대해 자세히 알아보겠습니다. 데이터 유효성 검사는 애플리케이션의 안정성과 데이터의 무결성을 유지하는 데 매우 중요한 과정입니다. Data Annotations 는 마치 **'데이터에 붙이는 검사 스티커'** 와 같습니다. 각 데이터 속성에 어떤 조건을 만족해야 하는지 명시적으로 선언해 놓으면, 프레임워크가 자동으로 이를 확인해 줍니다.
+
+### 1\. Data Annotations 이란 무엇일까요? (기초 다지기)
+**Data Annotations (데이터 어노테이션)** 은 `.NET` 프레임워크에서 제공하는 **특성 (Attributes)** 들의 모음입니다. 이 특성들은 `System.ComponentModel.DataAnnotations` 네임스페이스에 정의되어 있으며, 클래스의 속성 (properties) 에 적용하여 해당 속성에 대한 **유효성 검사 규칙 (validation rules)** 을 선언적으로 정의할 수 있도록 해줍니다. 마치 **'제품 포장에 붙어있는 주의사항이나 규격 표시'** 와 같습니다. 해당 제품이 어떤 조건을 만족해야 하는지 명확하게 알려주는 역할을 합니다.
+**Data Annotations 의 주요 목적:**
+  * **선언적인 유효성 검사**: 코드를 직접 작성하는 대신, 특성을 사용하여 유효성 검사 규칙을 간결하게 정의할 수 있습니다.
+  * **메타데이터 제공**: 유효성 검사 규칙 외에도 데이터 속성에 대한 다양한 메타데이터 (예: 표시 이름, 데이터 형식) 를 제공할 수 있습니다.
+  * **프레임워크 통합**: ASP.NET Core MVC, Blazor, Entity Framework Core 등 다양한 .NET 프레임워크에서 Data Annotations 를 자동으로 인식하고 활용하여 유효성 검사를 수행합니다.
+  * **코드 가독성 향상**: 유효성 검사 규칙이 모델 클래스 내에 직접 명시되어 코드의 가독성을 높이고 유지보수를 용이하게 합니다.
+**핵심 요약:**
+| 개념                  | 설명                                                                                                                                                                                           | 비유                                                                                                                                                                                           |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Data Annotations** | `.NET` 프레임워크의 특성 (Attributes) 모음으로, 클래스 속성에 적용하여 유효성 검사 규칙을 선언적으로 정의합니다.                                                                                                                              | 데이터에 붙이는 검사 스티커, 제품 포장의 주의사항이나 규격 표시                                                                                                                                                                                           |
+| **주요 목적** | 선언적인 유효성 검사, 메타데이터 제공, 프레임워크 통합, 코드 가독성 향상                                                                                                                                                                                          | 코드 없이 규칙 정의, 데이터 정보 제공, 다양한 프레임워크에서 자동 활용, 코드 이해도 증가                                                                                                                                                                                           |
+
+### 2\. Data Annotations 의 특징 (Characteristics)
+Data Annotations 는 다음과 같은 주요 특징을 가지고 있습니다.
+  * **선언적 (Declarative)**: 유효성 검사 로직을 코드로 직접 구현하는 대신, 특성을 속성에 적용하는 방식으로 규칙을 정의합니다.
+  * **메타데이터 제공 (Metadata)**: 유효성 검사 규칙뿐만 아니라, 데이터 속성의 표시 이름, 데이터 형식, 길이 제한 등 다양한 메타데이터를 제공합니다.
+  * **프레임워크 통합 (Framework Integration)**: ASP.NET Core MVC, Blazor, Entity Framework Core 등 다양한 .NET 프레임워크에서 Data Annotations 를 자동으로 인식하고 유효성 검사에 활용합니다.
+  * **확장성 (Extensibility)**: 기본적으로 제공되는 특성 외에도 `ValidationAttribute` 클래스를 상속받아 사용자 정의 유효성 검사 특성을 만들 수 있습니다.
+  * **높은 가독성 (Readability)**: 유효성 검사 규칙이 모델 클래스 내에 직접 명시되어 코드만으로도 어떤 제약 조건이 있는지 쉽게 파악할 수 있습니다.
+
+**Data Annotations 특징 요약 (표):**
+| 특징                     | 설명                                                                                                                                                                                                                                                           |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **선언적** | 특성을 사용하여 유효성 검사 규칙을 정의                                                                                                                                                                                                                            |
+| **메타데이터 제공** | 유효성 검사 규칙 외 다양한 데이터 속성 정보 제공                                                                                                                                                                                                                          |
+| **프레임워크 통합** | ASP.NET Core MVC, Blazor, EF Core 등에서 자동 인식 및 활용                                                                                                                                                                                                                          |
+| **확장성** | `ValidationAttribute` 를 상속받아 사용자 정의 특성 생성 가능                                                                                                                                                                                                                          |
+| **높은 가독성** | 모델 클래스 내에 규칙이 명시되어 코드 이해 용이                                                                                                                                                                                                                          |
+
+### 3\. 주요 Data Annotation 특성 및 사용 방법
+`System.ComponentModel.DataAnnotations` 네임스페이스에는 다양한 유효성 검사를 위한 특성들이 제공됩니다. 몇 가지 자주 사용되는 특성과 그 사용 방법을 예시와 함께 살펴보겠습니다.
+#### 3.1. `[Required]`
+  * **기능**: 해당 속성이 반드시 값을 가져야 함을 나타냅니다. 문자열 속성의 경우 null 이거나 빈 문자열 ("") 이 아니어야 하며, 값 타입 속성의 경우 null 이 아니어야 합니다.
+  * **예시**:
+
+<!-- end list -->
+
+```csharp
+using System.ComponentModel.DataAnnotations;
+
+public class User
+{
+    [Required(ErrorMessage = "이름은 필수 입력 항목입니다.")]
+    public string Name { get; set; }
+
+    public int? Age { get; set; } // Nullable 값 타입은 Required 적용 시 null 허용 안 함
+}
+```
+
+#### 3.2. `[StringLength(maximumLength, MinimumLength = 0)]`
+  * **기능**: 문자열 속성의 최대 길이와 선택적으로 최소 길이를 지정합니다.
+  * **예시**:
+
+<!-- end list -->
+
+```csharp
+public class Product
+{
+    public int ProductId { get; set; }
+
+    [Required]
+    [StringLength(100, MinimumLength = 5, ErrorMessage = "상품명은 5자 이상 100자 이하로 입력해야 합니다.")]
+    public string ProductName { get; set; }
+}
+```
+
+#### 3.3. `[Range(minimum, maximum)]`
+  * **기능**: 숫자 속성의 값의 범위를 지정합니다.
+  * **예시**:
+
+<!-- end list -->
+
+```csharp
+public class Order
+{
+    public int OrderId { get; set; }
+
+    [Range(1, 100, ErrorMessage = "수량은 1개 이상 100개 이하로 선택해야 합니다.")]
+    public int Quantity { get; set; }
+}
+```
+
+#### 3.4. `[EmailAddress]`
+  * **기능**: 문자열 속성의 값이 유효한 이메일 주소 형식인지 검사합니다.
+  * **예시**:
+
+<!-- end list -->
+
+```csharp
+public class Customer
+{
+    public int CustomerId { get; set; }
+
+    [Required]
+    [EmailAddress(ErrorMessage = "유효한 이메일 주소 형식이 아닙니다.")]
+    public string Email { get; set; }
+}
+```
+
+#### 3.5. `[Phone]`
+  * **기능**: 문자열 속성의 값이 유효한 전화번호 형식인지 검사합니다.
+  * **예시**:
+
+<!-- end list -->
+
+```csharp
+public class Contact
+{
+    public int ContactId { get; set; }
+
+    [Phone(ErrorMessage = "유효한 전화번호 형식이 아닙니다.")]
+    public string PhoneNumber { get; set; }
+}
+```
+
+#### 3.6. `[Url]`
+  * **기능**: 문자열 속성의 값이 유효한 URL 형식인지 검사합니다.
+  * **예시**:
+
+<!-- end list -->
+
+```csharp
+public class Website
+{
+    public int WebsiteId { get; set; }
+
+    [Url(ErrorMessage = "유효한 URL 형식이 아닙니다.")]
+    public string WebsiteUrl { get; set; }
+}
+```
+
+#### 3.7. `[Compare(otherProperty)]`
+  * **기능**: 현재 속성의 값이 다른 속성의 값과 일치하는지 검사합니다. 주로 비밀번호 확인 등에 사용됩니다.
+  * **예시**:
+
+<!-- end list -->
+
+```csharp
+public class RegisterViewModel
+{
+    [Required]
+    [DataType(DataType.Password)]
+    public string Password { get; set; }
+
+    [Required]
+    [DataType(DataType.Password)]
+    [Compare("Password", ErrorMessage = "비밀번호와 확인 비밀번호가 일치하지 않습니다.")]
+    public string ConfirmPassword { get; set; }
+}
+```
+
+#### 3.8. `[RegularExpression(pattern)]`
+  * **기능**: 속성의 값이 주어진 정규 표현식 패턴과 일치하는지 검사합니다.
+  * **예시**:
+
+<!-- end list -->
+
+```csharp
+public class ProductCode
+{
+    public int ProductCodeId { get; set; }
+
+    [Required]
+    [RegularExpression("^[A-Z]{3}-\\d{3}$", ErrorMessage = "상품 코드는 AAA-123 형식이어야 합니다.")]
+    public string Code { get; set; }
+}
+```
+
+#### 3.9. `[MaxLength(length)]` 및 `[MinLength(length)]`
+  * **기능**: 문자열 또는 배열 속성의 최대 또는 최소 길이를 지정합니다. `StringLength` 와 유사하지만, 최소 길이를 필수로 지정하지 않아도 됩니다.
+  * **예시**:
+
+<!-- end list -->
+
+```csharp
+public class Article
+{
+    public int ArticleId { get; set; }
+
+    [MaxLength(500, ErrorMessage = "내용은 최대 500자까지 입력 가능합니다.")]
+    public string Content { get; set; }
+
+    [MinLength(10, ErrorMessage = "요약은 최소 10자 이상 입력해야 합니다.")]
+    public string Summary { get; set; }
+}
+```
+
+#### 3.10. `[DataType(DataType)]`
+  * **기능**: 속성의 데이터 형식을 명시적으로 지정합니다. 주로 UI 렌더링 힌트를 제공하지만, 일부 데이터 타입 (예: `DataType.EmailAddress`, `DataType.Password`) 은 내장된 유효성 검사를 트리거하기도 합니다.
+  * **예시**:
+
+<!-- end list -->
+
+```csharp
+public class LoginViewModel
+{
+    [Required]
+    [EmailAddress]
+    public string Email { get; set; }
+
+    [Required]
+    [DataType(DataType.Password)]
+    public string Password { get; set; }
+}
+```
+
+**주요 Data Annotation 특성 요약 (표):**
+| 특성                   | 기능                                                                                                                                                                                                                                                           | 예시                                                                                                                                                                                                                                                           |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `[Required]`           | 필수 입력 필드 지정                                                                                                                                                                                                                                                            | `[Required(ErrorMessage = "필수 입력")] public string Name { get; set; }`                                                                                                                                                                                             |
+| `[StringLength(max, min)]` | 문자열 최대 및 최소 길이 제한                                                                                                                                                                                                                                                        | `[StringLength(100, MinimumLength = 5)] public string Title { get; set; }`                                                                                                                                                                                              |
+| `[Range(min, max)]`      | 숫자 값의 범위 제한                                                                                                                                                                                                                                                              | `[Range(18, 65)] public int Age { get; set; }`                                                                                                                                                                                                                                  |
+| `[EmailAddress]`       | 유효한 이메일 주소 형식 검사                                                                                                                                                                                                                                                           | `[EmailAddress] public string Email { get; set; }`                                                                                                                                                                                                                                |
+| `[Phone]`              | 유효한 전화번호 형식 검사                                                                                                                                                                                                                                                           | `[Phone] public string PhoneNumber { get; set; }`                                                                                                                                                                                                                            |
+| `[Url]`                | 유효한 URL 형식 검사                                                                                                                                                                                                                                                              | `[Url] public string WebsiteUrl { get; set; }`                                                                                                                                                                                                                              |
+| `[Compare("OtherProp")]` | 다른 속성 값과 일치 여부 검사                                                                                                                                                                                                                                                         | `[Compare("Password")] public string ConfirmPassword { get; set; }`                                                                                                                                                                                                    |
+| `[RegularExpression(pattern)]` | 정규 표현식 패턴과 일치 여부 검사                                                                                                                                                                                                                                                         | `[RegularExpression("^{3}-{4}-{4}$")] public string CreditCardNumber { get; set; }`                                                                                                                                                                             |
+| `[MaxLength(length)]`   | 문자열 또는 배열의 최대 길이 제한                                                                                                                                                                                                                                                        | `[MaxLength(500)] public string Description { get; set; }`                                                                                                                                                                                                                          |
+| `[MinLength(length)]`   | 문자열 또는 배열의 최소 길이 제한                                                                                                                                                                                                                                                        | `[MinLength(10)] public string Summary { get; set; }`                                                                                                                                                                                                                             |
+| `[DataType(DataType)]`   | 데이터 형식 명시 (UI 힌트 및 일부 내장 검사)                                                                                                                                                                                                                                            | `[DataType(DataType.Password)] public string Password { get; set; }`                                                                                                                                                                                                    |
+
+### 4\. Data Annotations 사용 방법
+Data Annotations 를 사용하려면 다음 단계를 따릅니다.
+1.  **네임스페이스 추가**: 모델 클래스 파일 상단에 `using System.ComponentModel.DataAnnotations;` 네임스페이스를 추가합니다.
+2.  **속성에 특성 적용**: 유효성 검사를 원하는 속성 위에 해당 특성을 \`\` 로 감싸서 적용합니다. 필요에 따라 `ErrorMessage` 속성을 사용하여 유효성 검사 실패 시 표시할 메시지를 지정할 수 있습니다.
+#### 4.1. ASP.NET Core MVC 에서의 활용
+ASP.NET Core MVC 에서는 모델 바인딩 과정에서 Data Annotations 를 자동으로 인식하고 유효성 검사를 수행합니다. 컨트롤러 액션에서 `ModelState.IsValid` 속성을 확인하여 유효성 검사 결과를 알 수 있습니다.
+**예시 (ASP.NET Core MVC 컨트롤러):**
+```csharp
+using Microsoft.AspNetCore.Mvc;
+using System.ComponentModel.DataAnnotations;
+
+public class UserController : Controller
+{
+    [HttpPost]
+    public IActionResult Register(RegisterViewModel model)
+    {
+        if (ModelState.IsValid)
+        {
+            // 모델이 유효한 경우 회원 가입 처리
+            return RedirectToAction("Success");
+        }
+
+        // 모델이 유효하지 않은 경우 에러 메시지와 함께 뷰 반환
+        return View(model);
+    }
+}
+
+public class RegisterViewModel
+{
+    [Required(ErrorMessage = "이메일 주소를 입력해주세요.")]
+    [EmailAddress(ErrorMessage = "유효한 이메일 주소 형식이 아닙니다.")]
+    public string Email { get; set; }
+
+    [Required(ErrorMessage = "비밀번호를 입력해주세요.")]
+    [DataType(DataType.Password)]
+    public string Password { get; set; }
+
+    [Required(ErrorMessage = "비밀번호 확인을 입력해주세요.")]
+    [DataType(DataType.Password)]
+    [Compare("Password", ErrorMessage = "비밀번호와 확인 비밀번호가 일치하지 않습니다.")]
+    public string ConfirmPassword { get; set; }
+}
+```
+
+#### 4.2. Entity Framework Core 에서의 활용
+Entity Framework Core 는 Data Annotations 를 사용하여 데이터베이스 스키마를 구성하는 데 도움을 줍니다. 예를 들어, `[Required]` 특성은 해당 속성이 데이터베이스 테이블에서 `NOT NULL` 제약 조건으로 생성되도록 할 수 있으며, `[StringLength]` 특성은 컬럼의 최대 길이를 지정하는 데 사용될 수 있습니다.
+#### 4.3. 수동 유효성 검사
+`Validator` 클래스를 사용하여 객체를 수동으로 검증할 수도 있습니다.
+**예시 (수동 유효성 검사):**
+```csharp
+using System.ComponentModel.DataAnnotations;
+
+public class Example
+{
+    [Required]
+    public string Value { get; set; }
+}
+
+public class ValidationExample
+{
+    public static void ValidateObject()
+    {
+        var example = new Example(); // Value 속성이 null 이므로 유효성 검사 실패
+
+        var validationResults = new List<ValidationResult>();
+        var validationContext = new ValidationContext(example);
+        bool isValid = Validator.TryValidateObject(example, validationContext, validationResults, true);
+
+        if (!isValid)
+        {
+            foreach (var error in validationResults)
+            {
+                Console.WriteLine(error.ErrorMessage); // 출력: Value 필드는 필수 필드입니다.
+            }
+        }
+        else
+        {
+            Console.WriteLine("객체가 유효합니다.");
+        }
+    }
+}
+```
+
+### 5\. 사용자 정의 유효성 검사 특성
+기본적으로 제공되는 Data Annotations 외에도, 특정 비즈니스 규칙에 맞는 사용자 정의 유효성 검사 특성을 만들 수 있습니다. 이를 위해서는 `ValidationAttribute` 클래스를 상속받고 `IsValid` 메서드를 오버라이드하여 검증 로직을 구현해야 합니다.
+**예시 (사용자 정의 유효성 검사 특성):**
+```csharp
+using System;
+using System.ComponentModel.DataAnnotations;
+
+public class AgeGreaterThanAttribute : ValidationAttribute
+{
+    private readonly int _minAge;
+
+    public AgeGreaterThanAttribute(int minAge)
+    {
+        _minAge = minAge;
+    }
+
+    protected override ValidationResult IsValid(object value, ValidationContext validationContext)
+    {
+        if (value is int age)
+        {
+            if (age > _minAge)
+            {
+                return ValidationResult.Success;
+            }
+            else
+            {
+                return new ValidationResult(ErrorMessage ?? $"{validationContext.DisplayName}은(는) {_minAge}보다 커야 합니다.");
+            }
+        }
+
+        return new ValidationResult("나이는 정수 형식이어야 합니다.");
+    }
+}
+
+public class Person
+{
+    public int PersonId { get; set; }
+
+    [Required]
+    public string Name { get; set; }
+
+    [AgeGreaterThan(19, ErrorMessage = "성인만 가입 가능합니다.")]
+    public int Age { get; set; }
+}
+```
+
+### 6\. 다이어그램
+
+```mermaid
+classDiagram
+    class System.ComponentModel.DataAnnotations.ValidationAttribute {
+        +string ErrorMessage
+        +virtual ValidationResult IsValid(object value, ValidationContext validationContext)
+    }
+    class RequiredAttribute extends ValidationAttribute
+    class StringLengthAttribute extends ValidationAttribute
+    class RangeAttribute extends ValidationAttribute
+    class EmailAddressAttribute extends ValidationAttribute
+    class PhoneAttribute extends ValidationAttribute
+    class UrlAttribute extends ValidationAttribute
+    class CompareAttribute extends ValidationAttribute
+    class RegularExpressionAttribute extends ValidationAttribute
+    class MaxLengthAttribute extends ValidationAttribute
+    class MinLengthAttribute extends ValidationAttribute
+    class DataTypeAttribute extends ValidationAttribute
+    class AgeGreaterThanAttribute extends ValidationAttribute
+```
+
+위 다이어그램은 `ValidationAttribute` 클래스를 상속받아 다양한 내장 및 사용자 정의 유효성 검사 특성이 만들어지는 구조를 보여줍니다.
+
+---
