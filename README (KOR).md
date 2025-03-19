@@ -13162,3 +13162,141 @@ classDiagram
 위 다이어그램은 `ValidationAttribute` 클래스를 상속받아 다양한 내장 및 사용자 정의 유효성 검사 특성이 만들어지는 구조를 보여줍니다.
 
 ---
+\#\# .NET 개발: Pre-Convention 모델 구성 (`ConfigureConventions`)
+.NET Entity Framework Core (EF Core) 에서 모델을 구성하는 강력한 방법 중 하나인 **Pre-Convention 모델 구성** 과 관련된 코드 스니펫을 자세히 분석하고 설명해 드리겠습니다. 이 코드는 EF Core 가 기본적으로 적용하는 규칙 (Conventions) 을 사용자 정의하여 모델을 일관성 있게 구성하는 데 매우 유용합니다. 마치 **'건축물을 짓기 전에 전체 설계의 기본 틀을 미리 정해두는 것'** 과 같습니다. 특정 데이터 타입의 속성에 대해 전역적인 기본 설정을 적용하여 개발 편의성을 높이고 코드의 중복을 줄일 수 있습니다.
+
+### 1\. EF Core 모델 구성과 규칙 (Conventions) 이해 (기초 다지기)
+EF Core 는 우리가 작성한 C# 엔티티 클래스를 기반으로 데이터베이스 스키마를 생성하고 관리합니다. 이때 EF Core 는 여러 가지 **규칙 (Conventions)** 을 사용하여 모델을 자동으로 구성합니다. 예를 들어, `Id` 또는 `<클래스 이름>Id` 라는 이름의 속성은 기본적으로 테이블의 기본 키로 간주됩니다.
+하지만 때로는 이러한 기본 규칙이 우리가 원하는 방식과 다를 수 있습니다. 예를 들어, 모든 문자열 속성의 최대 길이를 특정 값으로 설정하고 싶거나, 모든 `decimal` 타입 속성의 정밀도를 특정 값으로 설정하고 싶을 수 있습니다. 이때 **모델 구성 (Model Configuration)** 을 통해 EF Core 의 기본 규칙을 재정의하거나 새로운 규칙을 추가할 수 있습니다.
+모델 구성 방법에는 크게 세 가지가 있습니다.
+1.  **Data Annotations (데이터 어노테이션)**: 엔티티 클래스의 속성에 특성을 적용하여 구성을 지정합니다. (이전에 설명드렸던 내용입니다.)
+2.  **Fluent API (플루언트 API)**: `DbContext` 클래스의 `OnModelCreating` 메서드 내에서 메서드 체이닝 방식으로 구성을 지정합니다. (더 세밀한 구성이 가능합니다.)
+3.  **Pre-Convention Model Configuration (사전 규칙 모델 구성)**: 오늘 살펴볼 내용으로, `DbContext` 클래스의 `ConfigureConventions` 메서드를 오버라이드하여 기본 규칙이 적용되기 전에 모델 구성을 수행합니다.
+
+### 2\. Pre-Convention 모델 구성이란 무엇일까요?
+**Pre-Convention 모델 구성** 은 EF Core 가 기본 규칙을 적용하기 **전에** 우리가 원하는 기본 설정을 미리 정의하는 방식입니다. 이를 통해 특정 데이터 타입의 모든 속성에 대해 일괄적으로 설정을 적용할 수 있습니다. 마치 **'공장에서 제품을 만들기 전에 모든 제품에 공통적으로 적용할 설정을 미리 지정하는 것'** 과 같습니다.
+**`ConfigureConventions` 메서드의 역할:**
+`ConfigureConventions` 메서드는 `DbContext` 클래스에서 오버라이드할 수 있는 메서드입니다. 이 메서드는 EF Core 모델이 빌드되는 과정의 아주 초기 단계에서 호출되며, `ModelConfigurationBuilder` 라는 객체를 통해 모델 구성에 접근할 수 있도록 합니다.
+
+### 3\. 제공된 코드 분석
+이제 질문하신 코드를 한 줄씩 자세히 살펴보겠습니다.
+```csharp
+protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+{
+    configurationBuilder.Properties<string>().HaveMaxLength(100);
+    configurationBuilder.Properties<decimal>().HavePrecision(16, 2);
+}
+```
+
+* **`protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)`**:
+    * `protected override`: 이 키워드는 현재 클래스가 부모 클래스 (`DbContext` 클래스) 에서 상속받은 `ConfigureConventions` 메서드를 재정의(오버라이드)하고 있음을 나타냅니다.
+    * `void`: 이 메서드는 반환 값이 없습니다.
+    * `ModelConfigurationBuilder configurationBuilder`: 이 파라미터는 EF Core 모델을 구성하는 데 사용되는 객체입니다. 이를 통해 다양한 구성 옵션에 접근할 수 있습니다.
+* **`configurationBuilder.Properties<string>().HaveMaxLength(100);`**:
+    * `configurationBuilder.Properties<string>()`: `ModelConfigurationBuilder` 객체의 `Properties<T>()` 메서드는 모델 내의 특정 타입 (`string` 타입) 의 모든 속성에 대한 구성을 반환합니다. 마치 **'모델에서 모든 문자열 속성을 선택하는 작업'** 과 같습니다.
+    * `.HaveMaxLength(100)`: 반환된 문자열 속성 컬렉션에 대해 `HaveMaxLength(100)` 메서드를 호출합니다. 이 메서드는 해당 문자열 속성들이 데이터베이스 테이블의 컬럼으로 매핑될 때, 해당 컬럼의 최대 길이를 100으로 설정하도록 EF Core 에게 지시합니다. 즉, **모델 내의 모든 `string` 타입 속성의 데이터베이스 컬럼 최대 길이를 기본적으로 100으로 설정**합니다.
+* **`configurationBuilder.Properties<decimal>().HavePrecision(16, 2);`**:
+    * `configurationBuilder.Properties<decimal>()`: `Properties<T>()` 메서드를 사용하여 모델 내의 모든 `decimal` 타입 속성에 대한 구성을 반환합니다. 마치 **'모델에서 모든 decimal 타입 속성을 선택하는 작업'** 과 같습니다.
+    * `.HavePrecision(16, 2)`: 반환된 `decimal` 타입 속성 컬렉션에 대해 `HavePrecision(16, 2)` 메서드를 호출합니다. 이 메서드는 해당 `decimal` 속성들이 데이터베이스 테이블의 컬럼으로 매핑될 때, 해당 컬럼의 **정밀도 (precision) 를 16** 으로, **스케일 (scale) 을 2** 로 설정하도록 EF Core 에게 지시합니다. 즉, **모델 내의 모든 `decimal` 타입 속성의 데이터베이스 컬럼 정밀도를 기본적으로 16, 스케일을 2로 설정**합니다. (정밀도는 소수점을 포함한 총 자릿수를 의미하고, 스케일은 소수점 이하 자릿수를 의미합니다.)
+
+### 4\. Pre-Convention 모델 구성의 특징
+* **전역적인 영향 (Global Scope)**: `ConfigureConventions` 에서 설정된 구성은 해당 데이터 타입의 **모든** 속성에 기본적으로 적용됩니다. 특정 엔티티나 속성에만 적용되는 것이 아니라 모델 전체에 영향을 미칩니다.
+* **타입 기반 구성 (Type-Based Configuration)**: 주로 특정 CLR 타입 (`string`, `decimal`, `DateTime` 등) 에 기반하여 구성을 적용합니다.
+* **초기 단계 실행 (Early Stage Execution)**: 이 구성은 EF Core 모델 빌드 프로세스의 매우 초기 단계에서 적용됩니다. 따라서 다른 구성 방식 (Fluent API, Data Annotations) 보다 먼저 적용되며, 다른 구성 방식으로 재정의될 수 있습니다.
+* **기본값 설정 (Default Settings)**: 반복적인 구성을 줄이고 모델의 일관성을 유지하기 위해 기본값을 설정하는 데 유용합니다.
+* **규칙 사용자 정의 (Convention Customization)**: EF Core 의 기본 규칙을 수정하거나 새로운 규칙을 추가하는 데 사용될 수 있습니다.
+
+### 5\. Pre-Convention 모델 구성 사용 방법
+Pre-Convention 모델 구성을 사용하려면 `DbContext` 클래스를 상속받는 클래스에서 `ConfigureConventions` 메서드를 오버라이드하고, `ModelConfigurationBuilder` 객체를 사용하여 원하는 구성을 정의하면 됩니다.
+**기본 구조:**
+```csharp
+public class YourDbContext : DbContext
+{
+    // ... (DbContext 생성자 및 기타 설정) ...
+
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+    {
+        // 여기에 사전 규칙 모델 구성 코드를 작성합니다.
+    }
+
+    // ... (DbSet 속성 등) ...
+}
+```
+
+**자주 사용되는 구성 메서드 (예시):**
+* **`Properties<string>().HaveMaxLength(int maxLength)`**: 모든 문자열 속성의 최대 길이 설정
+* **`Properties<decimal>().HavePrecision(int precision, int scale)`**: 모든 decimal 속성의 정밀도 및 스케일 설정
+* **`Properties<DateTime>().HaveColumnType(string columnType)`**: 모든 DateTime 속성의 데이터베이스 컬럼 타입 설정
+* **`Properties<bool>().HaveDefaultValue(bool defaultValue)`**: 모든 bool 속성의 기본값 설정
+* **`Properties<string>().IsUnicode(bool unicode)`**: 모든 문자열 속성의 유니코드 사용 여부 설정
+* **`Properties<string>().IsRequired()`**: 모든 문자열 속성을 필수 속성으로 설정 (주의해서 사용해야 합니다.)
+
+### 6\. 예시
+#### 6.1. 추가적인 Pre-Convention 구성 예시
+모든 `DateTime` 타입 속성의 데이터베이스 컬럼 타입을 `datetime2` 로 설정하고, 모든 `bool` 타입 속성의 기본값을 `false` 로 설정하는 예시입니다.
+```csharp
+protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+{
+    configurationBuilder.Properties<string>().HaveMaxLength(100);
+    configurationBuilder.Properties<decimal>().HavePrecision(16, 2);
+    configurationBuilder.Properties<DateTime>().HaveColumnType("datetime2");
+    configurationBuilder.Properties<bool>().HaveDefaultValue(false);
+}
+```
+
+#### 6.2. Pre-Convention 구성과 다른 구성 방식의 우선순위
+Pre-Convention 구성은 가장 먼저 적용되지만, Fluent API (`OnModelCreating`) 나 Data Annotations 를 통해 동일한 속성에 대해 다른 구성을 지정하면, **Fluent API 와 Data Annotations 의 구성이 Pre-Convention 구성을 재정의** 합니다.
+**예시:**
+```csharp
+public class MyEntity
+{
+    public int Id { get; set; }
+    public string Name { get; set; } // Pre-Convention 에 의해 최대 길이 100으로 설정됨
+
+    [StringLength(50)] // Data Annotation 에 의해 최대 길이 50으로 재정의됨
+    public string Description { get; set; }
+
+    public decimal Price { get; set; } // Pre-Convention 에 의해 정밀도 16, 스케일 2로 설정됨
+}
+
+protected override void OnModelCreating(ModelBuilder modelBuilder)
+{
+    base.OnModelCreating(modelBuilder);
+
+    modelBuilder.Entity<MyEntity>()
+        .Property(e => e.Price)
+        .HasPrecision(10, 3); // Fluent API 에 의해 정밀도 10, 스케일 3으로 재정의됨
+}
+
+protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+{
+    configurationBuilder.Properties<string>().HaveMaxLength(100);
+    configurationBuilder.Properties<decimal>().HavePrecision(16, 2);
+}
+```
+
+위 예시에서 `MyEntity` 의 `Name` 속성은 Pre-Convention 에 의해 최대 길이가 100으로 설정되지만, `Description` 속성은 Data Annotation 에 의해 최대 길이가 50으로 재정의됩니다. 마찬가지로 `Price` 속성은 Pre-Convention 에 의해 정밀도 16, 스케일 2로 설정되지만, Fluent API 에 의해 정밀도 10, 스케일 3으로 재정의됩니다.
+
+### 7\. 다이어그램
+
+```mermaid
+graph TD
+    A[DbContext] --> B(ConfigureConventions);
+    B --> C{Pre-Convention Configuration};
+    C -- Applies to --> D(ModelBuilder);
+    A --> E(OnModelCreating);
+    E --> F{Fluent API Configuration};
+    F -- Overrides --> D;
+    G[Entity Classes] --> H{Data Annotations};
+    H -- Overrides --> D;
+```
+
+위 다이어그램은 EF Core 모델 구성 파이프라인을 간략하게 보여줍니다. `ConfigureConventions` 는 가장 먼저 실행되어 기본 설정을 적용하고, 이후 `OnModelCreating` 의 Fluent API 와 엔티티 클래스의 Data Annotations 가 적용되어 설정을 재정의할 수 있습니다.
+
+### 8\. Pre-Convention 모델 구성 사용 시점
+
+* **일관된 기본 설정**: 애플리케이션 전체에서 특정 데이터 타입의 속성에 대해 일관된 기본 설정을 적용하고 싶을 때 유용합니다.
+* **팀 표준 준수**: 개발팀 또는 조직의 코딩 표준이나 데이터베이스 규칙을 모델 구성에 반영하고 싶을 때 사용할 수 있습니다.
+* **반복적인 구성 감소**: 여러 엔티티에서 동일한 데이터 타입에 대해 동일한 설정을 반복적으로 지정해야 하는 경우, Pre-Convention 구성을 통해 코드 중복을 줄일 수 있습니다.
+
+---
