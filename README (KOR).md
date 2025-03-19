@@ -13504,3 +13504,370 @@ sequenceDiagram
 위 시퀀스 다이어그램은 계좌 이체 시 트랜잭션이 어떻게 처리되는지 간략하게 보여줍니다.
 
 ---
+\#\# .NET 개발: 다양한 트랜잭션 옵션 심층 분석 (`transaction.Commit`, `transaction.Rollback` 등)
+.NET 개발에서 데이터베이스 트랜잭션을 관리하는 데 사용되는 다양한 옵션들, 특히 질문에서 언급하신 `transaction.Commit`, `transaction.Rollback` 등을 포함하여 자세히 알아보겠습니다. 데이터베이스 트랜잭션은 데이터의 무결성을 유지하는 데 핵심적인 역할을 하며, 이를 효과적으로 관리하기 위한 다양한 방법들을 이해하는 것은 매우 중요합니다. 마치 **'여러 개의 중요한 작업을 묶어서 처리하고, 문제가 발생하면 안전하게 이전 상태로 되돌릴 수 있는 기능'** 과 같습니다.
+
+### 1\. 트랜잭션 관리 옵션 개요 (기초 다지기)
+데이터베이스 트랜잭션은 하나 이상의 데이터베이스 작업을 논리적인 작업 단위로 묶어 처리하는 메커니즘입니다. 트랜잭션 내의 모든 작업은 전부 성공하거나 (Commit), 전부 실패해야만 (Rollback) 합니다. .NET 에서는 ADO.NET 과 Entity Framework Core (EF Core) 를 통해 트랜잭션을 관리할 수 있으며, 각각 다양한 옵션을 제공합니다.
+
+### 2\. 핵심 트랜잭션 관리 옵션
+가장 기본적인 트랜잭션 관리 옵션은 다음과 같습니다.
+#### 2.1. `Commit()`
+* **기능**: 트랜잭션 내에서 수행된 모든 변경 사항을 데이터베이스에 **영구적으로 반영** 합니다. 마치 **'작업 완료 도장을 찍는 것'** 과 같습니다.
+* **특징**: `Commit()` 이 성공적으로 호출되면, 해당 트랜잭션에서 이루어진 데이터 변경은 되돌릴 수 없습니다.
+* **사용 시점**: 트랜잭션 내의 모든 작업이 성공적으로 완료되었음을 확신할 때 호출합니다.
+
+**예시 (C# - ADO.NET):**
+```csharp
+using System.Data.SqlClient;
+
+string connectionString = "YourConnectionString";
+
+using (SqlConnection connection = new SqlConnection(connectionString))
+{
+    connection.Open();
+    SqlTransaction transaction = connection.BeginTransaction();
+
+    try
+    {
+        // 데이터베이스 작업 1
+        SqlCommand command1 = new SqlCommand("...", connection, transaction);
+        command1.ExecuteNonQuery();
+
+        // 데이터베이스 작업 2
+        SqlCommand command2 = new SqlCommand("...", connection, transaction);
+        command2.ExecuteNonQuery();
+
+        // 모든 작업이 성공했으므로 트랜잭션 커밋
+        transaction.Commit();
+        Console.WriteLine("트랜잭션이 성공적으로 커밋되었습니다.");
+    }
+    catch (Exception ex)
+    {
+        // 오류 발생 시 롤백 처리 (아래 설명 참조)
+        transaction.Rollback();
+        Console.WriteLine($"오류 발생: {ex.Message}. 트랜잭션이 롤백되었습니다.");
+    }
+}
+```
+
+#### 2.2. `Rollback()`
+* **기능**: 트랜잭션 내에서 수행된 **모든 변경 사항을 취소** 하고, 데이터베이스를 트랜잭션 시작 이전의 상태로 되돌립니다. 마치 **'작업을 전부 취소하고 이전 상태로 되돌리는 것'** 과 같습니다.
+* **특징**: 오류가 발생하거나 특정 조건이 충족되지 않았을 때 데이터의 무결성을 유지하기 위해 사용됩니다.
+* **사용 시점**: 트랜잭션 처리 중에 예외가 발생하거나, 비즈니스 규칙에 위배되는 상황이 발생했을 때 호출합니다. 일반적으로 `try-catch` 블록의 `catch` 절에서 호출됩니다.
+
+**예시 (위의 ADO.NET 예시의 `catch` 블록):**
+```csharp
+catch (Exception ex)
+{
+    // 오류 발생 시 트랜잭션 롤백
+    transaction.Rollback();
+    Console.WriteLine($"오류 발생: {ex.Message}. 트랜잭션이 롤백되었습니다.");
+}
+```
+
+#### 2.3. `BeginTransaction()`
+* **기능**: 데이터베이스 연결 (`SqlConnection` 또는 `DbContext.Database`) 에 대해 **새로운 트랜잭션을 시작** 합니다. 마치 **'새로운 작업 묶음을 시작하겠다고 선언하는 것'** 과 같습니다.
+* **특징**: 트랜잭션 객체 (`SqlTransaction` 또는 `DbContextTransaction`) 를 반환하며, 이 객체를 통해 `Commit()` 또는 `Rollback()` 을 호출할 수 있습니다.
+* **사용 시점**: 하나 이상의 데이터베이스 작업을 하나의 논리적인 단위로 묶어서 처리하고 싶을 때, 해당 작업들을 수행하기 전에 호출합니다.
+
+**예시 (C# - EF Core):**
+```csharp
+using (var context = new YourDbContext())
+{
+    using (var transaction = context.Database.BeginTransaction())
+    {
+        try
+        {
+            // 데이터베이스 작업 1 (EF Core)
+            var entity1 = context.Entities.Find(1);
+            entity1.SomeProperty = "Updated Value";
+            context.SaveChanges();
+
+            // 데이터베이스 작업 2 (EF Core)
+            var entity2 = new Entity { Name = "New Entity" };
+            context.Entities.Add(entity2);
+            context.SaveChanges();
+
+            // 모든 작업 성공 시 커밋
+            transaction.Commit();
+            Console.WriteLine("트랜잭션이 성공적으로 커밋되었습니다.");
+        }
+        catch (Exception ex)
+        {
+            // 오류 발생 시 롤백
+            transaction.Rollback();
+            Console.WriteLine($"오류 발생: {ex.Message}. 트랜잭션이 롤백되었습니다.");
+        }
+    }
+}
+```
+
+### 3\. ADO.NET 에서의 추가적인 트랜잭션 옵션
+ADO.NET 에서는 `SqlTransaction` 객체를 통해 다음과 같은 추가적인 트랜잭션 관리 옵션을 제공합니다.
+#### 3.1. `Save(string savepointName)`
+* **기능**: 트랜잭션 내의 특정 시점에 **저장점 (Savepoint)** 을 설정합니다. 마치 **'작업 중간에 임시 저장 지점을 만드는 것'** 과 같습니다.
+* **특징**: 저장점을 설정한 후 오류가 발생하면, 트랜잭션 전체를 롤백하는 대신 특정 저장점까지만 롤백할 수 있습니다.
+* **사용 시점**: 복잡한 트랜잭션에서 특정 부분 작업이 실패했을 때, 전체 트랜잭션을 롤백하는 대신 해당 부분만 롤백하고 나머지 작업을 계속 진행하고 싶을 때 유용합니다.
+
+**예시 (C# - ADO.NET):**
+```csharp
+using System.Data.SqlClient;
+
+string connectionString = "YourConnectionString";
+
+using (SqlConnection connection = new SqlConnection(connectionString))
+{
+    connection.Open();
+    SqlTransaction transaction = connection.BeginTransaction();
+
+    try
+    {
+        // 작업 1
+        SqlCommand command1 = new SqlCommand("...", connection, transaction);
+        command1.ExecuteNonQuery();
+
+        // 저장점 설정
+        transaction.Save("SavePoint1");
+
+        // 작업 2 (오류 발생 가능성이 있는 작업)
+        SqlCommand command2 = new SqlCommand("...", connection, transaction);
+        command2.ExecuteNonQuery();
+
+        // 작업 3
+        SqlCommand command3 = new SqlCommand("...", connection, transaction);
+        command3.ExecuteNonQuery();
+
+        transaction.Commit();
+        Console.WriteLine("트랜잭션이 성공적으로 커밋되었습니다.");
+    }
+    catch (Exception ex)
+    {
+        // SavePoint1 이후에 오류가 발생한 경우, 해당 저장점까지만 롤백
+        transaction.Rollback("SavePoint1");
+        Console.WriteLine($"작업 2 또는 3에서 오류 발생: {ex.Message}. SavePoint1 까지 롤백되었습니다.");
+
+        // 필요하다면 오류 처리 후 작업을 재시도하거나 다른 로직 수행
+        // ...
+
+        // 최종적으로 트랜잭션을 커밋하거나 완전히 롤백할 수 있습니다.
+        // transaction.Commit();
+        // transaction.Rollback();
+    }
+}
+```
+
+#### 3.2. `Release(string savepointName)`
+* **기능**: 이전에 설정된 **저장점을 해제** 합니다. 마치 **'임시 저장 지점을 삭제하는 것'** 과 같습니다.
+* **특징**: 해제된 저장점으로는 더 이상 롤백할 수 없습니다.
+* **사용 시점**: 특정 저장점까지 롤백할 필요가 없다고 판단되었을 때, 해당 저장점을 해제하여 데이터베이스 리소스를 관리할 수 있습니다.
+
+**예시 (위의 ADO.NET 예시에서 `SavePoint1` 이후에 오류가 발생하지 않았을 경우):**
+```csharp
+try
+{
+    // ... (작업 1, 2, 3 성공) ...
+
+    // 저장점 해제 (더 이상 SavePoint1 으로 롤백할 필요가 없는 경우)
+    transaction.Release("SavePoint1");
+
+    transaction.Commit();
+    Console.WriteLine("트랜잭션이 성공적으로 커밋되었습니다.");
+}
+```
+
+#### 3.3. `Rollback(string savepointName)`
+* **기능**: 트랜잭션을 특정 **저장점** 까지 롤백합니다. 마치 **'특정 임시 저장 지점으로 되돌아가는 것'** 과 같습니다.
+* **특징**: 지정된 저장점 이후의 모든 변경 사항이 취소됩니다.
+* **사용 시점**: `Save()` 메서드를 사용하여 저장점을 설정한 후, 특정 부분 작업에서 오류가 발생했을 때 해당 저장점 이전의 상태로 되돌리고 싶을 때 사용합니다.
+**예시 (위의 ADO.NET 예시의 `catch` 블록):**
+```csharp
+catch (Exception ex)
+{
+    // SavePoint1 이후에 오류가 발생한 경우, 해당 저장점까지만 롤백
+    transaction.Rollback("SavePoint1");
+    Console.WriteLine($"작업 2 또는 3에서 오류 발생: {ex.Message}. SavePoint1 까지 롤백되었습니다.");
+}
+```
+
+### 4\. Entity Framework Core (EF Core) 에서의 추가적인 트랜잭션 옵션
+EF Core 의 `DbContext.Database` 속성을 통해 접근할 수 있는 `DatabaseFacade` 클래스는 다음과 같은 트랜잭션 관련 메서드를 제공합니다.
+#### 4.1. `CreateSavepointAsync(string savepointName, CancellationToken cancellationToken = default)` / `CreateSavepoint(string savepointName)`
+* **기능**: 트랜잭션 내에 **저장점** 을 비동기 또는 동기적으로 생성합니다.
+* **사용 시점**: ADO.NET 의 `Save()` 와 동일한 목적으로 사용됩니다.
+#### 4.2. `RollbackToSavepointAsync(string savepointName, CancellationToken cancellationToken = default)` / `RollbackToSavepoint(string savepointName)`
+* **기능**: 트랜잭션을 특정 **저장점** 으로 비동기 또는 동기적으로 롤백합니다.
+* **사용 시점**: ADO.NET 의 `Rollback(string savepointName)` 와 동일한 목적으로 사용됩니다.
+#### 4.3. `ReleaseSavepointAsync(string savepointName, CancellationToken cancellationToken = default)` / `ReleaseSavepoint(string savepointName)`
+* **기능**: 특정 **저장점** 을 비동기 또는 동기적으로 해제합니다.
+* **사용 시점**: ADO.NET 의 `Release(string savepointName)` 와 동일한 목적으로 사용됩니다.
+
+**예시 (C# - EF Core):**
+```csharp
+using (var context = new YourDbContext())
+{
+    using (var transaction = await context.Database.BeginTransactionAsync())
+    {
+        try
+        {
+            // 작업 1
+            var entity1 = await context.Entities.FindAsync(1);
+            entity1.SomeProperty = "Updated Value 1";
+            await context.SaveChangesAsync();
+
+            // 저장점 생성
+            await context.Database.CreateSavepointAsync("SavePoint1");
+
+            // 작업 2 (오류 발생 가능성이 있는 작업)
+            var entity2 = new Entity { Name = "Error Entity" };
+            context.Entities.Add(entity2);
+            await context.SaveChangesAsync(); // 의도적으로 오류 발생 (예: Name 속성에 NotNull 제약)
+
+            // 작업 3
+            var entity3 = new Entity { Name = "Another Entity" };
+            context.Entities.Add(entity3);
+            await context.SaveChangesAsync();
+
+            await transaction.CommitAsync();
+            Console.WriteLine("트랜잭션이 성공적으로 커밋되었습니다.");
+        }
+        catch (Exception ex)
+        {
+            // SavePoint1 이후에 오류가 발생한 경우, 해당 저장점까지만 롤백
+            await context.Database.RollbackToSavepointAsync("SavePoint1");
+            Console.WriteLine($"작업 2 또는 3에서 오류 발생: {ex.Message}. SavePoint1 까지 롤백되었습니다.");
+
+            // 필요하다면 오류 처리 후 작업을 재시도하거나 다른 로직 수행
+            // ...
+
+            // 최종적으로 트랜잭션을 커밋하거나 완전히 롤백할 수 있습니다.
+            // await transaction.CommitAsync();
+            // await transaction.RollbackAsync();
+        }
+    }
+}
+```
+
+### 5\. `TransactionScope` 를 이용한 트랜잭션 관리
+`System.Transactions` 네임스페이스의 `TransactionScope` 클래스를 사용하면 여러 데이터베이스 연결 또는 다른 트랜잭션 리소스를 포함하는 트랜잭션을 쉽게 관리할 수 있습니다.
+**예시 (C# - `TransactionScope`):**
+```csharp
+using System.Transactions;
+
+using (var scope = new TransactionScope())
+{
+    try
+    {
+        using (var context1 = new YourDbContext())
+        {
+            var entity1 = context1.Entities.Find(1);
+            entity1.SomeProperty = "Updated in Context 1";
+            context1.SaveChanges();
+        }
+
+        using (var context2 = new AnotherDbContext())
+        {
+            var entity2 = new AnotherEntity { Value = "Added in Context 2" };
+            context2.AnotherEntities.Add(entity2);
+            context2.SaveChanges();
+        }
+
+        // scope.Complete() 가 호출되어야 트랜잭션이 커밋됩니다.
+        scope.Complete();
+        Console.WriteLine("TransactionScope 내의 모든 작업이 성공적으로 완료되었습니다.");
+    }
+    catch (TransactionAbortedException ex)
+    {
+        Console.WriteLine($"TransactionScope 가 중단되었습니다: {ex.Message}");
+        // 트랜잭션은 자동으로 롤백됩니다.
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"일반 오류 발생: {ex.Message}");
+        // 트랜잭션은 자동으로 롤백됩니다.
+    }
+}
+```
+
+`TransactionScope` 는 암시적인 트랜잭션을 제공하며, `scope.Complete()` 가 호출되면 트랜잭션이 커밋되고, `Complete()` 가 호출되지 않거나 예외가 발생하면 트랜잭션이 롤백됩니다. 이는 여러 리소스에 걸친 트랜잭션을 관리하는 데 매우 편리합니다.
+
+### 6\. 트랜잭션 격리 수준 설정
+트랜잭션을 시작할 때 격리 수준을 명시적으로 설정할 수 있습니다. 이는 데이터베이스 시스템의 동시성 제어 방식에 영향을 미칩니다.
+**예시 (C# - ADO.NET 에서 격리 수준 설정):**
+```csharp
+using System.Data;
+using System.Data.SqlClient;
+
+string connectionString = "YourConnectionString";
+
+using (SqlConnection connection = new SqlConnection(connectionString))
+{
+    connection.Open();
+    SqlTransaction transaction = connection.BeginTransaction(IsolationLevel.ReadCommitted); // 격리 수준 설정
+
+    // ... (트랜잭션 내의 작업 수행) ...
+
+    try
+    {
+        transaction.Commit();
+    }
+    catch (Exception)
+    {
+        transaction.Rollback();
+    }
+}
+```
+
+**예시 (C# - EF Core 에서 격리 수준 설정):**
+```csharp
+using System.Data;
+
+using (var context = new YourDbContext())
+{
+    using (var transaction = await context.Database.BeginTransactionAsync(IsolationLevel.Serializable)) // 격리 수준 설정
+    {
+        // ... (트랜잭션 내의 작업 수행) ...
+
+        try
+        {
+            await transaction.CommitAsync();
+        }
+        catch (Exception)
+        {
+            await transaction.RollbackAsync();
+        }
+    }
+}
+```
+
+### 7\. 다이어그램
+
+```mermaid
+stateDiagram-v2
+    state Transaction {
+        state Active {
+            [*] --> Beginning : BeginTransaction()
+            Beginning --> SavepointCreated : Save(name) / CreateSavepoint(name)
+            SavepointCreated --> Active
+            Active --> Committing : Commit() / CommitTransaction() / scope.Complete()
+            Active --> RollingBack : Rollback() / RollbackTransaction() / Exception in scope
+            SavepointCreated --> RollingBackToSavepoint : Rollback(name) / RollbackToSavepoint(name)
+            RollingBackToSavepoint --> Active
+            SavepointCreated --> SavepointReleased : Release(name) / ReleaseSavepoint(name)
+            SavepointReleased --> Active
+        }
+        state Committing {
+            Committing --> Committed : Success
+        }
+        state RollingBack {
+            RollingBack --> RolledBack : Success
+            RollingBackToSavepoint --> Active
+        }
+        Committed --> [*]
+        RolledBack --> [*]
+    }
+```
+
+위 상태 다이어그램은 트랜잭션의 생명주기를 간략하게 보여줍니다. 트랜잭션은 시작(`BeginTransaction`) 되어 활성 상태(`Active`)를 유지하며, 성공적으로 완료되면 커밋(`Commit`) 되고, 오류가 발생하면 롤백(`Rollback`) 됩니다. 저장점(`Savepoint`)을 사용하여 트랜잭션의 특정 지점까지 롤백할 수도 있습니다.
+
+---
